@@ -42,7 +42,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // Jika gagal, tangani error dan tampilkan pesan
       if (mounted) { // Pastikan widget masih ada di tree
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Gagal: ${e.toString()}')),
+          SnackBar(content: Text('Login Gagal: ${e.toString().replaceAll("Exception: ", "")}')),
         );
       }
     } finally {

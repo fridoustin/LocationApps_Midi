@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthRemoteDataSource {
   final SupabaseClient _client;
 
+  SupabaseClient get client => _client;
   AuthRemoteDataSource(this._client);
 
   /// User yang sedang login
