@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
-import 'package:midi_location/features/auth/presentation/pages/profile_screen.dart';
+import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
 import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
 
