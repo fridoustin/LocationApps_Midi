@@ -1,22 +1,18 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:midi_location/core/constant/color.dart';
-import 'package:midi_location/formkplt_screen.dart';
-import 'package:midi_location/home_screen.dart';
-import 'package:midi_location/profile_screen.dart';
-import 'package:midi_location/ulok_screen.dart';
-import 'package:midi_location/widgets/navigation/navigation_bar.dart';
+import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
+import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
+import 'package:midi_location/features/auth/presentation/pages/profile_screen.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
+import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
 
 class MainLayout extends StatefulWidget {
   final int currentIndex;
   final PreferredSizeWidget? appBar;
 
-  const MainLayout({
-    super.key,
-    required this.currentIndex,
-    this.appBar,
-  });
+  const MainLayout({super.key, required this.currentIndex, this.appBar});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
@@ -56,10 +52,7 @@ class _MainLayoutState extends State<MainLayout> {
       },
       child: Scaffold(
         appBar: widget.appBar,
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _pages),
         bottomNavigationBar: NavigationBarWidget(
           currentIndex: _currentIndex,
           onItemTapped: _onItemTapped,

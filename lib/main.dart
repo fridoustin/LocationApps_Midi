@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:midi_location/core/routes/route.dart';
-import 'package:midi_location/widgets/main_layout.dart';
+import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
