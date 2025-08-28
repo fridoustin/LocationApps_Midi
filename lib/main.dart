@@ -1,8 +1,9 @@
 // ignore_for_file: use_super_parameters, sized_box_for_whitespace
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/routes/route.dart';
-import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -13,8 +14,10 @@ Future<void> main() async {
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-  runApp(MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
+
+final supabase = Supabase.instance.client;
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -26,7 +29,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.red,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MainLayout(currentIndex: 0),
+      home: const AuthGate(),
+      // home: const MainLayout(currentIndex: 0),
       debugShowCheckedModeBanner: false,
       onGenerateRoute: routeGenerators,
     );
