@@ -3,8 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 
-enum TopBarType { home, general }
+enum TopBarType { home, general , profile}
 
 class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   final TopBarType type;
@@ -13,6 +14,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leadingWidget;
   final VoidCallback? onNotificationTap;
   final bool showNotificationButton;
+  final UserProfileData? profileData;
 
   const CustomTopBar({
     super.key,
@@ -22,6 +24,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.leadingWidget,
     this.onNotificationTap,
     this.showNotificationButton = true,
+    this.profileData
   });
 
   factory CustomTopBar.home({
@@ -47,13 +50,30 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
         showNotificationButton: showNotificationButton);
   }
 
+  factory CustomTopBar.profile({
+    required String title,
+    required UserProfileData profileData,
+    VoidCallback? onNotificationTap,
+  }) {
+    return CustomTopBar(
+      type: TopBarType.profile,
+      title: title,
+      profileData: profileData,
+      onNotificationTap: onNotificationTap,
+      showNotificationButton: true, // Asumsi tombol notifikasi selalu ada di profil
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        (type == TopBarType.home)
-            ? _buildHomeTopBar(context)
-            : _buildGeneralTopBar(context),
+        if (type == TopBarType.home)
+          _buildHomeTopBar(context)
+        else if (type == TopBarType.general)
+          _buildGeneralTopBar(context)
+        else if (type == TopBarType.profile)
+          _buildProfileTopBar(context),
         
         if (showNotificationButton)
           Positioned(
@@ -74,7 +94,6 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildHomeTopBar(BuildContext context) {
     return AppBar(
       backgroundColor: AppColors.primaryColor,
-      elevation: 2,
       automaticallyImplyLeading: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -132,7 +151,6 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       leading: leadingWidget,
       backgroundColor: AppColors.primaryColor,
-      elevation: 2,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
@@ -143,10 +161,77 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
+  Widget _buildProfileTopBar(BuildContext context) {
+    return AppBar(
+      centerTitle: true,
+      toolbarHeight: 120,
+      title: Text(
+        title ?? '',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: AppColors.primaryColor,
+      automaticallyImplyLeading: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      flexibleSpace: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 100), // Beri ruang untuk tombol notifikasi
+            const CircleAvatar(
+              radius: 56,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 82, color: AppColors.primaryColor),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              profileData?.name ?? 'Memuat Nama...',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              profileData?.position ?? 'Memuat Posisi...',
+              style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/location.svg', 
+                  // ignore: deprecated_member_use
+                  color: AppColors.cardColor,
+                  width: 20,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  profileData?.branchName ?? 'Memuat Cabang...',
+                  style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Size get preferredSize {
     if (type == TopBarType.home) {
       return const Size.fromHeight(160);
+    } if (type == TopBarType.profile) {
+      return const Size.fromHeight(340);
     } else {
       return const Size.fromHeight(120);
     }
