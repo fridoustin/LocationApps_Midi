@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:midi_location/core/constant/color.dart';
+import 'package:midi_location/core/constants/color.dart';
 
 class NavigationBarItemWidget extends StatelessWidget {
   final int index;
@@ -29,15 +29,22 @@ class NavigationBarItemWidget extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            SvgPicture.asset(
-              iconAsset,
-              semanticsLabel: label,
-              width: 24,
-              height: 24,
-              colorFilter: isSelected
-                ? const ColorFilter.mode(AppColors.primaryColor, BlendMode.srcIn)
-                : const ColorFilter.mode(AppColors.iconColor, BlendMode.srcIn)
-            ),
+              SvgPicture.asset(
+                iconAsset,
+                semanticsLabel: label,
+                width: 24,
+                height: 24,
+                colorFilter:
+                    isSelected
+                        ? const ColorFilter.mode(
+                          AppColors.primaryColor,
+                          BlendMode.srcIn,
+                        )
+                        : const ColorFilter.mode(
+                          AppColors.iconColor,
+                          BlendMode.srcIn,
+                        ),
+              ),
               const SizedBox(height: 4),
               Flexible(
                 child: Text(
@@ -47,8 +54,12 @@ class NavigationBarItemWidget extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected ? AppColors.primaryColor : AppColors.iconColor,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color:
+                        isSelected
+                            ? AppColors.primaryColor
+                            : AppColors.iconColor,
                   ),
                 ),
               ),
