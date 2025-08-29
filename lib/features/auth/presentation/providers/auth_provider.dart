@@ -41,7 +41,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
       const allowedPositionId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
       final profileResponse = await supabaseClient
-          .from('profiles')
+          .from('users')
           .select('position_id')
           .eq('id', appUser.id)
           .single();
