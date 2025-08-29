@@ -7,24 +7,24 @@ import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
-// 1. Provider untuk SupabaseClient
+// Provider untuk SupabaseClient
 final supabaseClientProvider = Provider<supabase.SupabaseClient>((ref) {
   return supabase.Supabase.instance.client;
 });
 
-// 2. Provider untuk AuthRemoteDataSource
+// Provider untuk AuthRemoteDataSource
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return AuthRemoteDataSource(client);
 });
 
-// 3. Provider untuk AuthRepository
+// Provider untuk AuthRepository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final dataSource = ref.watch(authRemoteDataSourceProvider);
   return AuthRepositoryImpl(dataSource);
 });
 
-// 4. Provider UTAMA: Stream untuk status autentikasi
+// Provider untuk status autentikasi
 // Provider ini akan memberitahu aplikasi kita secara real-time
 // apakah ada user yang sedang login atau tidak.
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -36,7 +36,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
       return null;
     }
 
-    // Jika user login, JANGAN langsung percaya. Cek dulu posisinya.
+    // Mengecek posisi user yang mencoba login.
     try {
       const allowedPositionId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
@@ -48,17 +48,13 @@ final authStateProvider = StreamProvider<User?>((ref) {
       
       final userPositionId = profileResponse['position_id'];
 
-      // HANYA JIKA posisi cocok, teruskan data user ke AuthGate.
       if (userPositionId == allowedPositionId) {
         return appUser;
       } else {
-        // JIKA TIDAK COCOK, anggap saja dia tidak login (kembalikan null)
-        // dan paksa logout untuk membersihkan sesi yang salah.
         await supabaseClient.auth.signOut();
         return null;
       }
     } catch (e) {
-      // Jika ada error (misal profil tak ada), anggap tidak login.
       return null;
     }
   });
