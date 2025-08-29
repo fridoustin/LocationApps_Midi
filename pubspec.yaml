@@ -37,6 +37,7 @@ dependencies:
   supabase_flutter: ^2.0.0
   flutter_dotenv: ^5.2.1
   flutter_svg: ^2.0.17
+  image_picker: ^1.1.2
   flutter_riverpod: ^2.6.1
   intl: ^0.20.2
 
@@ -70,6 +71,16 @@ flutter:
     - assets/icons/map.svg
     - assets/icons/profile.svg
     - assets/icons/addulok.svg
+    - assets/icons/edit_profile.svg
+    - assets/icons/email.svg
+    - assets/icons/phone.svg
+    - assets/icons/help.svg
+    - assets/icons/about.svg
+    - assets/icons/right_arrow.svg
+    - assets/icons/left_arrow.svg
+    - assets/icons/avatar.svg
+    - assets/icons/notification.svg
+    - assets/icons/logo_midi.png
     - assets/icons/error.svg
     - assets/pic/topbarlogo.png
     - assets/icons/notifikasi.svg
