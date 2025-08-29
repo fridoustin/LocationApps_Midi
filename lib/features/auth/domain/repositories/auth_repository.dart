@@ -15,4 +15,6 @@ abstract class AuthRepository {
 
   // Fungsi untuk Sign Out
   Future<void> signOut();
+
+  Future<bool> isUserAuthorized(String userId);
 }

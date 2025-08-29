@@ -29,32 +29,22 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 // apakah ada user yang sedang login atau tidak.
 final authStateProvider = StreamProvider<User?>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
-  final supabaseClient = ref.watch(supabaseClientProvider);
+
+  // Perhatikan, kita tidak perlu `supabaseClientProvider` lagi di sini!
   return authRepository.onAuthStateChange.asyncMap((appUser) async {
-    // Jika user logout (null), langsung teruskan.
     if (appUser == null) {
       return null;
     }
 
-    // Mengecek posisi user yang mencoba login.
-    try {
-      const allowedPositionId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+    // Cukup panggil method dari repository
+    final isAllowed = await authRepository.isUserAuthorized(appUser.id);
 
-      final profileResponse = await supabaseClient
-          .from('users')
-          .select('position_id')
-          .eq('id', appUser.id)
-          .single();
-      
-      final userPositionId = profileResponse['position_id'];
-
-      if (userPositionId == allowedPositionId) {
-        return appUser;
-      } else {
-        await supabaseClient.auth.signOut();
-        return null;
-      }
-    } catch (e) {
+    if (isAllowed) {
+      return appUser;
+    } else {
+      // Jika tidak diizinkan, pastikan sesi dibersihkan
+      // Kita bisa panggil signOut dari repository juga
+      await authRepository.signOut();
       return null;
     }
   });
