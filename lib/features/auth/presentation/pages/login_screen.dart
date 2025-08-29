@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/core/utils/show_error_dialog.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 
 
@@ -41,9 +42,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } catch (e) {
       // Jika gagal, tangani error dan tampilkan pesan
       if (mounted) { // Pastikan widget masih ada di tree
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Gagal: ${e.toString().replaceAll("Exception: ", "")}')),
-        );
+        final errorMessage = e.toString().replaceAll("Exception: ", "");
+        showErrorDialog(context, errorMessage);
       }
     } finally {
       // Set state loading kembali ke false setelah selesai (baik berhasil maupun gagal)
