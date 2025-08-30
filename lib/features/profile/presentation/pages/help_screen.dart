@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/topbar.dart';
 
 class HelpScreen extends StatefulWidget {
   const HelpScreen({super.key});
@@ -13,19 +14,19 @@ class _HelpScreenState extends State<HelpScreen> {
   final List<Map<String, String>> faqItems = [
     {
       'question': 'Kenapa lokasi saya tidak sesuai?',
-      'answer': 'lore ipsum dolor sit amet, consectetur adipiscing elit.',
+      'answer': 'Pastikan layanan lokasi pada perangkat Anda aktif dan aplikasi memiliki izin untuk mengaksesnya. Coba muat ulang halaman atau restart aplikasi jika masalah berlanjut.',
     },
     {
       'question': 'Bagaimana cara memperbarui data profil?',
-      'answer': 'lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      'answer': 'Anda dapat memperbarui informasi pribadi melalui halaman profil. Tekan ikon edit di bagian "Personal Information" untuk mengubah data Anda.',
     },
     {
       'question': 'Apakah saya bisa menerima notifikasi?',
-      'answer': 'lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      'answer': 'Ya, aplikasi ini mendukung notifikasi. Pastikan Anda memberikan izin notifikasi di pengaturan perangkat Anda untuk menerima pembaruan penting.',
     },
     {
       'question': 'Bagaimana jika ingin ganti kata sandi?',
-      'answer': 'lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      'answer': 'Fitur ganti kata sandi saat ini belum tersedia di dalam aplikasi. Silakan hubungi admin atau tim support untuk bantuan lebih lanjut terkait keamanan akun.',
     },
   ];
 
@@ -33,49 +34,26 @@ class _HelpScreenState extends State<HelpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
+      appBar: CustomTopBar.general(
+        title: 'Help',
+        showNotificationButton: false, 
+        leadingWidget: IconButton( 
+          icon: SvgPicture.asset(
+            "assets/icons/left_arrow.svg",
+            width: 24,
+            height: 24,
+            colorFilter: const ColorFilter.mode(
+              Colors.white,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 75, bottom: 40),
-              decoration: const BoxDecoration(
-                color: AppColors.primaryColor,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  const Text(
-                    "Help",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textColor,
-                    ),
-                  ),
-                  Positioned(
-                    left: 20,
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: SvgPicture.asset(
-                        "assets/icons/left_arrow.svg",
-                        width: 24,
-                        height: 24,
-                        colorFilter: const ColorFilter.mode(
-                          AppColors.textColor,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -102,7 +80,6 @@ class _HelpScreenState extends State<HelpScreen> {
                           faq['question']!,
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-
                         shape: const RoundedRectangleBorder(
                           side: BorderSide(color: Colors.transparent),
                         ),
@@ -125,9 +102,7 @@ class _HelpScreenState extends State<HelpScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -138,69 +113,96 @@ class _HelpScreenState extends State<HelpScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   Card(
                     color: AppColors.cardColor,
                     margin: EdgeInsets.zero,
                     elevation: 1,
+                    clipBehavior: Clip.antiAlias, // Agar InkWell tidak keluar dari border radius
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/email.svg",
-                                width: 20,
-                                height: 20,
-                                colorFilter: const ColorFilter.mode(
-                                  AppColors.black,
-                                  BlendMode.srcIn,
+                    child: Column(
+                      children: [
+                        // Baris untuk Email
+                        InkWell(
+                          onTap: () {
+                            // TODO: Tambahkan logika untuk membuka aplikasi email
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                                  child: SvgPicture.asset(
+                                    "assets/icons/email.svg",
+                                    width: 20,
+                                    height: 20,
+                                    colorFilter: const ColorFilter.mode(
+                                      AppColors.primaryColor,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              const Text(
-                                'support@mu.co.id',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Text(
+                                    'support@mu.co.id',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/phone.svg",
-                                width: 20,
-                                height: 20,
-                                colorFilter: const ColorFilter.mode(
-                                  AppColors.black,
-                                  BlendMode.srcIn,
+                        ),
+                        
+                        // Pemisah antar item
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+
+                        // Baris untuk Telepon
+                        InkWell(
+                          onTap: () {
+                            // TODO: Tambahkan logika untuk membuka aplikasi telepon
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+                                  child: SvgPicture.asset(
+                                    "assets/icons/phone.svg",
+                                    width: 20,
+                                    height: 20,
+                                    colorFilter: const ColorFilter.mode(
+                                      AppColors.primaryColor,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              const Text(
-                                '+62 812 1234 1234',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Text(
+                                    '+62 812 1234 1234',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-
                   const SizedBox(height: 40),
                 ],
               ),
