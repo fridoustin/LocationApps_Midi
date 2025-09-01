@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
+import 'package:midi_location/features/profile/domain/entities/profile.dart';
+import 'package:midi_location/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'info_row.dart';
 
 class InfoCard extends StatelessWidget {
-  final UserProfileData? profileData;
+  final Profile? profileData;
   const InfoCard({super.key, this.profileData});
 
   @override
@@ -38,7 +39,17 @@ class InfoCard extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  // Navigator.push(context, MaterialPageRoute(builder: (_) => EditProfilePage(...)));
+                  // Lakukan navigasi hanya jika profileData tidak null
+                  if (profileData != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditProfilePage(
+                          currentProfile: profileData!,
+                        ),
+                      ),
+                    );
+                  }
                 },
                 child: SvgPicture.asset(
                   "assets/icons/editulok.svg",
@@ -60,7 +71,7 @@ class InfoCard extends StatelessWidget {
           const Divider(height: 25),
           InfoRow(
             iconPath: "assets/icons/phone.svg",
-            text: profileData?.phone ?? "-"
+            text: profileData?.phone ?? "-",
           ),
         ],
       ),
