@@ -55,7 +55,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       case 0: // Halaman Home
         return userProfileAsync.when(
           data: (profile) => CustomTopBar.home(
-            branchName: profile?.branchName ?? 'Branch',
+            branchName: profile?.branch ?? 'Branch',
           ),
           loading: () => CustomTopBar.home(branchName: 'Memuat...'),
           error: (err, stack) => CustomTopBar.general(title: 'Gagal Memuat'),

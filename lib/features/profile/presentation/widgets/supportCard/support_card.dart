@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:midi_location/features/profile/presentation/pages/about_screen.dart';
+import 'package:midi_location/features/profile/presentation/pages/help_screen.dart';
 import 'support_row.dart';
 
 class SupportCard extends StatelessWidget {
@@ -35,7 +37,7 @@ class SupportCard extends StatelessWidget {
             iconPath: "assets/icons/help.svg",
             text: "Help",
             onTap: () {
-              // Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpScreen()));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpScreen()));
             },
           ),
           const Divider(height: 25),
@@ -43,7 +45,7 @@ class SupportCard extends StatelessWidget {
             iconPath: "assets/icons/about.svg",
             text: "About",
             onTap: () {
-              // Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
             },
           ),
         ],

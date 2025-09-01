@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
+import 'package:midi_location/features/profile/domain/entities/profile.dart';
 
 enum TopBarType { home, general , profile}
 
@@ -14,7 +14,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leadingWidget;
   final VoidCallback? onNotificationTap;
   final bool showNotificationButton;
-  final UserProfileData? profileData;
+  final Profile? profileData;
 
   const CustomTopBar({
     super.key,
@@ -52,7 +52,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   factory CustomTopBar.profile({
     required String title,
-    required UserProfileData profileData,
+    required Profile profileData,
     VoidCallback? onNotificationTap,
   }) {
     return CustomTopBar(
@@ -162,6 +162,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildProfileTopBar(BuildContext context) {
+    final bool hasAvatar = profileData?.avatarUrl != null && profileData!.avatarUrl!.isNotEmpty;
     return AppBar(
       centerTitle: true,
       toolbarHeight: 120,
@@ -185,10 +186,13 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
         child: Column(
           children: [
             const SizedBox(height: 100), // Beri ruang untuk tombol notifikasi
-            const CircleAvatar(
-              radius: 56,
+            CircleAvatar(
+              radius: 60,
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 82, color: AppColors.primaryColor),
+              backgroundImage: hasAvatar ? NetworkImage(profileData!.avatarUrl!) : null,
+              child: !hasAvatar
+                    ? const Icon(Icons.person, size: 60, color: AppColors.primaryColor)
+                    : null,
             ),
             const SizedBox(height: 12),
             Text(
@@ -215,7 +219,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  profileData?.branchName ?? 'Memuat Cabang...',
+                  profileData?.branch ?? 'Memuat Cabang...',
                   style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],

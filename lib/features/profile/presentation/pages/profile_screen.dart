@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/core/widgets/InfoCard/info_card.dart';
-import 'package:midi_location/core/widgets/supportCard/support_card.dart';
+import 'package:midi_location/features/profile/presentation/widgets/InfoCard/info_card.dart';
+import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 

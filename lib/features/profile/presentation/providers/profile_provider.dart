@@ -1,66 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
+import '../../data/datasources/profile_remote_datasource.dart';
+import '../../data/repositories/profile_repository_impl.dart';
+import '../../domain/entities/profile.dart';
+import '../../domain/repositories/profile_repository.dart';
 
-class Profile {
-  String name;
-  String email;
-  String phone;
-  String role;
-  String branch;
+// Sediakan instance dari DataSource dan Repository khusus profil
+final profileRemoteDataSourceProvider = Provider<ProfileRemoteDataSource>((ref) {
+  return ProfileRemoteDataSource(ref.watch(supabaseClientProvider));
+});
 
-  Profile({
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.role,
-    required this.branch,
-  });
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  return ProfileRepositoryImpl(ref.watch(profileRemoteDataSourceProvider));
+});
 
-  Profile copyWith({
-    String? name,
-    String? email,
-    String? phone,
-    String? role,
-    String? branch,
-  }) {
-    return Profile(
-      name: name ?? this.name,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
-      role: role ?? this.role,
-      branch: branch ?? this.branch,
-    );
-  }
-}
+// Provider untuk mengambil data profil lengkap untuk UI
+final profileDataProvider = FutureProvider<Profile>((ref) {
+  return ref.watch(profileRepositoryProvider).getProfileData();
+});
 
-class ProfileNotifier extends StateNotifier<Profile> {
-  ProfileNotifier()
-    : super(
-        Profile(
-          name: "Apriyanto Dwi Herlambang",
-          email: "email@mu.co.id",
-          phone: "+62 812 - 1234 - 1244",
-          role: "Location Manager",
-          branch: "Head Office",
-        ),
-      );
-
-  void updateProfile({
-    String? name,
-    String? email,
-    String? phone,
-    String? role,
-    String? branch,
-  }) {
-    state = state.copyWith(
-      name: name,
-      email: email,
-      phone: phone,
-      role: role,
-      branch: branch,
-    );
-  }
-}
-
-final profileProvider = StateNotifierProvider<ProfileNotifier, Profile>(
-  (ref) => ProfileNotifier(),
-);
