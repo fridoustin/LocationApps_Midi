@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/core/widgets/sliding_tab_bar.dart';
+import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_ulok.dart';
 import 'package:midi_location/core/widgets/ulok_card.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 
