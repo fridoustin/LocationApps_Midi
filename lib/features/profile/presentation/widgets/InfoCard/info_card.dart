@@ -55,12 +55,12 @@ class InfoCard extends StatelessWidget {
           const SizedBox(height: 16),
           InfoRow(
             iconPath: "assets/icons/email.svg",
-            text: profileData?.email ?? 'Memuat Email',
+            text: profileData?.email ?? '-',
           ),
           const Divider(height: 25),
-          const InfoRow(
+          InfoRow(
             iconPath: "assets/icons/phone.svg",
-            text: "+62 812 - 1234 - 1244", // Data dummy
+            text: profileData?.phone ?? "-"
           ),
         ],
       ),
