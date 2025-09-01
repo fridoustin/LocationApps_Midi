@@ -7,7 +7,7 @@ class ULOKPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child : Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.location_on, size: 100, color: Colors.grey[400]),
@@ -21,7 +21,7 @@ class ULOKPage extends StatelessWidget {
             ),
           ),
         ],
-      )
+      ),
     );
   }
 }
