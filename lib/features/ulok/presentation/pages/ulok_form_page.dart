@@ -520,7 +520,7 @@ class _UlokFormPageState extends State<UlokFormPage> {
                           hint: 'Masukkan luas tanah/bangunan',
                         ),
                         _buildTextField(
-                          label: 'Harga Sewa (+PPN 10%) *',
+                          label: 'Harga Sewa (+PPH 10%) *',
                           hint: 'Masukkan harga sewa',
                         ),
                         _buildTextField(
