@@ -80,6 +80,10 @@ flutter:
     - assets/icons/avatar.svg
     - assets/icons/notification.svg
     - assets/icons/logo_midi.png
+    - assets/icons/data_store.svg
+    - assets/icons/indonesia.svg
+    - assets/icons/down_arrow.svg
+    - assets/icons/calender.svg
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
