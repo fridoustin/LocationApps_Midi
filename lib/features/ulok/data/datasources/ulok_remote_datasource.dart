@@ -6,9 +6,13 @@ class UlokRemoteDataSource {
 
   // Query untuk mengambil data 'Recent'
   Future<List<Map<String, dynamic>>> getRecentUlok(String query) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('User not Authenticated');
+
     var request = client
         .from('ulok')
         .select('id, nama_ulok, alamat, kecamatan, kabupaten, provinsi, approval_status, created_at')
+        .eq('users_id', userId)
         .eq('approval_status', 'In Progress');
 
     if (query.isNotEmpty) {
@@ -22,9 +26,13 @@ class UlokRemoteDataSource {
 
   // Query untuk mengambil data 'History'
   Future<List<Map<String, dynamic>>> getHistoryUlok(String query) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('User not Authenticated');
+    
     var request = client
         .from('ulok')
         .select('id, nama_ulok, alamat, kecamatan, kabupaten, provinsi, approval_status, created_at')
+        .eq('users_id', userId)
         .inFilter('approval_status', ['OK', 'NOK']);
 
     if (query.isNotEmpty) {
