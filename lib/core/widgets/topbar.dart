@@ -207,7 +207,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
               profileData?.position ?? 'Memuat Posisi...',
               style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w500),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -215,7 +215,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                   'assets/icons/location.svg', 
                   // ignore: deprecated_member_use
                   color: AppColors.cardColor,
-                  width: 20,
+                  width: 15,
                 ),
                 const SizedBox(width: 4),
                 Text(
