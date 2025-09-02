@@ -49,9 +49,38 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     setState(() => _currentIndex = index);
   }
 
+  PreferredSizeWidget _buildAppBar(int index, WidgetRef ref) {
+    final userProfileAsync = ref.watch(userProfileProvider);
+
+  switch (index) {
+      case 0: // Halaman Home
+        return userProfileAsync.when(
+          data: (profile) => CustomTopBar.home(
+            branchName: profile?.branch ?? 'Branch',
+          ),
+          loading: () => CustomTopBar.home(branchName: 'Memuat...'),
+          error: (err, stack) => CustomTopBar.general(title: 'Gagal Memuat'),
+        );
+      case 3: // Halaman Profile
+        return userProfileAsync.when(
+          data: (profile) {
+            if (profile == null) {
+              return CustomTopBar.general(title: 'Profil Tidak Ditemukan');
+            }
+            // Gunakan factory constructor .profile yang sudah Anda buat
+            return CustomTopBar.profile(profileData: profile, title: _pageTitles[index],);
+          },
+          loading: () => CustomTopBar.general(title: 'Memuat Profil...'),
+          error: (err, stack) => CustomTopBar.general(title: 'Gagal Memuat Profil'),
+        );
+      default: // Halaman Lainnya (ULOK, Form KPLT)
+        return CustomTopBar.general(title: _pageTitles[index]);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userProfileAsync = ref.watch(userProfileProvider);
+    // final userProfileAsync = ref.watch(userProfileProvider);
     return WillPopScope(
       onWillPop: () async {
         if (_currentIndex != 0) {
@@ -61,22 +90,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         return true;
       },
       child: Scaffold(
-        appBar: _currentIndex == 0
-          ? userProfileAsync.when(
-              data: (profile) => CustomTopBar.home(
-                branchName: profile?.branchName ?? 'Branch',
-              ),
-              loading: () => CustomTopBar.home(
-                branchName: 'Memuat...',
-              ),
-              error: (err, stack) => CustomTopBar.general(
-                title: 'Gagal Memuat Data',
-              ),
-            )
-          // Jika halaman lain
-          : CustomTopBar.general(
-              title: _pageTitles[_currentIndex],
-            ),
+        appBar: _buildAppBar(_currentIndex, ref),
         body: IndexedStack(index: _currentIndex, children: _pages),
         bottomNavigationBar: NavigationBarWidget(
           currentIndex: _currentIndex,
@@ -88,6 +102,32 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             );
           },
         ),
+        // appBar: _currentIndex == 0
+        //   ? userProfileAsync.when(
+        //       data: (profile) => CustomTopBar.home(
+        //         branchName: profile?.branchName ?? 'Branch',
+        //       ),
+        //       loading: () => CustomTopBar.home(
+        //         branchName: 'Memuat...',
+        //       ),
+        //       error: (err, stack) => CustomTopBar.general(
+        //         title: 'Gagal Memuat Data',
+        //       ),
+        //     )
+        //   // Jika halaman lain
+        //   : CustomTopBar.general(
+        //       title: _pageTitles[_currentIndex],
+        //     ),
+        // body: IndexedStack(index: _currentIndex, children: _pages),
+        // bottomNavigationBar: NavigationBarWidget(
+        //   currentIndex: _currentIndex,
+        //   onItemTapped: _onItemTapped,
+        //   onCenterButtonTapped: () {
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(content: Text('Center button tapped')),
+        //     );
+        //   },
+        // ),
         backgroundColor: AppColors.backgroundColor,
       ),
     );

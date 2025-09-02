@@ -1,46 +1,118 @@
-// 1. Import Riverpod dan provider auth
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart'; // Sesuaikan path jika perlu
+import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
+import 'package:midi_location/features/home/presentation/widgets/donut_chart.dart';
+import 'package:midi_location/features/home/presentation/widgets/line_chart.dart';
+import 'package:midi_location/features/home/presentation/widgets/summary_card.dart';
+import 'package:midi_location/features/home/presentation/widgets/timerange_button.dart';
+// 1. IMPORT PROVIDER PROFIL
+import 'package:midi_location/features/profile/presentation/providers/profile_provider.dart';
 
-// 2. Ubah menjadi ConsumerWidget
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
   static const String route = '/home';
 
   @override
-  // 3. Tambahkan WidgetRef ref pada method build
   Widget build(BuildContext context, WidgetRef ref) {
-    return Center(
+    final statsAsync = ref.watch(dashboardStatsProvider);
+    final timeRange = ref.watch(timeRangeProvider);
+    // 2. PANTAU PROVIDER PROFIL DI SINI
+    final profileAsync = ref.watch(profileDataProvider);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start, // Agar toggle rata kiri
         children: [
-          Icon(Icons.home, size: 100, color: Colors.red[300]),
-          const SizedBox(height: 20),
-          Text(
-            'Home Page',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+          // 3. GUNAKAN .when UNTUK MENAMPILKAN NAMA SECARA DINAMIS
+          profileAsync.when(
+            data: (profile) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Halo,\n${profile.name}",
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.black),
+                ),
+                const Text(
+                  "Berikut Ringkasan Pekerjaan Anda",
+                  style: TextStyle(fontSize: 14, color: AppColors.black),
+                ),
+              ],
+            ),
+            loading: () => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Halo,\nMemuat...",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.black),
+                ),
+                const Text(
+                  "Berikut Ringkasan Pekerjaan Anda",
+                  style: TextStyle(fontSize: 14, color: AppColors.black),
+                ),
+              ],
+            ),
+            error: (err, stack) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Halo,\nUser",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.black),
+                ),
+                const Text(
+                  "Berikut Ringkasan Pekerjaan Anda",
+                  style: TextStyle(fontSize: 14, color: AppColors.black),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
 
-          // 4. Tambahkan Tombol Logout
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[400],
-              foregroundColor: Colors.white,
+          // Gunakan widget AnimatedToggleSwitch yang baru
+          AnimatedToggleSwitch(
+            isMonthSelected: timeRange == 'month',
+            onMonthTap: () => ref.read(timeRangeProvider.notifier).state = 'month',
+            onYearTap: () => ref.read(timeRangeProvider.notifier).state = 'year',
+          ),
+          const SizedBox(height: 16),
+          
+          statsAsync.when(
+            data: (stats) => Column(
+              children: [
+                // Summary Cards
+                Row(
+                  children: [
+                    Expanded(
+                        child: SummaryCard(
+                            title: 'Total Ulok',
+                            value: stats.totalUlok.toString())),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: SummaryCard(
+                            title: 'Ulok Approved',
+                            value: stats.ulokApproved.toString())),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Line Chart Card
+                LineChartCard(data: stats.monthlyApprovedData),
+                const SizedBox(height: 16),
+
+                // Donut Chart Card
+                DonutChartCard(data: stats.statusCounts),
+              ],
             ),
-            onPressed: () {
-              // 5. Panggil fungsi signOut dari provider
-              ref.read(authRepositoryProvider).signOut();
-            },
-            child: const Text('Logout'),
+            loading: () => const Center(
+                child:
+                    CircularProgressIndicator(color: AppColors.primaryColor)),
+            error: (err, stack) =>
+                Center(child: Text('Gagal memuat statistik: $err')),
           ),
         ],
       ),
     );
   }
 }
+
