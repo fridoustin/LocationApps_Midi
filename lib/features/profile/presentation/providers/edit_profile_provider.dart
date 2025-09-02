@@ -48,6 +48,7 @@ class EditProfileNotifier extends StateNotifier<EditProfileState> {
     required String name,
     required String email,
     required String phone,
+    required String nik,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -55,6 +56,7 @@ class EditProfileNotifier extends StateNotifier<EditProfileState> {
         name: name,
         email: email,
         phone: phone,
+        nik: nik,
         avatarFile: state.imageFile,
       );
       state = state.copyWith(isLoading: false);

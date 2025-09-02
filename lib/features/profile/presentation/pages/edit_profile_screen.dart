@@ -26,6 +26,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
+  late final TextEditingController _nikController;
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _nameController = TextEditingController(text: widget.currentProfile.name);
     _phoneController = TextEditingController(text: widget.currentProfile.phone);
     _emailController = TextEditingController(text: widget.currentProfile.email);
+    _nikController = TextEditingController(text: widget.currentProfile.nik ?? '-');
   }
 
   @override
@@ -40,6 +42,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _nikController.dispose();
     super.dispose();
   }
 
@@ -81,6 +84,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final success = await notifier.saveProfile(
       name: _nameController.text,
       email: _emailController.text,
+      nik: _nikController.text,
       phone: _phoneController.text,
     );
     if (success && mounted) {
@@ -133,6 +137,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             Column(
               children: [
                 ProfileTextField(controller: _nameController, label: "Nama"),
+                const SizedBox(height: 16),
+                ProfileTextField(
+                  controller: _nikController, 
+                  label: "NIK", 
+                  isEnabled: false,
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(height: 16),
                 ProfileTextField(
                   controller: _emailController,

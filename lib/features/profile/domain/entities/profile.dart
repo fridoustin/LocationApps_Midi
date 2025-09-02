@@ -7,6 +7,7 @@ class Profile {
   final String position;
   final String branch;
   final String? avatarUrl;
+  final String? nik;
 
   Profile({
     required this.id,
@@ -16,5 +17,6 @@ class Profile {
     required this.position,
     required this.branch,
     this.avatarUrl,
+    this.nik
   });
 }
