@@ -34,7 +34,6 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.poppinsTextTheme()
       ),
       home: const AuthGate(),
-      debugShowCheckedModeBanner: false,
       onGenerateRoute: routeGenerators,
     );
   }

@@ -38,6 +38,9 @@ dependencies:
   flutter_dotenv: ^5.2.1
   flutter_svg: ^2.0.17
   image_picker: ^1.1.2
+  geolocator: ^12.0.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.0
   flutter_riverpod: ^2.6.1
   intl: ^0.20.2
   fl_chart: ^0.71.0
@@ -83,12 +86,18 @@ flutter:
     - assets/icons/avatar.svg
     - assets/icons/notification.svg
     - assets/icons/logo_midi.png
+    - assets/icons/data_store.svg
+    - assets/icons/indonesia.svg
+    - assets/icons/down_arrow.svg
+    - assets/icons/calender.svg
     - assets/icons/error.svg
     - assets/pic/topbarlogo.png
     - assets/icons/notifikasi.svg
     - assets/pic/alfamidilogohd.png
     - assets/icons/editulok.svg
-    - /Users/fridoustin/MBER/midi_location/assets/pic/alfamididown.png
+    - assets/pic/alfamididown.png
+    - assets/pic/alfamidilogohd.png
+    - assets/pic/topbarlogo.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

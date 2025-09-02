@@ -83,7 +83,10 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
+                      borderSide: BorderSide(
+                        color: AppColors.primaryColor,
+                        width: 2.0,
+                      ),
                     ),
                     contentPadding: EdgeInsets.symmetric(horizontal: 8),
                   ),
@@ -91,8 +94,9 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
               ),
               const SizedBox(width: 16),
               IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.filter_list_alt)),
+                onPressed: () {},
+                icon: const Icon(Icons.filter_list_alt),
+              ),
             ],
           ),
         ),
@@ -118,8 +122,14 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                 ),
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryColor)),
-            error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
+            loading:
+                () => const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+            error:
+                (err, stack) => Center(child: Text('Gagal memuat data: $err')),
           ),
         ),
       ],
