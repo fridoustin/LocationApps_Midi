@@ -77,7 +77,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
         
         if (showNotificationButton)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 42,
+            top: MediaQuery.of(context).padding.top + 32,
             right: 24,
             child: GestureDetector(
               onTap: onNotificationTap,
@@ -165,7 +165,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     final bool hasAvatar = profileData?.avatarUrl != null && profileData!.avatarUrl!.isNotEmpty;
     return AppBar(
       centerTitle: true,
-      toolbarHeight: 120,
+      toolbarHeight: 100,
       title: Text(
         title ?? '',
         style: const TextStyle(
@@ -185,9 +185,9 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
       flexibleSpace: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 100), // Beri ruang untuk tombol notifikasi
+            const SizedBox(height: 85), // Beri ruang untuk tombol notifikasi
             CircleAvatar(
-              radius: 60,
+              radius: 65,
               backgroundColor: Colors.white,
               backgroundImage: hasAvatar ? NetworkImage(profileData!.avatarUrl!) : null,
               child: !hasAvatar
@@ -235,9 +235,9 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     if (type == TopBarType.home) {
       return const Size.fromHeight(160);
     } if (type == TopBarType.profile) {
-      return const Size.fromHeight(340);
+      return const Size.fromHeight(330);
     } else {
-      return const Size.fromHeight(120);
+      return const Size.fromHeight(100);
     }
   }
 }
