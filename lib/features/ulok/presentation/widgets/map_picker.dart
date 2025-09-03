@@ -35,7 +35,6 @@ class MapPickerDialogState extends State<MapPickerDialog> {
           _pickedLatLng = LatLng(position.latitude, position.longitude);
           _isLoading = false;
         });
-        // JANGAN panggil _mapController.move() di sini
       }
     } catch (e) {
       if (mounted) {
@@ -76,6 +75,7 @@ class MapPickerDialogState extends State<MapPickerDialog> {
                           children: [
                             TileLayer(
                               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.midi.location',
                             ),
                             if (_pickedLatLng != null)
                               MarkerLayer(
