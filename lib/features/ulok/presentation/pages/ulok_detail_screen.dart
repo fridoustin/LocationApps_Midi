@@ -194,10 +194,14 @@ class UlokDetailPage extends StatelessWidget {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(
-                              Icons.access_time,
-                              color: Colors.grey,
-                              size: 14,
+                            SvgPicture.asset(
+                              "assets/icons/time.svg",
+                              width: 14,
+                              height: 14,
+                              colorFilter: const ColorFilter.mode(
+                                Colors.grey,
+                                BlendMode.srcIn,
+                              ),
                             ),
                             const SizedBox(width: 4),
                             Text(

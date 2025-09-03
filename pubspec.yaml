@@ -103,6 +103,7 @@ flutter:
     - assets/icons/access_denied.svg
     - assets/icons/no_connection.svg
     - assets/icons/under_maintenance.svg
+    - assets/icons/time.svg
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
