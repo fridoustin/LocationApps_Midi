@@ -4,11 +4,17 @@ class UlokRemoteDataSource {
   final SupabaseClient client;
   UlokRemoteDataSource(this.client);
 
-  // Query untuk mengambil data 'Recent'
   Future<List<Map<String, dynamic>>> getRecentUlok(String query) async {
     var request = client
         .from('ulok')
-        .select('id, nama_ulok, alamat, kecamatan, kabupaten, provinsi, approval_status, created_at')
+        .select('''
+//       id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
+//       latitude, longitude,
+//       approval_status, created_at,
+//       format_store, bentuk_objek, alas_hak, jumlah_lantai,
+//       lebar_depan, panjang, luas, harga_sewa,
+//       nama_pemilik, kontak_pemilik
+//     ''')
         .eq('approval_status', 'In Progress');
 
     if (query.isNotEmpty) {
@@ -16,15 +22,21 @@ class UlokRemoteDataSource {
     }
 
     final response = await request.order('created_at', ascending: false);
-    
+
     return response;
   }
 
-  // Query untuk mengambil data 'History'
   Future<List<Map<String, dynamic>>> getHistoryUlok(String query) async {
     var request = client
         .from('ulok')
-        .select('id, nama_ulok, alamat, kecamatan, kabupaten, provinsi, approval_status, created_at')
+        .select('''
+//       id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
+//       latitude, longitude,
+//       approval_status, created_at,
+//       format_store, bentuk_objek, alas_hak, jumlah_lantai,
+//       lebar_depan, panjang, luas, harga_sewa,
+//       nama_pemilik, kontak_pemilik
+//     ''')
         .inFilter('approval_status', ['OK', 'NOK']);
 
     if (query.isNotEmpty) {
