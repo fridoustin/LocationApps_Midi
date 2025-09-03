@@ -123,6 +123,7 @@ class UlokDetailPage extends StatelessWidget {
 
     final fullAddress = [
       ulok.alamat,
+      ulok.desa_kelurahan,
       ulok.kecamatan,
       ulok.kabupaten,
       ulok.provinsi,
