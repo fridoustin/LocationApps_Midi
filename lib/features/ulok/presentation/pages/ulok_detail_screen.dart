@@ -70,7 +70,7 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
           children: [
             TileLayer(
               urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              userAgentPackageName: 'com.example.app',
+              userAgentPackageName: 'com.midi.location',
             ),
             MarkerLayer(
               markers: [
@@ -127,7 +127,7 @@ class UlokDetailPage extends StatelessWidget {
       ulok.kecamatan,
       ulok.kabupaten,
       ulok.provinsi,
-    ].where((e) => e != null && e.isNotEmpty).join(', ');
+    ].where((e) => e.isNotEmpty).join(', ');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
