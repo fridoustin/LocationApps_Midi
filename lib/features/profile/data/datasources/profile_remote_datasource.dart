@@ -44,7 +44,8 @@ class ProfileRemoteDataSource {
     required String name,
     required String email,
     required String phone,
-    File? avatarFile,
+    required String nik,
+    File? avatarFile
 
   }) async {
     final user = _client.auth.currentUser;
@@ -65,6 +66,7 @@ class ProfileRemoteDataSource {
       'nama': name,
       'no_telp': phone,
       'email': email,
+      'nik': nik,
       'updated_at': DateTime.now().toIso8601String(),
     };
     if (avatarUrl != null) {

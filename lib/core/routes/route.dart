@@ -3,6 +3,13 @@ import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_scr
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
+import 'package:midi_location/features/error_screens/no_connection_screen.dart';
+import 'package:midi_location/features/error_screens/error_404_screen.dart';
+import 'package:midi_location/features/error_screens/access_denied_screen.dart';
+import 'package:midi_location/features/error_screens/under_maintenance_screen.dart';
+import 'package:midi_location/features/auth/presentation/pages/login_screen.dart';
+import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_detail_screen.dart';
 
 Route<dynamic> routeGenerators(RouteSettings settings) {
   switch (settings.name) {
@@ -14,8 +21,23 @@ Route<dynamic> routeGenerators(RouteSettings settings) {
       return _buildPageRoute(const FormKPLTPage());
     case ProfilePage.route:
       return _buildPageRoute(const ProfilePage());
+    case LoginPage.route:
+      return _buildPageRoute(const LoginPage());
+    case NoConnectionScreen.route:
+      return _buildPageRoute(const NoConnectionScreen());
+    case Error404Screen.route:
+      return _buildPageRoute(const Error404Screen());
+    case AccessDeniedScreen.route:
+      return _buildPageRoute(const AccessDeniedScreen());
+    case UnderMaintenanceScreen.route:
+      return _buildPageRoute(const UnderMaintenanceScreen());
+    case UlokDetailPage.route:
+      return _buildPageRoute(
+        UlokDetailPage(ulok: settings.arguments as UsulanLokasi),
+      );
+
     default:
-      throw ('Route not found');
+      return _buildPageRoute(const Error404Screen());
   }
 }
 

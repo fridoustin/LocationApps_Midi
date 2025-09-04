@@ -18,7 +18,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
       phone: data['no_telp'] ?? '-',
       position: (data['positions'] as Map<String, dynamic>)['nama'],
       branch: (data['branch'] as Map<String, dynamic>)['nama'],
+      branchId: data['branch_id'],
       avatarUrl: data['profile'],
+      nik: data['nik'] ?? '-'
     );
   }
 
@@ -27,12 +29,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
     required String name,
     required String email,
     required String phone,
+    required String nik,
     File? avatarFile,
   }) {
     return _dataSource.updateProfile(
       name: name,
       email: email,
       phone: phone,
+      nik: nik,
       avatarFile: avatarFile,
     );
   }

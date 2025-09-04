@@ -65,6 +65,11 @@ class InfoCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           InfoRow(
+            iconPath: "assets/icons/profile.svg",
+            text: profileData?.nik ?? '-',
+          ),
+          const Divider(height: 25),
+          InfoRow(
             iconPath: "assets/icons/email.svg",
             text: profileData?.email ?? '-',
           ),

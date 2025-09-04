@@ -10,6 +10,7 @@ import 'package:midi_location/features/home/presentation/pages/home_screen.dart'
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
 import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final int currentIndex;
@@ -82,7 +83,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     // final userProfileAsync = ref.watch(userProfileProvider);
     return WillPopScope(
       onWillPop: () async {
-        // kalau bukan di home, balik dulu ke home
         if (_currentIndex != 0) {
           setState(() => _currentIndex = 0);
           return false;
@@ -96,8 +96,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
           currentIndex: _currentIndex,
           onItemTapped: _onItemTapped,
           onCenterButtonTapped: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Center button tapped')),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UlokFormPage()),
             );
           },
         ),
