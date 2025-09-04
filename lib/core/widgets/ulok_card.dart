@@ -25,7 +25,7 @@ class UlokCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fullAddress =
-        '${ulok.alamat}, Kec. ${ulok.kecamatan}, ${ulok.kabupaten}, ${ulok.provinsi}';
+        '${ulok.alamat}, ${ulok.desa_kelurahan}, Kec. ${ulok.kecamatan}, ${ulok.kabupaten}, ${ulok.provinsi}';
 
     final formattedDate = DateFormat('dd MMMM yyyy').format(ulok.tanggal);
 
