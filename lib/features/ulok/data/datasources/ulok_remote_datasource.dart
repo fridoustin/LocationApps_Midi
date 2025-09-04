@@ -11,13 +11,14 @@ class UlokRemoteDataSource {
     var request = client
         .from('ulok')
         .select('''
-//       id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
-//       latitude, longitude,
-//       approval_status, created_at,
-//       format_store, bentuk_objek, alas_hak, jumlah_lantai,
-//       lebar_depan, panjang, luas, harga_sewa,
-//       nama_pemilik, kontak_pemilik
-//     ''')
+          id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
+          latitude, longitude,
+          approval_status, created_at,
+          format_store, bentuk_objek, alas_hak, jumlah_lantai,
+          lebar_depan, panjang, luas, harga_sewa,
+          nama_pemilik, kontak_pemilik
+        ''')
+        .eq('users_id', userId)
         .eq('approval_status', 'In Progress');
 
     if (query.isNotEmpty) {
@@ -36,13 +37,14 @@ class UlokRemoteDataSource {
     var request = client
         .from('ulok')
         .select('''
-//       id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
-//       latitude, longitude,
-//       approval_status, created_at,
-//       format_store, bentuk_objek, alas_hak, jumlah_lantai,
-//       lebar_depan, panjang, luas, harga_sewa,
-//       nama_pemilik, kontak_pemilik
-//     ''')
+          id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
+          latitude, longitude,
+          approval_status, created_at,
+          format_store, bentuk_objek, alas_hak, jumlah_lantai,
+          lebar_depan, panjang, luas, harga_sewa,
+          nama_pemilik, kontak_pemilik
+        ''')
+        .eq('users_id', userId)
         .inFilter('approval_status', ['OK', 'NOK']);
 
     if (query.isNotEmpty) {
