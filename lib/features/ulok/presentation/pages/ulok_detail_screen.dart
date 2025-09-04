@@ -8,6 +8,7 @@ import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_edit_page.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_column_row.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_detail_section.dart';
 
 class UlokDetailPage extends StatelessWidget {
@@ -103,13 +104,27 @@ class UlokDetailPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    "Dibuat Pada $formattedDate",
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
-                  ),
+                  Row(
+                    children: [
+                      SvgPicture.asset(
+                        "assets/icons/time.svg",
+                        width: 14,
+                        height: 14,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.grey,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Dibuat Pada $formattedDate",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ]
+                  )
                 ],
               ),
             ),
@@ -122,7 +137,7 @@ class UlokDetailPage extends StatelessWidget {
                 InfoRowWidget(label: "Alamat", value: fullAddress),
                 InfoRowWidget(label: "LatLong", value: ulok.latLong ?? "-"),
                 const SizedBox(height: 12),
-                InteractiveMapWidget(initialPosition: latLng),
+                InteractiveMapWidget(position: latLng,),
               ],
             ),
             const SizedBox(height: 16),
