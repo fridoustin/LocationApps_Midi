@@ -5,6 +5,9 @@ class UlokRemoteDataSource {
   UlokRemoteDataSource(this.client);
 
   Future<List<Map<String, dynamic>>> getRecentUlok(String query) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('User not Authenticated');
+
     var request = client
         .from('ulok')
         .select('''
@@ -27,6 +30,9 @@ class UlokRemoteDataSource {
   }
 
   Future<List<Map<String, dynamic>>> getHistoryUlok(String query) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('User not Authenticated');
+    
     var request = client
         .from('ulok')
         .select('''

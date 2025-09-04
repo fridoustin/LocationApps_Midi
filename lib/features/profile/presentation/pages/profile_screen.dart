@@ -22,9 +22,6 @@ class ProfilePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Widget Header (bisa dipisah juga jika makin kompleks)
-                const SizedBox(height: 20),
-                // Widget Kartu Info
                 profileAsync.when(
                   data: (profile) {
                     return InfoCard(profileData: profile);

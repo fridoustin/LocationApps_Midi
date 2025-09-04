@@ -1,871 +1,503 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/topbar.dart';
+import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/dropdown.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/form_card.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/map_picker.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/text_field.dart';
+import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
+import 'package:midi_location/features/wilayah/presentation/providers/wilayah_provider.dart';
+import 'package:midi_location/features/wilayah/presentation/widgets/wilayah_dropdown.dart';
 
-class UlokFormPage extends StatefulWidget {
+class UlokFormPage extends ConsumerStatefulWidget {
   const UlokFormPage({super.key});
 
   @override
-  State<UlokFormPage> createState() => _UlokFormPageState();
+  ConsumerState<UlokFormPage> createState() => _UlokFormPageState();
 }
 
-class _UlokFormPageState extends State<UlokFormPage> {
+class _UlokFormPageState extends ConsumerState<UlokFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final MapController _mapController = MapController();
+  late final MapController _mapController;
 
-  String? selectedFormatStore;
-  String? selectedBentukObjek;
-  String selectedCountryCode = '+62';
+  // Controllers
+  final _namaUlokC = TextEditingController();
+  final _alamatC = TextEditingController();
+  final _latLngC = TextEditingController();
+  final _alasHakC = TextEditingController();
+  final _jumlahLantaiC = TextEditingController();
+  final _lebarDepanC = TextEditingController();
+  final _panjangC = TextEditingController();
+  final _luasC = TextEditingController();
+  final _hargaSewaC = TextEditingController();
+  final _namaPemilikC = TextEditingController();
+  final _kontakPemilikC = TextEditingController();
 
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _tanggalUlokController = TextEditingController();
-  final TextEditingController _latLongController = TextEditingController();
+  WilayahEntity? _selectedProvince;
+  WilayahEntity? _selectedRegency;
+  WilayahEntity? _selectedDistrict;
+  WilayahEntity? _selectedVillage;
+
+  // State
+  String? _selectedFormatStore;
+  String? _selectedBentukObjek;
+  LatLng? _currentLatLng;
 
   @override
   void initState() {
     super.initState();
-    _latLongController.addListener(() {
-      setState(() {});
-    });
+    _mapController = MapController();
   }
 
   @override
   void dispose() {
+    _namaUlokC.dispose();
+    _alamatC.dispose();
+    _alasHakC.dispose();
+    _jumlahLantaiC.dispose();
+    _lebarDepanC.dispose();
+    _panjangC.dispose();
+    _luasC.dispose();
+    _hargaSewaC.dispose();
+    _namaPemilikC.dispose();
+    _kontakPemilikC.dispose();
+    _latLngC.dispose();
     _mapController.dispose();
-    _tanggalUlokController.dispose();
-    _latLongController.dispose();
-    _phoneController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryColor,
-              onPrimary: AppColors.textColor,
-              surface: AppColors.backgroundColor,
-              onSurface: AppColors.black,
-            ),
-            dialogBackgroundColor: AppColors.cardColor,
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _tanggalUlokController.text =
-            "${picked.day}/${picked.month}/${picked.year}";
-      });
-    }
   }
 
   Future<void> _openMapDialog() async {
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Izin lokasi ditolak")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Izin lokasi ditolak")));
+      }
       return;
     }
 
-    LatLng? selectedLatLng = await showDialog<LatLng>(
+    final LatLng? selectedLatLng = await showDialog<LatLng>(
+      // ignore: use_build_context_synchronously
       context: context,
-      builder: (context) {
-        LatLng tempLatLng = LatLng(0, 0);
-        bool isLoading = true;
-        final dialogMapController = MapController();
+      builder: (context) => const MapPickerDialog(),
+    );
 
-        Future<void> _getCurrentLocation(StateSetter setStateDialog) async {
-          if (!context.mounted) return;
-          setStateDialog(() {
-            isLoading = true;
-          });
-          try {
-            Position position = await Geolocator.getCurrentPosition(
-              desiredAccuracy: LocationAccuracy.high,
-            );
-            LatLng newLatLng = LatLng(position.latitude, position.longitude);
+    if (selectedLatLng != null) {
+      setState(() {
+        _currentLatLng = selectedLatLng;
+        _latLngC.text =
+            "${selectedLatLng.latitude.toStringAsFixed(6)}, ${selectedLatLng.longitude.toStringAsFixed(6)}";
+      });
+    }
+  }
 
-            if (context.mounted) {
-              setStateDialog(() {
-                tempLatLng = newLatLng;
-                isLoading = false;
-              });
-              dialogMapController.move(newLatLng, 16);
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Gagal mendapatkan lokasi: $e")),
-              );
-            }
-          }
-        }
-
-        return Dialog(
+  Future<void> _showSuccessAndNavigateBack() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.all(Radius.circular(16.0)),
           ),
-          child: StatefulBuilder(
-            builder: (context, setStateDialog) {
-              if (isLoading) {
-                _getCurrentLocation(setStateDialog);
-              }
-
-              return SizedBox(
-                height: 400,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child:
-                            isLoading
-                                ? const Center(
-                                  child: CircularProgressIndicator(),
-                                )
-                                : ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: FlutterMap(
-                                    mapController: dialogMapController,
-                                    options: MapOptions(
-                                      initialCenter: tempLatLng,
-                                      initialZoom: 16,
-                                      onTap: (tapPosition, latLng) {
-                                        setStateDialog(() {
-                                          tempLatLng = latLng;
-                                        });
-                                      },
-                                    ),
-                                    children: [
-                                      TileLayer(
-                                        urlTemplate:
-                                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                        userAgentPackageName:
-                                            'com.midi.location',
-                                      ),
-                                      MarkerLayer(
-                                        markers: [
-                                          Marker(
-                                            point: tempLatLng,
-                                            width: 80,
-                                            height: 80,
-                                            child: const Icon(
-                                              Icons.location_on,
-                                              color: AppColors.primaryColor,
-                                              size: 40,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          _getCurrentLocation(setStateDialog).then((_) {
-                            Navigator.pop(context, tempLatLng);
-                          });
-                        },
-                        icon: const Icon(Icons.my_location),
-                        label: const Text("Gunakan Lokasi Saya Sekarang"),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                          backgroundColor: AppColors.primaryColor,
-                          foregroundColor: AppColors.textColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check_circle_outline,
+                  color: AppColors.successColor, size: 80),
+              SizedBox(height: 16),
+              Text(
+                'Berhasil Disubmit!',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         );
       },
     );
 
-    if (selectedLatLng != null) {
-      setState(() {
-        _latLongController.text =
-            "${selectedLatLng.latitude}, ${selectedLatLng.longitude}";
-      });
-    }
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
   }
 
-  Widget _buildPhoneTextField() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: const BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Colors.grey, width: 1.0),
-                ),
-              ),
-              child: Row(
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/indonesia.svg',
-                    width: 24,
-                    height: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text('+62', style: TextStyle(color: AppColors.black)),
-                ],
-              ),
-            ),
-            Expanded(
-              child: TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                style: const TextStyle(color: AppColors.black),
-                decoration: InputDecoration(
-                  hintText: 'Masukkan No Telp Pemilik',
-                  hintStyle: TextStyle(color: AppColors.black.withOpacity(0.5)),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: InputBorder.none,
-                  filled: true,
-                  fillColor: Colors.transparent,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  void _onSubmit() {
+    // Validasi field wilayah lebih jelas
+    if (_selectedProvince == null ||
+        _selectedRegency == null ||
+        _selectedDistrict == null ||
+        _selectedVillage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Harap pilih Provinsi, Kabupaten, Kecamatan, dan Desa.'),
+      ));
+      return;
+    }
+
+    if ((_formKey.currentState?.validate() ?? false) && _currentLatLng != null) {
+      final formData = UlokFormData(
+        namaUlok: _namaUlokC.text,
+        latLng: _currentLatLng!,
+        provinsi: _selectedProvince!.name,
+        kabupaten: _selectedRegency!.name,
+        kecamatan: _selectedDistrict!.name,
+        desa: _selectedVillage!.name,
+        alamat: _alamatC.text,
+        formatStore: _selectedFormatStore ?? '',
+        bentukObjek: _selectedBentukObjek ?? '',
+        alasHak: _alasHakC.text,
+        jumlahLantai: int.tryParse(_jumlahLantaiC.text) ?? 0,
+        lebarDepan: double.tryParse(_lebarDepanC.text) ?? 0.0,
+        panjang: double.tryParse(_panjangC.text) ?? 0.0,
+        luas: double.tryParse(_luasC.text) ?? 0.0,
+        hargaSewa: double.tryParse(_hargaSewaC.text) ?? 0.0,
+        namaPemilik: _namaPemilikC.text,
+        kontakPemilik: _kontakPemilikC.text,
+      );
+
+      ref.read(ulokFormProvider.notifier).submitForm(formData).then((success) {
+        if (success && mounted) {
+          ref.invalidate(ulokListProvider);
+          ref.invalidate(dashboardStatsProvider);
+          _showSuccessAndNavigateBack();
+        }
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Harap lengkapi semua data wajib, termasuk Latlong.'),
+      ));
+    }
   }
 
   Widget _buildMapPreview() {
-    if (_latLongController.text.isEmpty) {
-      return Container();
+    if (_currentLatLng == null) {
+      return const SizedBox.shrink();
     }
 
-    try {
-      final parts = _latLongController.text.split(',');
-      final lat = double.tryParse(parts[0].trim());
-      final lon = double.tryParse(parts[1].trim());
-
-      if (lat == null || lon == null) {
-        return Container();
-      }
-
-      final previewLatLng = LatLng(lat, lon);
-
-      return Padding(
-        padding: const EdgeInsets.only(top: 20, bottom: 20),
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: SizedBox(
+        height: 250,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: SizedBox(
-            height: 250,
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: previewLatLng,
-                initialZoom: 16,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _currentLatLng!,
+              initialZoom: 16,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.midi.location',
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.midi.location',
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: previewLatLng,
-                      width: 80,
-                      height: 80,
-                      child: const Icon(
-                        Icons.location_on,
-                        color: AppColors.primaryColor,
-                        size: 40,
-                      ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FloatingActionButton.small(
-                          heroTag: 'zoomIn',
-                          backgroundColor: AppColors.primaryColor,
-                          foregroundColor: AppColors.textColor,
-                          onPressed: () {
-                            _mapController.move(
-                              _mapController.camera.center,
-                              _mapController.camera.zoom + 1,
-                            );
-                          },
-                          child: const Icon(Icons.add),
-                        ),
-                        const SizedBox(height: 8),
-                        FloatingActionButton.small(
-                          heroTag: 'zoomOut',
-                          backgroundColor: AppColors.primaryColor,
-                          foregroundColor: AppColors.textColor,
-                          onPressed: () {
-                            _mapController.move(
-                              _mapController.camera.center,
-                              _mapController.camera.zoom - 1,
-                            );
-                          },
-                          child: const Icon(Icons.remove),
-                        ),
-                      ],
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _currentLatLng!,
+                    width: 80,
+                    height: 80,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: AppColors.primaryColor,
+                      size: 40,
                     ),
                   ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FloatingActionButton.small(
+                        heroTag: 'zoomIn',
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: AppColors.textColor,
+                        onPressed: () {
+                          _mapController.move(
+                            _mapController.camera.center,
+                            _mapController.camera.zoom + 1,
+                          );
+                        },
+                        child: const Icon(Icons.add),
+                      ),
+                      const SizedBox(height: 8),
+                      FloatingActionButton.small(
+                        heroTag: 'zoomOut',
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: AppColors.textColor,
+                        onPressed: () {
+                          _mapController.move(
+                            _mapController.camera.center,
+                            _mapController.camera.zoom - 1,
+                          );
+                        },
+                        child: const Icon(Icons.remove),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              )
+            ],
           ),
         ),
-      );
-    } catch (e) {
-      return const Text(
-        "Format Latlong tidak valid. Gunakan format 'latitude, longitude'.",
-        style: TextStyle(color: AppColors.errorColor),
-      );
-    }
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final formState = ref.watch(ulokFormProvider);
+
+    ref.listen<UlokFormState>(ulokFormProvider, (prev, next) {
+      if (next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: ${next.errorMessage}'),
+          backgroundColor: AppColors.errorColor,
+        ));
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(top: 75, bottom: 40),
-            decoration: const BoxDecoration(
-              color: AppColors.primaryColor,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Text(
-                  "Form ULOK",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textColor,
-                  ),
-                ),
-                Positioned(
-                  left: 20,
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: SvgPicture.asset(
-                      "assets/icons/left_arrow.svg",
-                      width: 24,
-                      height: 24,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.textColor,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 20,
-                  child: SvgPicture.asset(
-                    "assets/icons/notification.svg",
-                    width: 24,
-                    height: 24,
-                    colorFilter: const ColorFilter.mode(
-                      AppColors.textColor,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ],
+      appBar: CustomTopBar.general(
+        title: 'Form ULOK',
+        showNotificationButton: false,
+        leadingWidget: IconButton(
+          icon: SvgPicture.asset(
+            "assets/icons/left_arrow.svg",
+            width: 24,
+            height: 24,
+            colorFilter: const ColorFilter.mode(
+              Colors.white,
+              BlendMode.srcIn,
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildCardSection(
-                      title: "Data Usulan Lokasi",
-                      iconAsset: "assets/icons/location.svg",
-                      iconColor: AppColors.primaryColor,
-                      children: [
-                        _buildTextField(
-                          label: 'Nama ULOK *',
-                          hint: 'Masukkan Nama Usulan Lokasi',
-                        ),
-                        _buildTextField(
-                          label: 'Provinsi *',
-                          hint: 'Masukkan Nama Provinsi',
-                        ),
-                        _buildTextField(
-                          label: 'Kabupaten/Kota *',
-                          hint: 'Masukkan Nama Kabupaten/Kota',
-                        ),
-                        _buildTextField(
-                          label: 'Kecamatan *',
-                          hint: 'Masukkan Nama Kecamatan',
-                        ),
-                        _buildTextField(
-                          label: 'Kelurahan/Desa *',
-                          hint: 'Masukkan Nama Kelurahan/Desa',
-                        ),
-                        _buildTextField(
-                          label: 'Alamat *',
-                          hint: 'Masukkan alamat usulan lokasi',
-                        ),
-                        _buildLatLongTextField(),
-                        _buildMapPreview(),
-                        _buildTextField(
-                          label: 'Tanggal ULOK *',
-                          hint: 'Pilih tanggal usulan lokasi',
-                          iconAsset: 'assets/icons/calender.svg',
-                          iconColor: AppColors.black,
-                          controller: _tanggalUlokController,
-                          onTap: () => _selectDate(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    _buildCardSection(
-                      title: "Data Store",
-                      iconAsset: "assets/icons/data_store.svg",
-                      iconColor: AppColors.primaryColor,
-                      children: [
-                        _buildPopupButton(
-                          label: 'Format Store *',
-                          items: ['Tipe 80', 'Tipe 100', 'Tipe 120'],
-                          selectedValue: selectedFormatStore,
-                          onSelected: (value) {
-                            setState(() {
-                              selectedFormatStore = value;
-                            });
-                          },
-                        ),
-                        _buildPopupButton(
-                          label: 'Bentuk Objek *',
-                          items: ['Ruko', 'Tanah Kosong'],
-                          selectedValue: selectedBentukObjek,
-                          onSelected: (value) {
-                            setState(() {
-                              selectedBentukObjek = value;
-                            });
-                          },
-                        ),
-                        _buildTextField(
-                          label: 'Kabupaten/Kota *',
-                          hint: 'Masukkan Nama Kabupaten/Kota',
-                        ),
-                        _buildTextField(
-                          label: 'Alas Hak *',
-                          hint: 'Masukkan alas hak',
-                        ),
-                        _buildTextField(
-                          label: 'Jumlah Lantai',
-                          hint: 'Masukkan jumlah lantai',
-                        ),
-                        _buildTextField(
-                          label: 'Lebar Depan (m) *',
-                          hint: 'Masukkan lebar depan',
-                        ),
-                        _buildTextField(
-                          label: 'Panjang (m) *',
-                          hint: 'Masukkan panjang tanah/bangunan',
-                        ),
-                        _buildTextField(
-                          label: 'Luas (m2) *',
-                          hint: 'Masukkan luas tanah/bangunan',
-                        ),
-                        _buildTextField(
-                          label: 'Harga Sewa (+PPH 10%) *',
-                          hint: 'Masukkan harga sewa',
-                        ),
-                        _buildTextField(
-                          label: 'Kode ULOK GIS *',
-                          hint: 'Masukkan kode ULOK GIS',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    _buildCardSection(
-                      title: "Data Pemilik",
-                      iconAsset: "assets/icons/avatar.svg",
-                      iconColor: AppColors.primaryColor,
-                      children: [
-                        _buildTextField(
-                          label: 'Nama Pemilik *',
-                          hint: 'Masukkan Nama Pemilik',
-                        ),
-                        const SizedBox(height: 15),
-                        _buildLabel('Kontak Pemilik *'),
-                        _buildPhoneTextField(),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.cardColor,
-                              foregroundColor: AppColors.primaryColor,
-                              side: const BorderSide(
-                                color: AppColors.primaryColor,
-                              ),
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Simpan Draft'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              foregroundColor: AppColors.textColor,
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Submit'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 40),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardSection({
-    required String title,
-    required String iconAsset,
-    Color? iconColor,
-    required List<Widget> children,
-  }) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 3,
-      color: AppColors.cardColor,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(title, iconAsset, iconColor: iconColor),
-            const SizedBox(height: 10),
-            ...children,
-          ],
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-    );
-  }
-
-  Widget _buildSectionHeader(
-    String title,
-    String iconAsset, {
-    Color? iconColor,
-  }) {
-    return Row(
-      children: [
-        SvgPicture.asset(
-          iconAsset,
-          width: 20,
-          height: 20,
-          colorFilter: ColorFilter.mode(
-            iconColor ?? AppColors.black,
-            BlendMode.srcIn,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.black,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLabel(String label) {
-    if (label.contains("*")) {
-      final parts = label.split("*");
-      return RichText(
-        text: TextSpan(
-          style: const TextStyle(color: AppColors.black, fontSize: 14),
-          children: [
-            TextSpan(text: parts[0].trimRight() + " "),
-            const TextSpan(
-              text: "*",
-              style: TextStyle(
-                color: AppColors.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return Text(label, style: const TextStyle(color: AppColors.black));
-  }
-
-  Widget _buildLatLongTextField() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
             children: [
-              _buildLabel('Latlong *'),
-              if (_latLongController.text.isNotEmpty)
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _latLongController.clear();
-                    });
-                  },
-                  child: const Text(
-                    "Hapus",
-                    style: TextStyle(
-                      color: AppColors.errorColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextFormField(
-              controller: _latLongController,
-              style: const TextStyle(color: AppColors.black),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Cari alamat pada peta atau isi manual',
-                hintStyle: TextStyle(color: AppColors.black.withOpacity(0.5)),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                border: InputBorder.none,
-                filled: true,
-                fillColor: Colors.transparent,
-                suffixIcon: IconButton(
-                  icon: SvgPicture.asset(
-                    'assets/icons/location.svg',
-                    width: 24,
-                    height: 24,
-                    colorFilter: const ColorFilter.mode(
-                      AppColors.black,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                  onPressed: _openMapDialog,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+              FormCardSection(
+                title: "Data Usulan Lokasi",
+                iconAsset: "assets/icons/location.svg",
+                children: [
+                  FormTextField(controller: _namaUlokC, label: 'Nama ULOK'),
+                  SearchableDropdown(
+                    label: "Provinsi *",
+                    itemsProvider: provincesProvider,
+                    selectedValue: _selectedProvince,
+                    onChanged: (newValue) {
+                      // update local state & providers
+                      setState(() {
+                        _selectedProvince = newValue;
+                        _selectedRegency = null;
+                        _selectedDistrict = null;
+                        _selectedVillage = null;
+                      });
+                      print('DEBUG selectedProvince => id: ${newValue?.id}, name: ${newValue?.name}');
+                      if (newValue != null && newValue.id.isNotEmpty) {
+                        ref.read(selectedProvinceProvider.notifier).state = newValue;
+                        // invalidate downstream so regenciesProvider refetches with proper id
+                        ref.invalidate(regenciesProvider);
+                      } else {
+                        ref.read(selectedProvinceProvider.notifier).state = null;
+                        ref.invalidate(regenciesProvider);
+                      }
 
-  Widget _buildTextField({
-    required String label,
-    required String hint,
-    String? iconAsset,
-    Color? iconColor,
-    VoidCallback? onTap,
-    TextEditingController? controller,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLabel(label),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextFormField(
-              controller: controller,
-              readOnly: onTap != null,
-              style: const TextStyle(color: AppColors.black),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(color: AppColors.black.withOpacity(0.5)),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                border: InputBorder.none,
-                filled: true,
-                fillColor: Colors.transparent,
-                suffixIcon:
-                    iconAsset != null
-                        ? GestureDetector(
-                          onTap: onTap,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: SvgPicture.asset(
-                              iconAsset,
-                              width: 24,
-                              height: 24,
-                              colorFilter:
-                                  iconColor != null
-                                      ? ColorFilter.mode(
-                                        iconColor,
-                                        BlendMode.srcIn,
-                                      )
-                                      : null,
-                            ),
-                          ),
-                        )
-                        : null,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPopupButton({
-    required String label,
-    required List<String> items,
-    String? selectedValue,
-    required ValueChanged<String> onSelected,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLabel(label),
-          const SizedBox(height: 8),
-          Container(
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      selectedValue ?? 'Pilih opsi',
-                      style: TextStyle(
-                        color:
-                            selectedValue == null
-                                ? AppColors.black.withOpacity(0.5)
-                                : AppColors.black,
-                      ),
-                    ),
-                  ),
-                ),
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    popupMenuTheme: const PopupMenuThemeData(
-                      color: AppColors.cardColor,
-                      textStyle: TextStyle(color: AppColors.black),
-                    ),
-                  ),
-                  child: PopupMenuButton<String>(
-                    icon: SvgPicture.asset(
-                      "assets/icons/down_arrow.svg",
-                      width: 8,
-                      height: 8,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.black,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    onSelected: onSelected,
-                    itemBuilder: (BuildContext context) {
-                      return items.map((String choice) {
-                        return PopupMenuItem<String>(
-                          value: choice,
-                          child: Text(choice),
-                        );
-                      }).toList();
+                      // reset downstream provider states
+                      ref.read(selectedRegencyProvider.notifier).state = null;
+                      ref.read(selectedDistrictProvider.notifier).state = null;
+                      ref.read(selectedVillageProvider.notifier).state = null;
                     },
                   ),
-                ),
-              ],
-            ),
+                  SearchableDropdown(
+                    label: "Kabupaten/Kota *",
+                    isEnabled: _selectedProvince != null,
+                    itemsProvider: regenciesProvider,
+                    selectedValue: _selectedRegency,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedRegency = newValue;
+                        _selectedDistrict = null;
+                        _selectedVillage = null;
+                      });
+
+                      // Debug
+                      // ignore: avoid_print
+                      print('DEBUG selectedRegency => id: ${newValue?.id}, name: ${newValue?.name}');
+
+                      if (newValue != null && newValue.id.isNotEmpty) {
+                        ref.read(selectedRegencyProvider.notifier).state = newValue;
+                        ref.invalidate(districtsProvider);
+                      } else {
+                        ref.read(selectedRegencyProvider.notifier).state = null;
+                        ref.invalidate(districtsProvider);
+                      }
+
+                      ref.read(selectedDistrictProvider.notifier).state = null;
+                      ref.read(selectedVillageProvider.notifier).state = null;
+                    },
+                  ),
+                  SearchableDropdown(
+                    label: "Kecamatan *",
+                    isEnabled: _selectedRegency != null,
+                    itemsProvider: districtsProvider,
+                    selectedValue: _selectedDistrict,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedDistrict = newValue;
+                        _selectedVillage = null;
+                      });
+
+                      // Debug
+                      // ignore: avoid_print
+                      print('DEBUG selectedDistrict => id: ${newValue?.id}, name: ${newValue?.name}');
+
+                      if (newValue != null && newValue.id.isNotEmpty) {
+                        ref.read(selectedDistrictProvider.notifier).state = newValue;
+                        ref.invalidate(villagesProvider);
+                      } else {
+                        ref.read(selectedDistrictProvider.notifier).state = null;
+                        ref.invalidate(villagesProvider);
+                      }
+
+                      ref.read(selectedVillageProvider.notifier).state = null;
+                    },
+                  ),
+                  SearchableDropdown(
+                    label: "Desa/Kelurahan *",
+                    isEnabled: _selectedDistrict != null,
+                    itemsProvider: villagesProvider,
+                    selectedValue: _selectedVillage,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedVillage = newValue;
+                      });
+
+                      // Debug
+                      // ignore: avoid_print
+                      print('DEBUG selectedVillage => id: ${newValue?.id}, name: ${newValue?.name}');
+
+                      // juga update provider
+                      if (newValue != null && newValue.id.isNotEmpty) {
+                        ref.read(selectedVillageProvider.notifier).state = newValue;
+                      } else {
+                        ref.read(selectedVillageProvider.notifier).state = null;
+                      }
+                    },
+                  ),
+                  FormTextField(controller: _alamatC, label: 'Alamat', maxLines: 3),
+                  FormTextField(
+                    controller: _latLngC,
+                    label: 'Latlong',
+                    readOnly: true,
+                    onTap: _openMapDialog,
+                    suffixIcon: IconButton(
+                      icon: SvgPicture.asset(
+                        "assets/icons/location.svg",
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          AppColors.primaryColor,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      onPressed: _openMapDialog,
+                    ),
+                  ),
+                  _buildMapPreview(),
+                ],
+              ),
+              const SizedBox(height: 20),
+              FormCardSection(
+                title: "Data Store",
+                iconAsset: "assets/icons/data_store.svg",
+                children: [
+                  PopupButtonForm(
+                    label: 'Format Store',
+                    optionsProvider: formatStoreOptionsProvider,
+                    selectedValue: _selectedFormatStore,
+                    onSelected: (value) => setState(() => _selectedFormatStore = value),
+                  ),
+                  PopupButtonForm(
+                    label: 'Bentuk Objek',
+                    optionsProvider: bentukObjekOptionsProvider,
+                    selectedValue: _selectedBentukObjek,
+                    onSelected: (value) => setState(() => _selectedBentukObjek = value),
+                  ),
+                  FormTextField(controller: _alasHakC, label: 'Alas Hak'),
+                  FormTextField(controller: _jumlahLantaiC, label: 'Jumlah Lantai', keyboardType: TextInputType.number),
+                  FormTextField(controller: _lebarDepanC, label: 'Lebar Depan (m)', keyboardType: TextInputType.number),
+                  FormTextField(controller: _panjangC, label: 'Panjang (m)', keyboardType: TextInputType.number),
+                  FormTextField(controller: _luasC, label: 'Luas (m2)', keyboardType: TextInputType.number),
+                  FormTextField(controller: _hargaSewaC, label: 'Harga Sewa (+PPH 10%)', keyboardType: TextInputType.number),
+                ],
+              ),
+              const SizedBox(height: 20),
+              FormCardSection(
+                title: "Data Pemilik",
+                iconAsset: "assets/icons/avatar.svg",
+                children: [
+                  FormTextField(controller: _namaPemilikC, label: 'Nama Pemilik'),
+                  FormTextField(controller: _kontakPemilikC, label: 'Kontak Pemilik', keyboardType: TextInputType.phone),
+                ],
+              ),
+              const SizedBox(height: 30),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: formState.isLoading ? null : () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cardColor,
+                        foregroundColor: AppColors.primaryColor,
+                        side: const BorderSide(color: AppColors.primaryColor),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Simpan Draft'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: formState.isLoading ? null : _onSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: formState.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Submit'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

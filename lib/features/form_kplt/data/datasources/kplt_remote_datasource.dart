@@ -6,9 +6,13 @@ class KpltRemoteDatasource {
 
   // Query untuk mengambil data 'Recent'
   Future<List<Map<String, dynamic>>> getRecentKplt(String query) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('User not Authenticated');
+
     var request = client
         .from('kplt')
         .select('id, ulok_id, created_at, approval_status, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
+        .eq('ulok.users_id', userId)
         .inFilter('approval_status', ['Need Input', 'Waiting for Forum', 'In Progress']);
 
     if (query.isNotEmpty) {
@@ -22,9 +26,13 @@ class KpltRemoteDatasource {
 
   // Query untuk mengambil data 'History'
   Future<List<Map<String, dynamic>>> getHistoryKplt(String query) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('User not Authenticated');
+
     var request = client
         .from('kplt')
         .select('id, ulok_id, created_at, approval_status, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
+        .eq('ulok.users_id', userId)
         .inFilter('approval_status', ['OK', 'NOK']);
 
     if (query.isNotEmpty) {
