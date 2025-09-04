@@ -9,4 +9,8 @@ class UlokFormRepositoryImpl implements UlokFormRepository {
   @override
   Future<void> submitUlok(UlokFormData data, String branchId) =>
       _dataSource.submitUlok(data, branchId);
+      
+  @override
+  Future<void> updateUlok(String ulokId, UlokFormData data) =>
+      _dataSource.updateUlok(ulokId, data);
 }

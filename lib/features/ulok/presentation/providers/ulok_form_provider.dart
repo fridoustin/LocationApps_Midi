@@ -24,9 +24,7 @@ final formatStoreOptionsProvider = FutureProvider<List<String>>((ref) async {
     );
     return (response as List).map((item) => item.toString()).toList();
   } catch (e) {
-    // INI AKAN MENCETAK ERROR ASLI DARI SUPABASE
     debugPrint("Error fetching format_store: $e");
-    // Lempar kembali error agar .when() bisa menanganinya
     rethrow;
   }
 });
@@ -40,13 +38,13 @@ final bentukObjekOptionsProvider = FutureProvider<List<String>>((ref) async {
     );
     return (response as List).map((item) => item.toString()).toList();
   } catch (e) {
-    // INI AKAN MENCETAK ERROR ASLI DARI SUPABASE
     debugPrint("Error fetching bentuk_objek: $e");
     rethrow;
   }
 });
 
-// --- State & Notifier untuk Presentation Layer ---
+
+// --- State & Notifier untuk Form Tambah ULOK ---
 @immutable
 class UlokFormState {
   final bool isLoading;
@@ -63,16 +61,14 @@ class UlokFormState {
 
 class UlokFormNotifier extends StateNotifier<UlokFormState> {
   final UlokFormRepository _repository;
-  final Ref _ref; // Butuh ref untuk membaca provider lain
+  final Ref _ref;
 
   UlokFormNotifier(this._repository, this._ref) : super(const UlokFormState());
 
   Future<bool> submitForm(UlokFormData data) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      // Ambil branch_id dari profil pengguna
       final profile = await _ref.read(profileDataProvider.future);
-
       await _repository.submitUlok(data, profile.branchId);
       state = state.copyWith(isLoading: false);
       return true;
@@ -87,3 +83,42 @@ final ulokFormProvider =
     StateNotifierProvider<UlokFormNotifier, UlokFormState>((ref) {
   return UlokFormNotifier(ref.watch(ulokFormRepositoryProvider), ref);
 });
+
+
+// --- State & Notifier untuk Form Edit ULOK ---
+@immutable
+class UlokEditState {
+  final bool isLoading;
+  final String? errorMessage;
+  const UlokEditState({this.isLoading = false, this.errorMessage});
+
+  UlokEditState copyWith({bool? isLoading, String? errorMessage}) {
+    return UlokEditState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
+  }
+}
+
+class UlokEditNotifier extends StateNotifier<UlokEditState> {
+  final UlokFormRepository _repository;
+  UlokEditNotifier(this._repository) : super(const UlokEditState());
+
+  Future<bool> updateUlok(String ulokId, UlokFormData data) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.updateUlok(ulokId, data);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return false;
+    }
+  }
+}
+
+final ulokEditProvider =
+    StateNotifierProvider<UlokEditNotifier, UlokEditState>((ref) {
+  return UlokEditNotifier(ref.watch(ulokFormRepositoryProvider));
+});
+
