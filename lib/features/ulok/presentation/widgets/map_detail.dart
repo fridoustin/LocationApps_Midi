@@ -24,8 +24,6 @@ class InteractiveMapWidget extends StatelessWidget {
           children: [
             TileLayer(
               urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              // --- PERBAIKAN DI SINI ---
-              // Tambahkan identitas aplikasi Anda, sama seperti di MapPickerDialog
               userAgentPackageName: 'com.midi.location',
             ),
             MarkerLayer(
