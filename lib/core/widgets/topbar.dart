@@ -12,7 +12,6 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   final String? branchName;
   final String? title;
   final Widget? leadingWidget;
-  final VoidCallback? onNotificationTap;
   final bool showNotificationButton;
   final Profile? profileData;
 
@@ -22,7 +21,6 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.branchName,
     this.title,
     this.leadingWidget,
-    this.onNotificationTap,
     this.showNotificationButton = true,
     this.profileData
   });
@@ -34,7 +32,6 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     return CustomTopBar(
       type: TopBarType.home,
       branchName: branchName,
-      onNotificationTap: onNotificationTap,
     );
   }
 
@@ -59,7 +56,6 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
       type: TopBarType.profile,
       title: title,
       profileData: profileData,
-      onNotificationTap: onNotificationTap,
       showNotificationButton: true, // Asumsi tombol notifikasi selalu ada di profil
     );
   }
@@ -80,7 +76,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
             top: MediaQuery.of(context).padding.top + 32,
             right: 24,
             child: GestureDetector(
-              onTap: onNotificationTap,
+              onTap: () => Navigator.pushNamed(context, '/notification'),
               child: SvgPicture.asset(
                 'assets/icons/notifikasi.svg',
                 width: 32,

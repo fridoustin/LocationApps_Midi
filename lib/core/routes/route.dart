@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
+import 'package:midi_location/features/notification/presentation/pages/notification_screen.dart';
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
 import 'package:midi_location/features/error_screens/no_connection_screen.dart';
@@ -31,6 +32,8 @@ Route<dynamic> routeGenerators(RouteSettings settings) {
       return _buildPageRoute(const AccessDeniedScreen());
     case UnderMaintenanceScreen.route:
       return _buildPageRoute(const UnderMaintenanceScreen());
+    case NotificationScreen.route:
+      return _buildPageRoute(const NotificationScreen());
     case UlokDetailPage.route:
       return _buildPageRoute(
         UlokDetailPage(ulok: settings.arguments as UsulanLokasi),
