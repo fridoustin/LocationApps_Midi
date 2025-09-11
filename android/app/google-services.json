@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1025280738796",
+    "project_id": "midiloc-26b86",
+    "storage_bucket": "midiloc-26b86.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1025280738796:android:7eb54a4eb9f26eb8286cc9",
+        "android_client_info": {
+          "package_name": "com.example.midi_location"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3h83v5xLaBvIVPm1A3cJm44DKaWJIXu8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
