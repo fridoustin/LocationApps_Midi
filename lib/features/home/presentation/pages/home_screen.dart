@@ -1,31 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/services/notification_service.dart';
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
 import 'package:midi_location/features/home/presentation/widgets/donut_chart.dart';
 import 'package:midi_location/features/home/presentation/widgets/line_chart.dart';
 import 'package:midi_location/features/home/presentation/widgets/summary_card.dart';
 import 'package:midi_location/features/home/presentation/widgets/timerange_button.dart';
-// 1. IMPORT PROVIDER PROFIL
 import 'package:midi_location/features/profile/presentation/providers/profile_provider.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
   static const String route = '/home';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService().requestPermissionAndGetToken();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final timeRange = ref.watch(timeRangeProvider);
-    // 2. PANTAU PROVIDER PROFIL DI SINI
     final profileAsync = ref.watch(profileDataProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // Agar toggle rata kiri
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 3. GUNAKAN .when UNTUK MENAMPILKAN NAMA SECARA DINAMIS
           profileAsync.when(
             data: (profile) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +79,6 @@ class HomePage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Gunakan widget AnimatedToggleSwitch yang baru
           AnimatedToggleSwitch(
             isMonthSelected: timeRange == 'month',
             onMonthTap: () => ref.read(timeRangeProvider.notifier).state = 'month',
