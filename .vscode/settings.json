@@ -1,3 +1,5 @@
 {
-    "cmake.ignoreCMakeListsMissing": true
+    "cmake.ignoreCMakeListsMissing": true,
+    "deno.enable": true,
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

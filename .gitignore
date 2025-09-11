@@ -13,6 +13,8 @@
 migrate_working_dir/
 .env
 /lib/firebase_options.dart
+/supabase/functions/service-account.json
+.temp
 
 # IntelliJ related
 *.iml
