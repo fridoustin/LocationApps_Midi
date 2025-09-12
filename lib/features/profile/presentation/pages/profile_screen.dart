@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
+import 'package:midi_location/features/profile/presentation/providers/profile_provider.dart';
 import 'package:midi_location/features/profile/presentation/widgets/InfoCard/info_card.dart';
 import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
@@ -34,7 +37,7 @@ class ProfilePage extends ConsumerWidget {
                 // Widget Kartu Bantuan 
                 const SupportCard(),
                 // Tombol Logout
-                _buildLogoutButton(ref),
+                _buildLogoutButton(context,ref),
               ],
             )
           ) 
@@ -43,11 +46,28 @@ class ProfilePage extends ConsumerWidget {
     );
   }
   // Widget untuk Tombol Logout
-  Widget _buildLogoutButton(WidgetRef ref) {
+  Widget _buildLogoutButton(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: ElevatedButton(
-        onPressed: () => ref.read(authRepositoryProvider).signOut(),
+        onPressed: () async {
+          try {
+            await ref.read(authRepositoryProvider).signOut();
+            ref.invalidate(profileDataProvider);
+            ref.invalidate(dashboardStatsProvider); 
+            if (!context.mounted) return;
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const AuthGate()),
+              (route) => false,
+            );
+
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Logout gagal: ${e.toString()}")),
+            );
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryColor,
           foregroundColor: AppColors.cardColor,
@@ -65,4 +85,3 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 }
-

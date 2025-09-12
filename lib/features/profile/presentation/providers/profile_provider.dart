@@ -15,7 +15,8 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 });
 
 // Provider untuk mengambil data profil lengkap untuk UI
-final profileDataProvider = FutureProvider<Profile>((ref) {
-  return ref.watch(profileRepositoryProvider).getProfileData();
+final profileDataProvider = FutureProvider.autoDispose<Profile>((ref) { 
+  final profileRepository = ref.watch(profileRepositoryProvider);
+  return profileRepository.getProfileData();
 });
 
