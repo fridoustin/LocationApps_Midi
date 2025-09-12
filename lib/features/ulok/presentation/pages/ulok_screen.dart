@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_ulok.dart';
-import 'package:midi_location/core/widgets/ulok_card.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/ulok_card.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/ulok_list_skeleton.dart';
 
 class ULOKPage extends ConsumerStatefulWidget {
   const ULOKPage({super.key});
@@ -122,12 +123,7 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                 ),
               );
             },
-            loading:
-                () => const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryColor,
-                  ),
-                ),
+            loading: () => const UlokListSkeleton(),
             error:
                 (err, stack) => Center(child: Text('Gagal memuat data: $err')),
           ),
