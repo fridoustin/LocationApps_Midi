@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_kplt.dart';
-import 'package:midi_location/core/widgets/kplt_card.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_list_skeleton.dart';
 
 class FormKPLTPage extends ConsumerStatefulWidget {
   const FormKPLTPage({super.key});
@@ -115,7 +116,7 @@ class _KPLTPageState extends ConsumerState<FormKPLTPage> {
                 ),
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryColor)),
+            loading: () => const KpltListSkeleton(),
             error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
           ),
         ),
