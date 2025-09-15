@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_ulok.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/draft_card.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_card.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_list_skeleton.dart';
@@ -22,7 +25,11 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
   @override
   void initState() {
     super.initState();
-    _searchController.text = ref.read(ulokSearchQueryProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchController.text = ref.read(ulokSearchQueryProvider);
+      }
+    });
   }
 
   @override
@@ -36,30 +43,54 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       ref.read(ulokSearchQueryProvider.notifier).state = query;
+      ref.invalidate(ulokDraftsProvider);
+      ref.invalidate(ulokListProvider);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeTab = ref.watch(ulokTabProvider);
-    final ulokListAsync = ref.watch(ulokListProvider);
+    final isShowingDrafts = ref.watch(showDraftsProvider);
 
     return Column(
       children: [
-        // WADAH BARU UNTUK TOMBOL TAB SESUAI REFERENSI
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: SlidingTabBar(
-            activeTab: activeTab,
-            onTabChanged: (newTab) {
-              ref.read(ulokSearchQueryProvider.notifier).state = '';
-              _searchController.clear();
-              ref.read(ulokTabProvider.notifier).state = newTab;
-            },
+          child: Row(
+            children: [
+              Expanded(
+                child: SlidingTabBar(
+                  activeTab: ref.watch(ulokTabProvider),
+                  onTabChanged: (newTab) {
+                    if (isShowingDrafts) {
+                      ref.read(showDraftsProvider.notifier).state = false;
+                    }
+                    ref.read(ulokSearchQueryProvider.notifier).state = '';
+                    _searchController.clear();
+                    ref.read(ulokTabProvider.notifier).state = newTab;
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(showDraftsProvider.notifier).update((state) => !state);
+                },
+                icon: const Icon(Icons.drafts_outlined),
+                label: const Text('Drafts'),
+                style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(0, 46),
+                    backgroundColor: isShowingDrafts ? AppColors.primaryColor : AppColors.cardColor,
+                    foregroundColor: isShowingDrafts ? Colors.white : AppColors.primaryColor,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: AppColors.primaryColor))),
+              ),
+            ],
           ),
         ),
 
-        // Search Bar & Filter (UI Saja untuk sekarang)
+        // Search Bar & Filter
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
           child: Row(
@@ -104,31 +135,115 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
 
         // Daftar Usulan Lokasi
         Expanded(
-          child: ulokListAsync.when(
-            data: (ulokList) {
-              if (ulokList.isEmpty) {
-                return const Center(child: Text('Tidak ada data ULok.'));
-              }
-              // RefreshIndicator untuk fitur pull-to-refresh
-              return RefreshIndicator(
-                color: AppColors.primaryColor,
-                backgroundColor: AppColors.cardColor,
-                onRefresh: () => ref.refresh(ulokListProvider.future),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: ulokList.length,
-                  itemBuilder: (context, index) {
-                    return UlokCard(ulok: ulokList[index]);
-                  },
-                ),
-              );
-            },
-            loading: () => const UlokListSkeleton(),
-            error:
-                (err, stack) => Center(child: Text('Gagal memuat data: $err')),
-          ),
+          child: isShowingDrafts
+              ? _buildDraftsList()
+              : _buildOnlineList(),
         ),
       ],
     );
   }
+  Widget _buildOnlineList() {
+    final ulokListAsync = ref.watch(ulokListProvider);
+    return ulokListAsync.when(
+      data: (ulokList) {
+        if (ulokList.isEmpty) {
+          return const Center(child: Text('Tidak ada data ULok.'));
+        }
+        return RefreshIndicator(
+          color: AppColors.primaryColor,
+          backgroundColor: AppColors.cardColor,
+          onRefresh: () {
+            ref.read(ulokSearchQueryProvider.notifier).state = '';
+            _searchController.clear();
+            return ref.refresh(ulokListProvider.future);
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: ulokList.length,
+            itemBuilder: (context, index) {
+              return UlokCard(ulok: ulokList[index]);
+            },
+          ),
+        );
+      },
+      loading: () => const UlokListSkeleton(),
+      error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
+    );
+  }
+
+  Widget _buildDraftsList() {
+    final draftsAsync = ref.watch(ulokDraftsProvider);
+    return draftsAsync.when(
+      data: (draftList) {
+        if (draftList.isEmpty) {
+          return const Center(child: Text('Tidak ada data Draft.'));
+        }
+        return RefreshIndicator(
+          color: AppColors.primaryColor,
+          backgroundColor: AppColors.cardColor,
+          onRefresh: () => ref.refresh(ulokDraftsProvider.future),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: draftList.length,
+            itemBuilder: (context, index) {
+              final draft = draftList[index];
+              return UlokDraftCard(
+                draft: draft,
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => UlokFormPage(draftData: draft),
+                  ));
+                },
+                onDeletePressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        backgroundColor: AppColors.backgroundColor,
+                        title: const Text('Hapus Draft'),
+                        content: Text(
+                            'Apakah Anda yakin ingin menghapus draft "${draft.namaUlok.isEmpty ? '(Tanpa Nama)' : draft.namaUlok}"?'),
+                        actions: <Widget>[
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryColor,
+                              side: const BorderSide(color: AppColors.primaryColor),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop();
+                            },
+                            child: const Text('Batal'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              ref.read(ulokFormProvider.notifier).deleteDraft(draft.localId);
+                              Navigator.of(dialogContext).pop(); 
+                            },
+                            child: const Text('Hapus'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const UlokListSkeleton(),
+      error: (err, stack) => Center(child: Text('Gagal memuat draft: $err')),
+    );
+  }
 }
+

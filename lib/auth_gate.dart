@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/widgets/main_layout.dart';
@@ -6,6 +7,7 @@ import 'package:midi_location/features/auth/presentation/providers/user_profile_
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 class AuthGate extends ConsumerWidget {
@@ -28,26 +30,35 @@ class AuthGate extends ConsumerWidget {
         ref.invalidate(kpltTabProvider);
       }
     });
-    // Pantau authStateProvider
+
+    final connectivityStatus = ref.watch(connectivityProvider);
     final authState = ref.watch(authStateProvider);
 
-    return authState.when(
-      data: (user) {
-        // Jika ada data user (berhasil login), tampilkan MainLayout
-        if (user != null) {
-          return const MainLayout(currentIndex: 0);
-        }
-        // Jika data user null (belum login/logout), tampilkan LoginPage
-        return const LoginPage();
-      },
-      // Tampilkan loading indicator saat status sedang diperiksa
-      loading: () => const Scaffold(
+    if (connectivityStatus.isLoading || authState.isLoading) {
+      return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
-      ),
-      // Tampilkan pesan error jika ada masalah
-      error: (err, stack) => Scaffold(
-        body: Center(child: Text('Terjadi error: $err')),
-      ),
-    );
+      );
+    }
+    if (connectivityStatus.hasError || authState.hasError) {
+      return Scaffold(
+        body: Center(child: Text('Terjadi error: ${connectivityStatus.error ?? authState.error}')),
+      );
+    }
+
+    final hasConnection = connectivityStatus.value != ConnectivityResult.none;
+
+    if (hasConnection) {
+      final user = authState.value;
+      if (user != null) {
+        return const MainLayout(currentIndex: 0);
+      }
+      return const LoginPage();
+    } else {
+      final session = ref.read(supabaseClientProvider).auth.currentSession;
+      if (session != null) {
+        return const MainLayout(currentIndex: 0);
+      }
+      return const LoginPage();
+    }
   }
 }

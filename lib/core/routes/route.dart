@@ -4,7 +4,6 @@ import 'package:midi_location/features/home/presentation/pages/home_screen.dart'
 import 'package:midi_location/features/notification/presentation/pages/notification_screen.dart';
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
-import 'package:midi_location/features/error_screens/no_connection_screen.dart';
 import 'package:midi_location/features/error_screens/error_404_screen.dart';
 import 'package:midi_location/features/error_screens/access_denied_screen.dart';
 import 'package:midi_location/features/error_screens/under_maintenance_screen.dart';
@@ -24,8 +23,6 @@ Route<dynamic> routeGenerators(RouteSettings settings) {
       return _buildPageRoute(const ProfilePage());
     case LoginPage.route:
       return _buildPageRoute(const LoginPage());
-    case NoConnectionScreen.route:
-      return _buildPageRoute(const NoConnectionScreen());
     case Error404Screen.route:
       return _buildPageRoute(const Error404Screen());
     case AccessDeniedScreen.route:
