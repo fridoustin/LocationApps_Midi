@@ -1,4 +1,6 @@
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 import '../../data/datasource/auth_remote_datasource.dart';
 import '../../domain/entities/user.dart' as app;
 import '../../domain/repositories/auth_repository.dart';
@@ -55,6 +57,19 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> isUserAuthorized(String userId) async {
+    print("--- [DEBUG] MASUK isUserAuthorized ---");
+
+    final connectivity = await Connectivity().checkConnectivity();
+    print("--- [DEBUG] Hasil Cek Koneksi: $connectivity ---");
+
+    // --- PERBAIKAN UTAMA DI SINI ---
+    // Kita cek apakah list hasil koneksi mengandung '.none'
+    if (connectivity.contains(ConnectivityResult.none)) {
+      print("--- [DEBUG] OFFLINE, Seharusnya langsung return true.");
+      return true;
+    }
+
+    print("--- [DEBUG] ONLINE, Mencoba melakukan panggilan jaringan ke Supabase...");
     try {
       const allowedPositionId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
       final response = await _dataSource.client
@@ -64,10 +79,12 @@ class AuthRepositoryImpl implements AuthRepository {
           .single();
       
       final userPositionId = response['position_id'];
+      print("--- [DEBUG] Panggilan jaringan berhasil, userPositionId: $userPositionId");
       return userPositionId == allowedPositionId;
     } catch (e) {
+      print("--- [DEBUG] Terjadi ERROR di dalam blok try-catch saat online.");
       print('Gagal melakukan pengecekan otorisasi: $e');
-      return false; // Anggap tidak diizinkan jika terjadi error
+      return false;
     }
   }
 }
