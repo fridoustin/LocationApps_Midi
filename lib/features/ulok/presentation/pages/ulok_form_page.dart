@@ -17,9 +17,11 @@ import 'package:midi_location/features/ulok/presentation/widgets/text_field.dart
 import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
 import 'package:midi_location/features/wilayah/presentation/providers/wilayah_provider.dart';
 import 'package:midi_location/features/wilayah/presentation/widgets/wilayah_dropdown.dart';
+import 'package:uuid/uuid.dart';
 
 class UlokFormPage extends ConsumerStatefulWidget {
-  const UlokFormPage({super.key});
+  final UlokFormData? draftData;
+  const UlokFormPage({super.key, this.draftData});
 
   @override
   ConsumerState<UlokFormPage> createState() => _UlokFormPageState();
@@ -28,6 +30,7 @@ class UlokFormPage extends ConsumerStatefulWidget {
 class _UlokFormPageState extends ConsumerState<UlokFormPage> {
   final _formKey = GlobalKey<FormState>();
   late final MapController _mapController;
+  late final String _currentLocalId;
 
   // Controllers
   final _namaUlokC = TextEditingController();
@@ -56,6 +59,29 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
   void initState() {
     super.initState();
     _mapController = MapController();
+    _currentLocalId = widget.draftData?.localId ?? const Uuid().v4();
+
+    if (widget.draftData != null) {
+      final data = widget.draftData!;
+      _namaUlokC.text = data.namaUlok;
+      _alamatC.text = data.alamat;
+      _latLngC.text = "${data.latLng.latitude}, ${data.latLng.longitude}";
+      _currentLatLng = data.latLng;
+      _selectedProvince = WilayahEntity(id: '', name: data.provinsi);
+      _selectedRegency = WilayahEntity(id: '', name: data.kabupaten);
+      _selectedDistrict = WilayahEntity(id: '', name: data.kecamatan);
+      _selectedVillage = WilayahEntity(id: '', name: data.desa);
+      _selectedFormatStore = data.formatStore;
+      _selectedBentukObjek = data.bentukObjek;
+      _alasHakC.text = data.alasHak;
+      _jumlahLantaiC.text = data.jumlahLantai.toString();
+      _lebarDepanC.text = data.lebarDepan.toString();
+      _panjangC.text = data.panjang.toString();
+      _luasC.text = data.luas.toString();
+      _hargaSewaC.text = data.hargaSewa.toString();
+      _namaPemilikC.text = data.namaPemilik;
+      _kontakPemilikC.text = data.kontakPemilik;
+    }
   }
 
   @override
@@ -133,39 +159,44 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     if (mounted) Navigator.of(context).pop();
   }
 
+  UlokFormData _collectFormData() {
+    return UlokFormData(
+      localId: _currentLocalId, // Selalu sertakan ID lokal saat ini
+      namaUlok: _namaUlokC.text,
+      latLng: _currentLatLng ?? LatLng(0, 0),
+      provinsi: _selectedProvince?.name ?? '',
+      kabupaten: _selectedRegency?.name ?? '',
+      kecamatan: _selectedDistrict?.name ?? '',
+      desa: _selectedVillage?.name ?? '',
+      alamat: _alamatC.text,
+      formatStore: _selectedFormatStore ?? '',
+      bentukObjek: _selectedBentukObjek ?? '',
+      alasHak: _alasHakC.text,
+      jumlahLantai: int.tryParse(_jumlahLantaiC.text) ?? 0,
+      lebarDepan: double.tryParse(_lebarDepanC.text) ?? 0.0,
+      panjang: double.tryParse(_panjangC.text) ?? 0.0,
+      luas: double.tryParse(_luasC.text) ?? 0.0,
+      hargaSewa: double.tryParse(_hargaSewaC.text) ?? 0.0,
+      namaPemilik: _namaPemilikC.text,
+      kontakPemilik: _kontakPemilikC.text,
+    );
+  }
+
+  void _onSaveDraft() {
+    final formData = _collectFormData();
+    ref.read(ulokFormProvider.notifier).saveDraft(formData).then((success) {
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Berhasil disimpan di Draft!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop();
+      }
+    });
+  }
+
   void _onSubmit() {
-    // Validasi field wilayah lebih jelas
-    if (_selectedProvince == null ||
-        _selectedRegency == null ||
-        _selectedDistrict == null ||
-        _selectedVillage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Harap pilih Provinsi, Kabupaten, Kecamatan, dan Desa.'),
-      ));
-      return;
-    }
-
     if ((_formKey.currentState?.validate() ?? false) && _currentLatLng != null) {
-      final formData = UlokFormData(
-        namaUlok: _namaUlokC.text,
-        latLng: _currentLatLng!,
-        provinsi: _selectedProvince!.name,
-        kabupaten: _selectedRegency!.name,
-        kecamatan: _selectedDistrict!.name,
-        desa: _selectedVillage!.name,
-        alamat: _alamatC.text,
-        formatStore: _selectedFormatStore ?? '',
-        bentukObjek: _selectedBentukObjek ?? '',
-        alasHak: _alasHakC.text,
-        jumlahLantai: int.tryParse(_jumlahLantaiC.text) ?? 0,
-        lebarDepan: double.tryParse(_lebarDepanC.text) ?? 0.0,
-        panjang: double.tryParse(_panjangC.text) ?? 0.0,
-        luas: double.tryParse(_luasC.text) ?? 0.0,
-        hargaSewa: double.tryParse(_hargaSewaC.text) ?? 0.0,
-        namaPemilik: _namaPemilikC.text,
-        kontakPemilik: _kontakPemilikC.text,
-      );
-
+      final formData = _collectFormData();
       ref.read(ulokFormProvider.notifier).submitForm(formData).then((success) {
         if (success && mounted) {
           ref.invalidate(ulokListProvider);
@@ -466,7 +497,7 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: formState.isLoading ? null : () {},
+                      onPressed: formState.action == FormAction.none ? _onSaveDraft : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.cardColor,
                         foregroundColor: AppColors.primaryColor,
@@ -474,20 +505,22 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Simpan Draft'),
+                      child: formState.action == FormAction.savingDraft
+                          ? const CircularProgressIndicator(color: AppColors.primaryColor)
+                          : const Text('Simpan Draft'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: formState.isLoading ? null : _onSubmit,
+                      onPressed: formState.action == FormAction.none ? _onSubmit : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: formState.isLoading
+                      child: formState.action == FormAction.submitting
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text('Submit'),
                     ),

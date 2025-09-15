@@ -160,6 +160,7 @@ class _UlokEditPageState extends ConsumerState<UlokEditPage> {
   void _onUpdate() {
     if (_formKey.currentState?.validate() ?? false) {
       final formData = UlokFormData(
+        localId: widget.ulok.id,
         namaUlok: _namaUlokC.text,
         latLng: _currentLatLng!,
         provinsi: _selectedProvince!.name,
