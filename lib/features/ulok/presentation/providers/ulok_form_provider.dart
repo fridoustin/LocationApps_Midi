@@ -64,12 +64,12 @@ enum FormAction { none, savingDraft, submitting }
 
 @immutable
 class UlokFormState {
-  final FormAction action; // Ganti isLoading dengan ini
+  final FormAction action; 
   final String? successMessage;
   final String? errorMessage;
 
   const UlokFormState({
-    this.action = FormAction.none, // Nilai default
+    this.action = FormAction.none, 
     this.successMessage,
     this.errorMessage
   });
@@ -94,16 +94,13 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
   UlokFormNotifier(this._repository, this._ref) : super(const UlokFormState());
 
   Future<bool> saveDraft(UlokFormData data) async {
-    // Set state ke savingDraft
     state = state.copyWith(action: FormAction.savingDraft, errorMessage: null, successMessage: null);
     try {
       await _repository.saveDraft(data);
-      // Kembalikan state ke none
       state = state.copyWith(action: FormAction.none, successMessage: "ULOK berhasil disimpan sebagai draft.");
       _ref.invalidate(ulokDraftsProvider);
       return true;
     } catch (e) {
-      // Kembalikan state ke none
       state = state.copyWith(action: FormAction.none, errorMessage: e.toString());
       return false;
     }
@@ -123,8 +120,8 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
     try {
       final profile = await _ref.read(profileDataProvider.future);
       await _repository.submitUlok(data, profile.branchId);
-      
-      // Jika submit berhasil, hapus draft dari local storage menggunakan localId
+
+      // Jika submit berhasil, hapus draft jika ada
       await _repository.deleteDraft(data.localId); 
       
       state = state.copyWith(action: FormAction.none);
@@ -136,6 +133,15 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
       return false;
     }
   }
+
+  Future<void> deleteDraft(String localId) async {
+    try {
+      await _repository.deleteDraft(localId);
+      _ref.invalidate(ulokDraftsProvider);
+    } catch (e) {
+      print('Gagal menghapus draft: $e');
+    }
+  }
 }
 
 final ulokFormProvider =
@@ -145,7 +151,7 @@ final ulokFormProvider =
 
 final ulokDraftsProvider = FutureProvider.autoDispose<List<UlokFormData>>((ref) async {
   final repository = ref.watch(ulokFormRepositoryProvider);
-  final searchQuery = ref.watch(ulokSearchQueryProvider); // Pantau search query
+  final searchQuery = ref.watch(ulokSearchQueryProvider);
 
   // Ambil semua draft dari local storage
   final allDrafts = await repository.getDrafts();

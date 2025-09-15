@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
 
 class UlokDraftCard extends StatelessWidget {
   final UlokFormData draft;
-  final VoidCallback onTap; // Kita tetap gunakan onTap dari parent
+  final VoidCallback onTap;
+  final VoidCallback onDeletePressed;
 
   const UlokDraftCard({
     super.key,
     required this.draft,
     required this.onTap,
+    required this.onDeletePressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Menggunakan alamat dari draft, jika kosong tampilkan placeholder
     final fullAddress = draft.alamat.isEmpty
         ? '(Alamat belum diisi)'
         : draft.alamat;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: onTap, // Aksi utama saat card ditekan
+      onTap: onTap,
       child: Card(
         margin: const EdgeInsets.only(bottom: 16),
         color: AppColors.cardColor,
@@ -47,16 +47,11 @@ class UlokDraftCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // Ikon edit SELALU tampil untuk draft
                   IconButton(
-                    onPressed: onTap, // Arahkan juga ke halaman edit
-                    icon: SvgPicture.asset(
-                      'assets/icons/editulok.svg',
-                      width: 24,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.primaryColor, // Warna ikon tetap sama
-                        BlendMode.srcIn,
-                      ),
+                    onPressed: onDeletePressed, 
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.primaryColor,
                     ),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
@@ -68,7 +63,6 @@ class UlokDraftCard extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.grey[700],
                   height: 1.4,
-                  // Tampilkan miring jika alamat masih placeholder
                   fontStyle: draft.alamat.isEmpty ? FontStyle.italic : FontStyle.normal,
                 ),
                 maxLines: 2,
@@ -77,7 +71,6 @@ class UlokDraftCard extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  // Status "Draft" dengan warna yang disesuaikan
                   Container(
                     width: 110,
                     padding: const EdgeInsets.symmetric(vertical: 6),
@@ -95,7 +88,6 @@ class UlokDraftCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Kita tidak menampilkan tanggal pada draft
                 ],
               ),
             ],

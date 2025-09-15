@@ -54,7 +54,6 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
 
     return Column(
       children: [
-        // WADAH BARU UNTUK TOMBOL TAB SESUAI REFERENSI
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
@@ -63,7 +62,6 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                 child: SlidingTabBar(
                   activeTab: ref.watch(ulokTabProvider),
                   onTabChanged: (newTab) {
-                    // Jika sedang menampilkan draft, kembali ke mode normal
                     if (isShowingDrafts) {
                       ref.read(showDraftsProvider.notifier).state = false;
                     }
@@ -76,12 +74,12 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: () {
-                  // Toggle tampilan draft
                   ref.read(showDraftsProvider.notifier).update((state) => !state);
                 },
                 icon: const Icon(Icons.drafts_outlined),
                 label: const Text('Drafts'),
                 style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(0, 46),
                     backgroundColor: isShowingDrafts ? AppColors.primaryColor : AppColors.cardColor,
                     foregroundColor: isShowingDrafts ? Colors.white : AppColors.primaryColor,
                     shape: RoundedRectangleBorder(
@@ -138,8 +136,8 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
         // Daftar Usulan Lokasi
         Expanded(
           child: isShowingDrafts
-              ? _buildDraftsList() // Panggil method untuk menampilkan draft
-              : _buildOnlineList(), // Panggil method untuk menampilkan data online
+              ? _buildDraftsList()
+              : _buildOnlineList(),
         ),
       ],
     );
@@ -172,8 +170,7 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
       error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
     );
   }
-
-  // Method helper untuk membangun list draft
+  
   Widget _buildDraftsList() {
     final draftsAsync = ref.watch(ulokDraftsProvider);
     return draftsAsync.when(
@@ -196,6 +193,37 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => UlokFormPage(draftData: draft),
                   ));
+                },
+                // --- PERUBAHAN DI SINI ---
+                onDeletePressed: () {
+                  // Tampilkan dialog konfirmasi sebelum menghapus
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        backgroundColor: AppColors.backgroundColor,
+                        title: const Text('Hapus Draft'),
+                        content: Text(
+                            'Apakah Anda yakin ingin menghapus draft "${draft.namaUlok.isEmpty ? '(Tanpa Nama)' : draft.namaUlok}"?'),
+                        actions: <Widget>[
+                          TextButton(
+                            child: const Text('Batal'),
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop(); // Tutup dialog
+                            },
+                          ),
+                          TextButton(
+                            child: const Text('Hapus', style: TextStyle(color: AppColors.primaryColor)),
+                            onPressed: () {
+                              // Panggil notifier untuk menghapus
+                              ref.read(ulokFormProvider.notifier).deleteDraft(draft.localId);
+                              Navigator.of(dialogContext).pop(); // Tutup dialog
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 },
               );
             },
