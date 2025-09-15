@@ -1,7 +1,8 @@
 import 'package:latlong2/latlong.dart';
+import 'package:uuid/uuid.dart';
 
-// Class untuk menampung semua data dari form
 class UlokFormData {
+  final String localId; // ID unik HANYA untuk identifikasi draft di perangkat
   final String namaUlok;
   final LatLng latLng;
   final String provinsi;
@@ -21,6 +22,7 @@ class UlokFormData {
   final String kontakPemilik;
 
   UlokFormData({
+    required this.localId,
     required this.namaUlok,
     required this.latLng,
     required this.provinsi,
@@ -39,4 +41,80 @@ class UlokFormData {
     required this.namaPemilik,
     required this.kontakPemilik,
   });
+
+  /// Mengubah objek menjadi Map untuk disimpan di local storage (SharedPreferences)
+  Map<String, dynamic> toLocalJson() {
+    return {
+      'localId': localId,
+      'namaUlok': namaUlok,
+      'latitude': latLng.latitude,
+      'longitude': latLng.longitude,
+      'provinsi': provinsi,
+      'kabupaten': kabupaten,
+      'kecamatan': kecamatan,
+      'desa': desa,
+      'alamat': alamat,
+      'formatStore': formatStore,
+      'bentukObjek': bentukObjek,
+      'alasHak': alasHak,
+      'jumlahLantai': jumlahLantai,
+      'lebarDepan': lebarDepan,
+      'panjang': panjang,
+      'luas': luas,
+      'hargaSewa': hargaSewa,
+      'namaPemilik': namaPemilik,
+      'kontakPemilik': kontakPemilik,
+    };
+  }
+
+  /// Mengubah objek menjadi Map untuk dikirim sebagai payload ke Supabase
+  /// Strukturnya harus cocok dengan nama kolom di tabel Anda.
+  /// TIDAK ADA ID DI SINI.
+  Map<String, dynamic> toSupabaseJson(String branchId) {
+    return {
+      'nama_ulok': namaUlok,
+      'latitude': latLng.latitude,
+      'longitude': latLng.longitude,
+      'provinsi': provinsi,
+      'kabupaten': kabupaten,
+      'kecamatan': kecamatan,
+      'desa': desa,
+      'alamat': alamat,
+      'format_store': formatStore,
+      'bentuk_objek': bentukObjek,
+      'alas_hak': alasHak,
+      'jumlah_lantai': jumlahLantai,
+      'lebar_depan': lebarDepan,
+      'panjang': panjang,
+      'luas': luas,
+      'harga_sewa': hargaSewa,
+      'nama_pemilik': namaPemilik,
+      'kontak_pemilik': kontakPemilik,
+      'branch_id': branchId,
+    };
+  }
+
+  /// Membuat objek dari data JSON yang disimpan secara lokal
+  factory UlokFormData.fromJson(Map<String, dynamic> json) {
+    return UlokFormData(
+      localId: json['localId'] ?? const Uuid().v4(), // Pastikan localId selalu ada
+      namaUlok: json['namaUlok'] ?? '',
+      latLng: LatLng(json['latitude'] ?? 0.0, json['longitude'] ?? 0.0),
+      provinsi: json['provinsi'] ?? '',
+      kabupaten: json['kabupaten'] ?? '',
+      kecamatan: json['kecamatan'] ?? '',
+      desa: json['desa'] ?? '',
+      alamat: json['alamat'] ?? '',
+      formatStore: json['formatStore'] ?? '',
+      bentukObjek: json['bentukObjek'] ?? '',
+      alasHak: json['alasHak'] ?? '',
+      jumlahLantai: json['jumlahLantai'] ?? 0,
+      lebarDepan: json['lebarDepan'] ?? 0.0,
+      panjang: json['panjang'] ?? 0.0,
+      luas: json['luas'] ?? 0.0,
+      hargaSewa: json['hargaSewa'] ?? 0.0,
+      namaPemilik: json['namaPemilik'] ?? '',
+      kontakPemilik: json['kontakPemilik'] ?? '',
+    );
+  }
 }
