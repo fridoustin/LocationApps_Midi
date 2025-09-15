@@ -2,7 +2,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 
 class UlokFormData {
-  final String localId; // ID unik HANYA untuk identifikasi draft di perangkat
+  final String localId;
   final String namaUlok;
   final LatLng latLng;
   final String provinsi;
@@ -68,8 +68,6 @@ class UlokFormData {
   }
 
   /// Mengubah objek menjadi Map untuk dikirim sebagai payload ke Supabase
-  /// Strukturnya harus cocok dengan nama kolom di tabel Anda.
-  /// TIDAK ADA ID DI SINI.
   Map<String, dynamic> toSupabaseJson(String branchId) {
     return {
       'nama_ulok': namaUlok,
@@ -97,7 +95,7 @@ class UlokFormData {
   /// Membuat objek dari data JSON yang disimpan secara lokal
   factory UlokFormData.fromJson(Map<String, dynamic> json) {
     return UlokFormData(
-      localId: json['localId'] ?? const Uuid().v4(), // Pastikan localId selalu ada
+      localId: json['localId'] ?? const Uuid().v4(),
       namaUlok: json['namaUlok'] ?? '',
       latLng: LatLng(json['latitude'] ?? 0.0, json['longitude'] ?? 0.0),
       provinsi: json['provinsi'] ?? '',

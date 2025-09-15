@@ -9,11 +9,9 @@ class UlokFormLocalDataSource {
     final prefs = await SharedPreferences.getInstance();
     final drafts = await getDrafts();
     
-    // Gunakan 'localId'
     drafts.removeWhere((d) => d.localId == data.localId);
     drafts.add(data);
     
-    // Gunakan 'toLocalJson()'
     final draftsJson = drafts.map((d) => jsonEncode(d.toLocalJson())).toList();
     await prefs.setStringList(_draftsKey, draftsJson);
   }
@@ -30,10 +28,8 @@ class UlokFormLocalDataSource {
     final prefs = await SharedPreferences.getInstance();
     final drafts = await getDrafts();
     
-    // Gunakan 'localId'
     drafts.removeWhere((d) => d.localId == localId);
     
-    // Gunakan 'toLocalJson()'
     final draftsJson = drafts.map((d) => jsonEncode(d.toLocalJson())).toList();
     await prefs.setStringList(_draftsKey, draftsJson);
   }

@@ -5,7 +5,7 @@ import 'package:midi_location/features/ulok/domain/repositories/ulok_form_reposi
 
 class UlokFormRepositoryImpl implements UlokFormRepository {
   final UlokFormRemoteDataSource _remoteDataSource;
-  final UlokFormLocalDataSource _localDataSource; // Tambahkan ini
+  final UlokFormLocalDataSource _localDataSource;
 
   UlokFormRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
