@@ -35,3 +35,4 @@ final ulokListProvider = FutureProvider<List<UsulanLokasi>>((ref) async {
 
 // 4. Provider untuk mengelola state tab yang sedang aktif
 final ulokTabProvider = StateProvider<UlokTab>((ref) => UlokTab.recent);
+final showDraftsProvider = StateProvider<bool>((ref) => false);
