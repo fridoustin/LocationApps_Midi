@@ -90,7 +90,7 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
           ),
         ),
 
-        // Search Bar & Filter (UI Saja untuk sekarang)
+        // Search Bar & Filter
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
           child: Row(
@@ -170,7 +170,7 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
       error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
     );
   }
-  
+
   Widget _buildDraftsList() {
     final draftsAsync = ref.watch(ulokDraftsProvider);
     return draftsAsync.when(
@@ -194,9 +194,7 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                     builder: (context) => UlokFormPage(draftData: draft),
                   ));
                 },
-                // --- PERUBAHAN DI SINI ---
                 onDeletePressed: () {
-                  // Tampilkan dialog konfirmasi sebelum menghapus
                   showDialog(
                     context: context,
                     builder: (BuildContext dialogContext) {
@@ -206,19 +204,32 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                         content: Text(
                             'Apakah Anda yakin ingin menghapus draft "${draft.namaUlok.isEmpty ? '(Tanpa Nama)' : draft.namaUlok}"?'),
                         actions: <Widget>[
-                          TextButton(
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryColor,
+                              side: const BorderSide(color: AppColors.primaryColor),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop();
+                            },
                             child: const Text('Batal'),
-                            onPressed: () {
-                              Navigator.of(dialogContext).pop(); // Tutup dialog
-                            },
                           ),
-                          TextButton(
-                            child: const Text('Hapus', style: TextStyle(color: AppColors.primaryColor)),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                             onPressed: () {
-                              // Panggil notifier untuk menghapus
                               ref.read(ulokFormProvider.notifier).deleteDraft(draft.localId);
-                              Navigator.of(dialogContext).pop(); // Tutup dialog
+                              Navigator.of(dialogContext).pop(); 
                             },
+                            child: const Text('Hapus'),
                           ),
                         ],
                       );
