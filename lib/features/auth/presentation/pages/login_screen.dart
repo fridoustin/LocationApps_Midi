@@ -60,7 +60,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       body: Container(
         decoration: const BoxDecoration(
         image: DecorationImage(
@@ -266,7 +265,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
               // Footer tetap di bawah
               const Padding(
-                padding: EdgeInsets.only(bottom: 16),
+                padding: EdgeInsets.only(bottom: 8, top: 8),
                 child: Text(
                   'Prototype @2025 Location Team App',
                   style: TextStyle(color: Colors.white, fontSize: 14),
