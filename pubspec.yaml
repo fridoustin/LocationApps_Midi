@@ -112,6 +112,7 @@ flutter:
     - assets/icons/no_connection.svg
     - assets/icons/under_maintenance.svg
     - assets/icons/time.svg
+    - assets/pic/bg_2.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
