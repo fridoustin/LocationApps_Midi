@@ -22,10 +22,9 @@ class DonutChartCard extends StatelessWidget {
         title: '${percentage.toStringAsFixed(0)}%',
         radius: 40,
         titleStyle: const TextStyle(
-            fontSize: 14, // <-- Atur ukuran font di sini
-            fontWeight: FontWeight.bold, 
-            color: Colors.white
-        ),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white),
       );
     }
 
@@ -38,36 +37,47 @@ class DonutChartCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Ulok Statistics", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text("Ulok Statistics",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             Row(
               children: [
-                SizedBox(
-                  height: 180,
-                  width: 200,
-                  child: PieChart(
-                    PieChartData(
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 40, 
-                      sections: [
-                        makeSection(
-                            pendingCount.toDouble(), Color(0xFFD9D9D9), 'Pending'),
-                        makeSection(nokCount.toDouble(), AppColors.primaryColor, 'NOK'),
-                        makeSection(okCount.toDouble(), AppColors.successColor, 'OK'),
-                      ],
+                Expanded(
+                  flex: 2, // Memberi porsi ruang 2/3 untuk PieChart
+                  child: SizedBox(
+                    height: 180,
+                    child: PieChart(
+                      PieChartData(
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 40,
+                        sections: [
+                          makeSection(pendingCount.toDouble(),
+                              const Color(0xFFD9D9D9), 'Pending'),
+                          makeSection(nokCount.toDouble(),
+                              AppColors.primaryColor, 'NOK'),
+                          makeSection(okCount.toDouble(),
+                              AppColors.successColor, 'OK'),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: 16),
                 Expanded(
+                  flex: 1, 
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Indicator(color: Colors.grey, text: 'Pending ($pendingCount)'),
+                      _Indicator(
+                          color: Colors.grey, text: 'Pending ($pendingCount)'),
                       const SizedBox(height: 8),
-                      _Indicator(color: AppColors.primaryColor, text: 'Ulok NOK ($nokCount)'),
+                      _Indicator(
+                          color: AppColors.primaryColor,
+                          text: 'Ulok NOK ($nokCount)'),
                       const SizedBox(height: 8),
-                      _Indicator(color: AppColors.successColor, text: 'Ulok OK ($okCount)'),
+                      _Indicator(
+                          color: AppColors.successColor,
+                          text: 'Ulok OK ($okCount)'),
                     ],
                   ),
                 ),
@@ -91,7 +101,9 @@ class _Indicator extends StatelessWidget {
       children: [
         Container(width: 16, height: 16, color: color),
         const SizedBox(width: 8),
-        Text(text),
+        Expanded(
+          child: Text(text),
+        ),
       ],
     );
   }
