@@ -1,6 +1,3 @@
-
-import 'package:connectivity_plus/connectivity_plus.dart';
-
 import '../../data/datasource/auth_remote_datasource.dart';
 import '../../domain/entities/user.dart' as app;
 import '../../domain/repositories/auth_repository.dart';
@@ -31,15 +28,6 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signInWithEmailPassword(String email, String password) async {
     try {
       await _dataSource.signInWithEmailPassword(email, password);
-      final user = _dataSource.currentUser;
-      if (user == null) throw Exception('User tidak ditemukan setelah login.');
-
-      final bool isAllowed = await isUserAuthorized(user.id);
-
-      if (!isAllowed) {
-        await _dataSource.signOut();
-        throw Exception('Hanya Location Specialist yang dapat login.');
-      }
     } catch (e) {
       rethrow;
     }
@@ -57,19 +45,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> isUserAuthorized(String userId) async {
-    print("--- [DEBUG] MASUK isUserAuthorized ---");
-
-    final connectivity = await Connectivity().checkConnectivity();
-    print("--- [DEBUG] Hasil Cek Koneksi: $connectivity ---");
-
-    // --- PERBAIKAN UTAMA DI SINI ---
-    // Kita cek apakah list hasil koneksi mengandung '.none'
-    if (connectivity.contains(ConnectivityResult.none)) {
-      print("--- [DEBUG] OFFLINE, Seharusnya langsung return true.");
-      return true;
-    }
-
-    print("--- [DEBUG] ONLINE, Mencoba melakukan panggilan jaringan ke Supabase...");
     try {
       const allowedPositionId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
       final response = await _dataSource.client
@@ -79,12 +54,20 @@ class AuthRepositoryImpl implements AuthRepository {
           .single();
       
       final userPositionId = response['position_id'];
-      print("--- [DEBUG] Panggilan jaringan berhasil, userPositionId: $userPositionId");
-      return userPositionId == allowedPositionId;
+      final isAllowed = userPositionId == allowedPositionId;
+      return isAllowed;
     } catch (e) {
-      print("--- [DEBUG] Terjadi ERROR di dalam blok try-catch saat online.");
-      print('Gagal melakukan pengecekan otorisasi: $e');
       return false;
     }
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) {
+    return _dataSource.sendPasswordResetEmail(email);
+  }
+
+  @override
+  Future<void> updateUserPassword(String newPassword) {
+    return _dataSource.updateUserPassword(newPassword);
   }
 }

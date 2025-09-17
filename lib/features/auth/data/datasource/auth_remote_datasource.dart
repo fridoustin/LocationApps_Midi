@@ -50,4 +50,29 @@ class AuthRemoteDataSource {
       throw Exception('Logout gagal: ${e.message}');
     }
   }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'io.supabase.midilocation://login-callback'
+      );
+    } on AuthException catch (e) {
+      throw Exception('Gagal mengirim email reset: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<void> updateUserPassword(String newPassword) async {
+    try {
+      await _client.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+    } on AuthException catch (e) {
+      throw Exception('Gagal memperbarui password: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
 }

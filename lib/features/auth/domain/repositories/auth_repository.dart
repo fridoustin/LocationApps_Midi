@@ -17,4 +17,10 @@ abstract class AuthRepository {
   Future<void> signOut();
 
   Future<bool> isUserAuthorized(String userId);
+
+  // Fungsi untuk mengirim email reset password
+  Future<void> sendPasswordResetEmail(String email);
+
+  // Fungsi untuk memperbarui password user
+  Future<void> updateUserPassword(String newPassword);
 }
