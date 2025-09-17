@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/utils/show_error_dialog.dart';
+import 'package:midi_location/core/widgets/main_layout.dart';
+import 'package:midi_location/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -18,7 +20,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _isLoading = false;
 
   Future<void> _login() async {
-    // Validasi sederhana
+
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email dan Password tidak boleh kosong')),
@@ -26,29 +28,32 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return;
     }
 
-    // Set state loading menjadi true
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // 'ref.read' digunakan untuk action/fungsi
       await ref
           .read(authRepositoryProvider)
           .signInWithEmailPassword(
             _emailController.text.trim(),
             _passwordController.text.trim(),
           );
-      // Jika berhasil, AuthGate akan otomatis mengarahkan ke halaman utama.
-    } catch (e) {
-      // Jika gagal, tangani error dan tampilkan pesan
+      ref.invalidate(authStateProvider);
       if (mounted) {
-        // Pastikan widget masih ada di tree
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => const MainLayout(currentIndex: 0),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
         final errorMessage = e.toString().replaceAll("Exception: ", "");
         showErrorDialog(context, errorMessage);
       }
     } finally {
-      // Set state loading kembali ke false setelah selesai (baik berhasil maupun gagal)
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -216,7 +221,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                               ),
 
-                              const SizedBox(height: 30),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                                      );
+                                    },
+                                    child: const Text(
+                                      'Lupa Password?',
+                                      style: TextStyle(
+                                        color: Color(0xFFD32F2F),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 10),
 
                               // Log In button
                               SizedBox(
