@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_list_skeleton.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 
 class RecentKpltView extends ConsumerWidget {
   const RecentKpltView({super.key});
@@ -15,6 +17,7 @@ class RecentKpltView extends ConsumerWidget {
 
     return RefreshIndicator(
       color: AppColors.primaryColor,
+      backgroundColor: Colors.white,
       onRefresh: () async {
         ref.invalidate(kpltNeedInputProvider);
         ref.invalidate(kpltInProgressProvider);
@@ -45,10 +48,47 @@ class RecentKpltView extends ConsumerWidget {
                 else
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: KpltCard(kplt: list[index]),
-                      ),
+                      (context, index) {
+                        final kpltItem = list[index];
+                        return GestureDetector(
+                          onTap: () {
+                            final ulokDataForForm = UsulanLokasi(
+                              id: kpltItem.ulokId,
+                              namaLokasi: kpltItem.namaLokasi,
+                              alamat: kpltItem.alamat,
+                              kecamatan: kpltItem.kecamatan,
+                              desa_kelurahan: kpltItem.desa_kelurahan,
+                              kabupaten: kpltItem.kabupaten,
+                              provinsi: kpltItem.provinsi,
+                              status: kpltItem.status,
+                              tanggal: kpltItem.tanggal,
+                              latLong: kpltItem.latLong,
+                              formatStore: kpltItem.formatStore,
+                              bentukObjek: kpltItem.bentukObjek,
+                              alasHak: kpltItem.alasHak,
+                              jumlahLantai: kpltItem.jumlahLantai,
+                              lebarDepan: kpltItem.lebarDepan,
+                              panjang: kpltItem.panjang,
+                              luas: kpltItem.luas,
+                              hargaSewa: kpltItem.hargaSewa,
+                              namaPemilik: kpltItem.namaPemilik,
+                              kontakPemilik: kpltItem.kontakPemilik,
+                            );
+
+                            // Panggil Navigasi
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => KpltFormPage(ulok: ulokDataForForm),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: KpltCard(kplt: kpltItem),
+                          ),
+                        );
+                      },
                       childCount: list.length,
                     ),
                   ),
@@ -120,7 +160,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Icon(icon, color: iconColor, size: 20),
         const SizedBox(width: 8),
-        Expanded( // <-- TAMBAHAN: Agar judul mendorong counter ke kanan
+        Expanded( 
           child: Text(
             title,
             style: const TextStyle(
