@@ -16,7 +16,7 @@ class KpltRepositoryImpl implements KpltRepository {
       kecamatan: map['kecamatan'],
       kabupaten: map['kabupaten'],
       provinsi: map['provinsi'],
-      status: map['approval_status'],
+      status: map['kplt_approval'],
       tanggal: DateTime.parse(map['created_at']),
     );
   }

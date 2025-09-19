@@ -11,9 +11,9 @@ class KpltRemoteDatasource {
 
     var request = client
         .from('kplt')
-        .select('id, ulok_id, created_at, approval_status, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
+        .select('id, ulok_id, created_at, kplt_approval, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
         .eq('ulok.users_id', userId)
-        .inFilter('approval_status', ['Need Input', 'Waiting for Forum', 'In Progress']);
+        .inFilter('kplt_approval', ['Waiting for Forum', 'In Progress']);
 
     if (query.isNotEmpty) {
       request = request.ilike('ulok.nama_ulok', '%$query%');
@@ -31,9 +31,9 @@ class KpltRemoteDatasource {
 
     var request = client
         .from('kplt')
-        .select('id, ulok_id, created_at, approval_status, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
+        .select('id, ulok_id, created_at, kplt_approval, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
         .eq('ulok.users_id', userId)
-        .inFilter('approval_status', ['OK', 'NOK']);
+        .inFilter('kplt_approval', ['OK', 'NOK']);
 
     if (query.isNotEmpty) {
       request = request.ilike('ulok.nama_ulok', '%$query%');
