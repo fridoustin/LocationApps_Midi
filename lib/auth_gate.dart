@@ -23,11 +23,12 @@ class AuthGate extends ConsumerWidget {
         ref.invalidate(userProfileProvider);
         ref.invalidate(dashboardStatsProvider);
         ref.invalidate(ulokListProvider);
-        ref.invalidate(kpltListProvider);
         ref.invalidate(notificationListProvider);
         ref.invalidate(timeRangeProvider);
         ref.invalidate(ulokTabProvider);
-        ref.invalidate(kpltTabProvider);
+        ref.invalidate(kpltNeedInputProvider);
+        ref.invalidate(kpltInProgressProvider);
+        ref.invalidate(kpltHistoryProvider);
       }
     });
 

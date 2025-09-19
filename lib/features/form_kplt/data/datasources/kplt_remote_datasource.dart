@@ -5,7 +5,7 @@ class KpltRemoteDatasource {
   KpltRemoteDatasource(this.client);
 
   // Query untuk mengambil data 'Recent'
-  Future<List<Map<String, dynamic>>> getRecentKplt(String query) async {
+  Future<List<Map<String, dynamic>>> getRecentKplt({String? query}) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw const AuthException('User not Authenticated');
 
@@ -15,7 +15,7 @@ class KpltRemoteDatasource {
         .eq('ulok.users_id', userId)
         .inFilter('kplt_approval', ['Waiting for Forum', 'In Progress']);
 
-    if (query.isNotEmpty) {
+    if (query != null && query.isNotEmpty) {
       request = request.ilike('ulok.nama_ulok', '%$query%');
     }
 
@@ -25,7 +25,7 @@ class KpltRemoteDatasource {
   }
 
   // Query untuk mengambil data 'History'
-  Future<List<Map<String, dynamic>>> getHistoryKplt(String query) async {
+  Future<List<Map<String, dynamic>>> getHistoryKplt({String? query}) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw const AuthException('User not Authenticated');
 
@@ -35,11 +35,29 @@ class KpltRemoteDatasource {
         .eq('ulok.users_id', userId)
         .inFilter('kplt_approval', ['OK', 'NOK']);
 
-    if (query.isNotEmpty) {
+    if (query != null && query.isNotEmpty) {
       request = request.ilike('ulok.nama_ulok', '%$query%');
     }
 
     final response = await request.order('created_at', ascending: false);
+    return response;
+  }
+
+  Future<List<Map<String, dynamic>>> getKpltNeedInput({String? query}) async {
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('User not Authenticated');
+
+    var request = client
+        .from('ulok') 
+        .select('*, kplt(ulok_id)')
+        .eq('users_id', userId)
+        .eq('approval_status', 'OK')
+        .isFilter('kplt', null);
+
+    if (query != null && query.isNotEmpty) {
+      request = request.ilike('nama_ulok', '%$query%');
+    }
+    final response = await request.order('updated_at', ascending: false);
     return response;
   }
 }
