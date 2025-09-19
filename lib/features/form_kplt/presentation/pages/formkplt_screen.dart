@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_kplt.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_list_skeleton.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/views/history_kplt_view.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/views/recent_kplt_view.dart';
 
 class FormKPLTPage extends ConsumerStatefulWidget {
   const FormKPLTPage({super.key});
@@ -16,19 +16,30 @@ class FormKPLTPage extends ConsumerStatefulWidget {
   ConsumerState<FormKPLTPage> createState() => _KPLTPageState();
 }
 
-class _KPLTPageState extends ConsumerState<FormKPLTPage> {
+class _KPLTPageState extends ConsumerState<FormKPLTPage> with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   Timer? _debounce;
+
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _searchController.text = ref.read(kpltSearchQueryProvider);
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        ref.read(kpltSearchQueryProvider.notifier).state = '';
+        _searchController.clear();
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose(); 
     _debounce?.cancel();
     super.dispose();
   }
@@ -42,22 +53,14 @@ class _KPLTPageState extends ConsumerState<FormKPLTPage> {
   
   @override
   Widget build(BuildContext context) {
-    final activeTab = ref.watch(kpltTabProvider);
-    final kpltListAsync = ref.watch(kpltListProvider);
-
     return Column(
         children: [
           Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: SlidingTabBarKplt(
-            activeTab: activeTab,
-            onTabChanged: (newTab) {
-              ref.read(kpltSearchQueryProvider.notifier).state = '';
-              _searchController.clear();
-              ref.read(kpltTabProvider.notifier).state = newTab;
-            },
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: SlidingTabBarKplt(
+              controller: _tabController,
+            ),
           ),
-        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
           child: Row(
@@ -97,30 +100,16 @@ class _KPLTPageState extends ConsumerState<FormKPLTPage> {
         ),
 
         Expanded(
-          child: kpltListAsync.when(
-            data: (kpltList) {
-              if (kpltList.isEmpty) {
-                return const Center(child: Text('Tidak ada data KPLT.'));
-              }
-              // RefreshIndicator untuk fitur pull-to-refresh
-              return RefreshIndicator(
-                color: AppColors.primaryColor,
-                backgroundColor: AppColors.cardColor,
-                onRefresh: () => ref.refresh(kpltListProvider.future),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: kpltList.length,
-                  itemBuilder: (context, index) {
-                    return KpltCard(kplt: kpltList[index]);
-                  },
-                ),
-              );
-            },
-            loading: () => const KpltListSkeleton(),
-            error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
+            // Gunakan TabBarView untuk menampilkan konten sesuai tab
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                RecentKpltView(),
+                HistoryKpltView(),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
     );
   }
 }

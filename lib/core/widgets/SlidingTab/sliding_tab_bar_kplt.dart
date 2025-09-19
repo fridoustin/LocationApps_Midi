@@ -1,27 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 
-class SlidingTabBarKplt extends StatelessWidget {
-  final KpltTab activeTab;
-  final Function(KpltTab) onTabChanged;
+class SlidingTabBarKplt extends StatefulWidget {
+  final TabController controller;
 
   const SlidingTabBarKplt({
     super.key,
-    required this.activeTab,
-    required this.onTabChanged,
+    required this.controller,
   });
+
+  @override
+  State<SlidingTabBarKplt> createState() => _SlidingTabBarKpltState();
+}
+
+class _SlidingTabBarKpltState extends State<SlidingTabBarKplt> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleTabChange);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTabChange);
+    super.dispose();
+  }
+
+  void _handleTabChange() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 52, // Tinggi kontainer
+      height: 52,
       decoration: BoxDecoration(
         color: AppColors.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             spreadRadius: 1,
             blurRadius: 3,
@@ -34,11 +51,10 @@ class SlidingTabBarKplt extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final tabWidth = constraints.maxWidth / 2;
-            final isRecentActive = activeTab == KpltTab.recent;
+            final isRecentActive = widget.controller.index == 0;
 
             return Stack(
               children: [
-                // LAPISAN BAWAH: Kotak Merah yang Bergeser
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 500),
                   curve: Curves.easeInOut,
@@ -52,14 +68,12 @@ class SlidingTabBarKplt extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // LAPISAN ATAS: Teks dan Area Tap
                 Row(
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => onTabChanged(KpltTab.recent),
-                        behavior: HitTestBehavior.opaque, // Agar area kosong bisa di-tap
+                        onTap: () => widget.controller.animateTo(0),
+                        behavior: HitTestBehavior.opaque,
                         child: Center(
                           child: AnimatedDefaultTextStyle(
                             duration: const Duration(milliseconds: 200),
@@ -74,7 +88,7 @@ class SlidingTabBarKplt extends StatelessWidget {
                     ),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => onTabChanged(KpltTab.history),
+                        onTap: () => widget.controller.animateTo(1),
                         behavior: HitTestBehavior.opaque,
                         child: Center(
                           child: AnimatedDefaultTextStyle(
