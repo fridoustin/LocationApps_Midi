@@ -10,10 +10,13 @@ class KpltListSkeleton extends StatelessWidget {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
-      child: Column(
-        children: List.generate(4, (index) { 
-          return const KpltCardSkeleton();
-        }),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: List.generate(5, (index) { // Tampilkan 5 skeleton
+            return const KpltCardSkeleton();
+          }),
+        ),
       ),
     );
   }
