@@ -10,11 +10,10 @@ class KpltListSkeleton extends StatelessWidget {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: 6,
-        itemBuilder: (context, index) => const KpltCardSkeleton(),
+      child: Column(
+        children: List.generate(4, (index) { 
+          return const KpltCardSkeleton();
+        }),
       ),
     );
   }
