@@ -16,22 +16,25 @@ final kpltRepositoryProvider = Provider<KpltRepository>((ref) {
 
 final kpltSearchQueryProvider = StateProvider<String>((ref) => '');
 
-// 2. Enum untuk melacak tab yang aktif
-enum KpltTab { recent, history }
-
-// 3. Provider untuk daftar data ULok, akan mengambil data berdasarkan tab yang aktif
-final kpltListProvider = FutureProvider<List<FormKPLT>>((ref) async {
+final kpltNeedInputProvider = FutureProvider.autoDispose<List<FormKPLT>>((ref) async {
   final repository = ref.watch(kpltRepositoryProvider);
-  final activeTab = ref.watch(kpltTabProvider);
-
   final searchQuery = ref.watch(kpltSearchQueryProvider);
-
-  if (activeTab == KpltTab.recent) {
-    return repository.getRecentKplt(searchQuery);
-  } else {
-    return repository.getHistoryKplt(searchQuery);
-  }
+  // Memanggil metode yang sesuai dari repository
+  return repository.getKpltNeedInput(searchQuery);
 });
 
-// 4. Provider untuk mengelola state tab yang sedang aktif
-final kpltTabProvider = StateProvider<KpltTab>((ref) => KpltTab.recent);
+// Provider untuk seksi "Sedang Proses" di tab Recent
+final kpltInProgressProvider = FutureProvider.autoDispose<List<FormKPLT>>((ref) async {
+  final repository = ref.watch(kpltRepositoryProvider);
+  final searchQuery = ref.watch(kpltSearchQueryProvider);
+  // Memanggil metode yang sesuai dari repository
+  return repository.getRecentKplt(searchQuery);
+});
+
+// Provider untuk data di tab History
+final kpltHistoryProvider = FutureProvider.autoDispose<List<FormKPLT>>((ref) async {
+  final repository = ref.watch(kpltRepositoryProvider);
+  final searchQuery = ref.watch(kpltSearchQueryProvider);
+  // Memanggil metode yang sesuai dari repository
+  return repository.getHistoryKplt(searchQuery);
+});
