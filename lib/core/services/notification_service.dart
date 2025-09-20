@@ -26,17 +26,29 @@ class NotificationService {
     // Konfigurasi untuk notifikasi lokal (saat aplikasi terbuka)
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
     
-    await _localNotifications.initialize(initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        if (response.payload != null && response.payload!.isNotEmpty) {
-          final Map<String, dynamic> data = jsonDecode(response.payload!);
-          _handleNavigation(data);
-        }
-      },
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
     );
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await _localNotifications.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      if (response.payload != null && response.payload!.isNotEmpty) {
+        final Map<String, dynamic> data = jsonDecode(response.payload!);
+        _handleNavigation(data);
+      }
+    },
+  );
     
     // Dengarkan jika token diperbarui (tetap di sini)
     _firebaseMessaging.onTokenRefresh.listen(_saveTokenToDatabase);
