@@ -12,6 +12,7 @@ class FormTextField extends StatelessWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final Widget? suffixIcon;
+  final ValueChanged<String>? onChanged;
 
   const FormTextField({
     super.key,
@@ -25,6 +26,7 @@ class FormTextField extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.suffixIcon,
+    this.onChanged
   });
 
   @override
@@ -59,6 +61,7 @@ class FormTextField extends StatelessWidget {
             maxLines: maxLines,
             readOnly: readOnly,
             onTap: onTap,
+            onChanged: onChanged,
             validator: validator ??
                 (value) {
                   if (isRequired && (value == null || value.isEmpty)) {

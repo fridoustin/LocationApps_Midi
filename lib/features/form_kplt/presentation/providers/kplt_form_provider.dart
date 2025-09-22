@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
+import 'package:midi_location/features/form_kplt/data/datasources/kplt_draft_manager.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
 import 'package:midi_location/features/form_kplt/domain/repositories/kplt_repository.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
@@ -121,13 +124,90 @@ class KpltFormState extends Equatable {
   
   @override
   List<Object?> get props => [status, errorMessage, ulokId, branchId, karakterLokasi, sosialEkonomi, peStatus, skorFpl, std, apc, spd, peRab, pdfFoto, countingKompetitor, pdfPembanding, pdfKks, excelFpl, excelPe, pdfFormUkur, videoTrafficSiang, videoTrafficMalam, video360Siang, video360Malam, petaCoverage];
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'status': status.name,
+      'ulokId': ulokId,
+      'branchId': branchId,
+      'karakterLokasi': karakterLokasi,
+      'sosialEkonomi': sosialEkonomi,
+      'peStatus': peStatus,
+      'skorFpl': skorFpl,
+      'std': std,
+      'apc': apc,
+      'spd': spd,
+      'peRab': peRab,
+      'pdfFotoPath': pdfFoto?.path,
+      'countingKompetitorPath': countingKompetitor?.path,
+      'pdfPembandingPath': pdfPembanding?.path,
+      'pdfKksPath': pdfKks?.path,
+      'excelFplPath': excelFpl?.path,
+      'excelPePath': excelPe?.path,
+      'pdfFormUkurPath': pdfFormUkur?.path,
+      'videoTrafficSiangPath': videoTrafficSiang?.path,
+      'videoTrafficMalamPath': videoTrafficMalam?.path,
+      'video360SiangPath': video360Siang?.path,
+      'video360MalamPath': video360Malam?.path,
+      'petaCoveragePath': petaCoverage?.path,
+    };
+  }
+
+  // Membuat state dari Map (yang didapat dari JSON)
+  factory KpltFormState.fromJson(Map<String, dynamic> json) {
+    return KpltFormState(
+      status: KpltFormStatus.initial,
+      ulokId: json['ulokId'],
+      branchId: json['branchId'],
+      karakterLokasi: json['karakterLokasi'],
+      sosialEkonomi: json['sosialEkonomi'],
+      peStatus: json['peStatus'],
+      skorFpl: json['skorFpl'],
+      std: json['std'],
+      apc: json['apc'],
+      spd: json['spd'],
+      peRab: json['peRab'],
+      pdfFoto: json['pdfFotoPath'] != null ? File(json['pdfFotoPath']) : null,
+      countingKompetitor: json['countingKompetitorPath'] != null ? File(json['countingKompetitorPath']) : null,
+      pdfPembanding: json['pdfPembandingPath'] != null ? File(json['pdfPembandingPath']) : null,
+      pdfKks: json['pdfKksPath'] != null ? File(json['pdfKksPath']) : null,
+      excelFpl: json['excelFplPath'] != null ? File(json['excelFplPath']) : null,
+      excelPe: json['excelPePath'] != null ? File(json['excelPePath']) : null,
+      pdfFormUkur: json['pdfFormUkurPath'] != null ? File(json['pdfFormUkurPath']) : null,
+      videoTrafficSiang: json['videoTrafficSiangPath'] != null ? File(json['videoTrafficSiangPath']) : null,
+      videoTrafficMalam: json['videoTrafficMalamPath'] != null ? File(json['videoTrafficMalamPath']) : null,
+      video360Siang: json['video360SiangPath'] != null ? File(json['video360SiangPath']) : null,
+      video360Malam: json['video360MalamPath'] != null ? File(json['video360MalamPath']) : null,
+      petaCoverage: json['petaCoveragePath'] != null ? File(json['petaCoveragePath']) : null,
+    );
+  }
 }
+
+final kpltDraftManagerProvider = Provider((_) => KpltDraftManager());
 
 class KpltFormNotifier extends StateNotifier<KpltFormState> {
   final KpltRepository _repository;
+  final KpltDraftManager _draftManager; 
+  final String _ulokId;
+  final Ref _ref;
 
-  KpltFormNotifier(this._repository, {required String ulokId}) 
-      : super(KpltFormState.initial(ulokId: ulokId));
+  KpltFormNotifier(this._repository, this._draftManager, this._ref,{required String ulokId})
+      : _ulokId = ulokId,
+        super(KpltFormState.initial(ulokId: ulokId)) {
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    final profile = await _ref.read(userProfileProvider.future);
+    final branchId = profile?.branchId;
+    final draft = await _draftManager.loadDraft(_ulokId);
+
+    if (draft != null) {
+      state = draft.copyWith(branchId: draft.branchId ?? branchId);
+    } else {
+      state = state.copyWith(branchId: branchId);
+    }
+  }
 
   void onBranchChanged(String value) {
     state = state.copyWith(branchId: value);
@@ -206,8 +286,20 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
     }
   }
 
+  Future<bool> saveDraft() async {
+    try {
+      await _draftManager.saveDraft(state);
+      return true; // Kembalikan true jika sukses
+    } catch (e) {
+      // Handle error jika perlu
+      return false; // Kembalikan false jika gagal
+    }
+  }
+
   // --- Method utama untuk submit form ---
   Future<void> submitForm() async {
+    debugPrint("--- CHECKING STATE ON SUBMIT ---");
+    debugPrint(state.toJson().toString());
     final s = state; 
     if (s.branchId == null || s.karakterLokasi == null || s.sosialEkonomi == null ||
         s.peStatus == null || s.skorFpl == null || s.std == null || s.apc == null ||
@@ -252,16 +344,17 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
       await _repository.submitKplt(formData);
       state = state.copyWith(status: KpltFormStatus.success);
 
+      await _draftManager.deleteDraft(_ulokId);
+
     } catch (e) {
       state = state.copyWith(status: KpltFormStatus.error, errorMessage: e.toString());
     }
   }
 }
 
-// 4. Provider yang akan digunakan oleh UI
-// Kita gunakan .family karena kita perlu memberikan ulokId saat provider dibuat
 final kpltFormProvider = StateNotifierProvider.autoDispose
     .family<KpltFormNotifier, KpltFormState, String>((ref, ulokId) {
   final repository = ref.watch(kpltRepositoryProvider);
-  return KpltFormNotifier(repository, ulokId: ulokId);
+  final draftManager = ref.watch(kpltDraftManagerProvider);
+  return KpltFormNotifier(repository, draftManager, ref, ulokId: ulokId);
 });
