@@ -3,6 +3,8 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:midi_location/core/constants/color.dart';
 
 class FileUploadWidget extends StatelessWidget {
   final String label;
@@ -40,7 +42,12 @@ class FileUploadWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.upload_file_rounded, color: Colors.grey[700]),
+              SvgPicture.asset(
+                'assets/icons/upload.svg',
+                width: 20,
+                height: 20,
+                colorFilter: const ColorFilter.mode(AppColors.primaryColor, BlendMode.srcIn),
+              ),
             ],
           ),
         ),
