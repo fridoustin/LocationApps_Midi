@@ -1,9 +1,12 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/custom_success_dialog.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_form_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
@@ -43,6 +46,44 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     super.dispose();
   }
 
+  void _showDraftSavedPopup() {
+  showDialog(
+    context: context,
+    builder: (context) => const CustomSuccessDialog(
+      title: "Draft anda tersimpan!",
+      iconPath: "assets/icons/draft.svg",
+    ),
+  );
+
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if(Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(); // Tutup dialog
+      }
+      if(Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(); 
+      }
+    });
+  }
+
+  Future<void> _showSubmitSuccessAndNavigateBack() async {
+  
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const CustomSuccessDialog(
+          title: "Data Berhasil Disubmit!",
+          iconPath: "assets/icons/success.svg", 
+        );
+      },
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (mounted) Navigator.of(context).pop(); 
+    if (mounted) Navigator.of(context).pop(); 
+  }
+
   @override
   Widget build(BuildContext context) {
     final formattedDate = DateFormat("dd MMMM yyyy").format(widget.ulok.tanggal);
@@ -64,17 +105,38 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     final formNotifier = ref.read(formProvider.notifier);
 
     // Listener untuk menampilkan Snackbar dan navigasi
-    ref.listen(formProvider, (previous, next) {
-      if (next.status == KpltFormStatus.success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Data KPLT berhasil disimpan!'),
-            backgroundColor: AppColors.successColor));
-        int count = 0;
-        Navigator.of(context).popUntil((_) => count++ >= 2);
-      } else if (next.status == KpltFormStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    ref.listen<KpltFormState>(formProvider, (previous, next) {
+      final prevStatus = previous?.status;
+      final nextStatus = next.status;
+
+      if (prevStatus != nextStatus) {
+        if (nextStatus == KpltFormStatus.success) {
+          _showSubmitSuccessAndNavigateBack(); 
+        } else if (nextStatus == KpltFormStatus.error) {
+          if (ModalRoute.of(context)?.isCurrent != true) {
+            Navigator.of(context).pop();
+          }
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Error: ${next.errorMessage}'),
-            backgroundColor: AppColors.primaryColor));
+            backgroundColor: AppColors.primaryColor,
+          ));
+        }
+      }
+
+      if (previous?.skorFpl != next.skorFpl) {
+        _skorFplController.text = next.skorFpl?.toString() ?? '';
+      }
+      if (previous?.std != next.std) {
+        _stdController.text = next.std?.toString() ?? '';
+      }
+      if (previous?.apc != next.apc) {
+        _apcController.text = next.apc?.toString() ?? '';
+      }
+      if (previous?.spd != next.spd) {
+        _spdController.text = next.spd?.toString() ?? '';
+      }
+      if (previous?.peRab != next.peRab) {
+        _peRabController.text = next.peRab?.toString() ?? '';
       }
     });
 
@@ -181,19 +243,19 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
               ],
             ),
             const Divider(thickness: 1, height: 32),
-            FormCardSection( // Menggunakan FormCardSection seperti di ULOK
+            FormCardSection( 
               title: "Analisa & FPL",
-              iconAsset: "assets/icons/analytics.svg",
+              iconAsset: "assets/icons/analisis.svg",
               children: [
                 PopupButtonForm(
                   label: "Karakter Lokasi",
-                  optionsProvider: dropdownOptionsProvider('karakter'), // Kirim providernya
+                  optionsProvider: dropdownOptionsProvider('karakter'), 
                   selectedValue: formState.karakterLokasi,
                   onSelected: (value) => formNotifier.onKarakterLokasiChanged(value!),
                 ),
                 PopupButtonForm(
                   label: "Sosial Ekonomi",
-                  optionsProvider: dropdownOptionsProvider('social'), // Kirim providernya
+                  optionsProvider: dropdownOptionsProvider('social'), 
                   selectedValue: formState.sosialEkonomi,
                   onSelected: (value) => formNotifier.onSosialEkonomiChanged(value!),
                 ),
@@ -201,24 +263,26 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                     controller: _skorFplController,
                     label: "Skor FPL",
                     keyboardType: TextInputType.number,
-                    onTap: () => formNotifier.onSkorFplChanged(_skorFplController.text),
+                    onChanged: (value) => formNotifier.onSkorFplChanged(value),
                 ),
                 FormTextField(
                     controller: _stdController,
                     label: "STD",
                     keyboardType: TextInputType.number,
-                    onTap: () => formNotifier.onStdChanged(_stdController.text),
+                    onChanged: (value) => formNotifier.onStdChanged(value),
                 ),
                 FormTextField(
                     controller: _apcController,
                     label: "APC",
                     keyboardType: TextInputType.number,
-                    onTap: () => formNotifier.onApcChanged(_apcController.text)),
+                    onChanged: (value) => formNotifier.onApcChanged(value)
+                ),
                 FormTextField(
                     controller: _spdController,
                     label: "SPD",
                     keyboardType: TextInputType.number,
-                    onTap: () => formNotifier.onSpdChanged(_spdController.text)),
+                    onChanged: (value) => formNotifier.onSpdChanged(value)
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -228,7 +292,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
               children: [
                 PopupButtonForm(
                   label: "PE Status",
-                  optionsProvider: dropdownOptionsProvider('PE_Status'), // Kirim providernya
+                  optionsProvider: dropdownOptionsProvider('PE_Status'), 
                   selectedValue: formState.peStatus,
                   onSelected: (value) => formNotifier.onPeStatusChanged(value!),
                 ),
@@ -236,13 +300,14 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                     controller: _peRabController,
                     label: "PE RAB",
                     keyboardType: TextInputType.number,
-                    onTap: () => formNotifier.onPeRabChanged(_peRabController.text)),
+                    onChanged: (value) => formNotifier.onPeRabChanged(value)
+                ),
               ],
             ),
             const SizedBox(height: 16),
             FormCardSection(
                 title: "Upload Dokumen",
-                iconAsset: "assets/icons/upload.svg", // Ganti dengan ikon yang sesuai
+                iconAsset: "assets/icons/lampiran.svg", 
                 children: [
                   FileUploadWidget(
                       label: "PDF Foto",
@@ -310,10 +375,14 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
-                    // onPressed: formState.status == KpltFormStatus.loading
-                    //     ? null
-                    //     : () => formNotifier.saveDraft(),
+                    onPressed: formState.status == KpltFormStatus.loading
+                      ? null
+                      : () async { // Jadikan async
+                          final success = await formNotifier.saveDraft();
+                          if (success && mounted) {
+                            _showDraftSavedPopup();
+                          }
+                        },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.cardColor,
                       foregroundColor: AppColors.primaryColor,
@@ -329,7 +398,10 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                   child: ElevatedButton(
                     onPressed: formState.status == KpltFormStatus.loading
                         ? null
-                        : () => formNotifier.submitForm(),
+                        : () {
+                          debugPrint("--- SUBMIT BUTTON PRESSED ---");
+                          formNotifier.submitForm();
+                        },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
                       foregroundColor: Colors.white,
