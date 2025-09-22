@@ -24,7 +24,7 @@ class KpltRepositoryImpl implements KpltRepository {
       combinedLatLong = '$lat,$lon';
     }
     if (ulokData == null) {
-      return FormKPLT(id: map['id'] ?? '', ulokId: map['ulok_id'] ?? '', namaLokasi: 'Data Ulok Hilang', alamat: '', kecamatan: '', kabupaten: '', provinsi: '', desa_kelurahan: '', status: map['kplt_approval'] ?? 'Error', tanggal: DateTime.now());
+      return FormKPLT(id: map['id'] ?? '', ulokId: map['ulok_id'] ?? '', namaLokasi: 'Data Ulok Hilang', alamat: '', kecamatan: '', kabupaten: '', provinsi: '', desaKelurahan: '', status: map['kplt_approval'] ?? 'Error', tanggal: DateTime.now());
     }
     return FormKPLT(
       id: map['id'], 
@@ -34,7 +34,7 @@ class KpltRepositoryImpl implements KpltRepository {
       kecamatan: ulokData['kecamatan'],
       kabupaten: ulokData['kabupaten'],
       provinsi: ulokData['provinsi'],
-      desa_kelurahan: ulokData['desa_kelurahan'],
+      desaKelurahan: ulokData['desa_kelurahan'],
       status: map['kplt_approval'], 
       tanggal: DateTime.parse(map['created_at']),
       latLong: combinedLatLong,
@@ -67,7 +67,7 @@ class KpltRepositoryImpl implements KpltRepository {
       kecamatan: map['kecamatan'],
       kabupaten: map['kabupaten'],
       provinsi: map['provinsi'],
-      desa_kelurahan: map['desa_kelurahan'],
+      desaKelurahan: map['desa_kelurahan'],
       status: 'Need Input', 
       tanggal: DateTime.parse(map['updated_at']), 
       latLong: combinedLatLong,

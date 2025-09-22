@@ -40,7 +40,7 @@ class UlokDetailPage extends StatelessWidget {
     
     final fullAddress = [
       ulok.alamat,
-      ulok.desa_kelurahan,
+      ulok.desaKelurahan,
       ulok.kecamatan.isNotEmpty ? 'Kec. ${ulok.kecamatan}' : '',
       ulok.kabupaten,
       ulok.provinsi,

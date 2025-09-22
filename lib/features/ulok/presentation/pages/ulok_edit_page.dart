@@ -81,7 +81,7 @@ class _UlokEditPageState extends ConsumerState<UlokEditPage> {
       ref.read(selectedDistrictProvider.notifier).state = initialDistrict;
 
       final villages = await ref.read(villagesProvider.future);
-      final initialVillage = villages.firstWhere((v) => v.name.toLowerCase() == widget.ulok.desa_kelurahan.toLowerCase());
+      final initialVillage = villages.firstWhere((v) => v.name.toLowerCase() == widget.ulok.desaKelurahan.toLowerCase());
       
       if (mounted) {
         setState(() {

@@ -48,7 +48,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
         double.tryParse(latLngParts[1]) ?? 0.0);
     final fullAddress = [
       widget.ulok.alamat,
-      widget.ulok.desa_kelurahan,
+      widget.ulok.desaKelurahan,
       widget.ulok.kecamatan.isNotEmpty ? 'Kec. ${widget.ulok.kecamatan}' : '',
       widget.ulok.kabupaten,
       widget.ulok.provinsi,

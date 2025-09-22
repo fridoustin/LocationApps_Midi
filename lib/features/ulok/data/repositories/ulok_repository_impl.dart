@@ -11,7 +11,7 @@ class UlokRepositoryImpl implements UlokRepository {
       id: map['id'],
       namaLokasi: map['nama_ulok'],
       alamat: map['alamat'],
-      desa_kelurahan: map['desa_kelurahan'],
+      desaKelurahan: map['desa_kelurahan'],
       kecamatan: map['kecamatan'],
       kabupaten: map['kabupaten'],
       provinsi: map['provinsi'],

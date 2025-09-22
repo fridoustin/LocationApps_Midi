@@ -4,7 +4,7 @@ class FormKPLT {
   final String namaLokasi;
   final String alamat;
   final String kecamatan;
-  final String desa_kelurahan;
+  final String desaKelurahan;
   final String kabupaten;
   final String provinsi;
   final String status;
@@ -27,7 +27,7 @@ class FormKPLT {
     required this.namaLokasi,
     required this.alamat,
     required this.kecamatan,
-    required this.desa_kelurahan,
+    required this.desaKelurahan,
     required this.kabupaten,
     required this.provinsi,
     required this.status,

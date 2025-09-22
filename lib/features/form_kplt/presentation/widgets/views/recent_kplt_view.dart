@@ -57,7 +57,7 @@ class RecentKpltView extends ConsumerWidget {
                               namaLokasi: kpltItem.namaLokasi,
                               alamat: kpltItem.alamat,
                               kecamatan: kpltItem.kecamatan,
-                              desa_kelurahan: kpltItem.desa_kelurahan,
+                              desaKelurahan: kpltItem.desaKelurahan,
                               kabupaten: kpltItem.kabupaten,
                               provinsi: kpltItem.provinsi,
                               status: kpltItem.status,
