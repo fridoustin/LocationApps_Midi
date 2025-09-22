@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/custom_success_dialog.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
@@ -101,6 +102,24 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     super.dispose();
   }
 
+  Future<void> _showDraftSavedAndNavigateBack() async {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return const CustomSuccessDialog(
+        title: "Draft anda tersimpan!",
+        iconPath: "assets/icons/draft.svg", 
+      );
+    },
+  );
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _openMapDialog() async {
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied ||
@@ -182,16 +201,19 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     );
   }
 
-  void _onSaveDraft() {
+  void _onSaveDraft() async { // Ubah menjadi async
     final formData = _collectFormData();
-    ref.read(ulokFormProvider.notifier).saveDraft(formData).then((success) {
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Berhasil disimpan di Draft!'), backgroundColor: Colors.green),
-        );
-        Navigator.of(context).pop();
-      }
-    });
+    final success = await ref.read(ulokFormProvider.notifier).saveDraft(formData);
+
+    if (success && mounted) {
+      // Panggil helper pop-up yang baru kita buat
+      _showDraftSavedAndNavigateBack();
+    } else if (mounted) {
+      // Tambahkan feedback jika gagal menyimpan draft
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan draft.'), backgroundColor: AppColors.errorColor),
+      );
+    }
   }
 
   void _onSubmit() {
