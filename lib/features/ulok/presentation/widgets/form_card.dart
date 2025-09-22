@@ -29,8 +29,8 @@ class FormCardSection extends StatelessWidget {
               children: [
                 SvgPicture.asset(
                   iconAsset,
-                  width: 24,
-                  height: 24,
+                  width: 20,
+                  height: 20,
                   colorFilter: const ColorFilter.mode(AppColors.primaryColor, BlendMode.srcIn),
                 ),
                 const SizedBox(width: 12),
@@ -43,7 +43,7 @@ class FormCardSection extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             ...children,
           ],
         ),
