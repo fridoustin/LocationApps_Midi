@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
 import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,7 +16,7 @@ class KpltRemoteDatasource {
 
     var request = client
         .from('kplt')
-        .select('id, ulok_id, created_at, kplt_approval, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
+        .select('*, ulok!inner(*)') 
         .eq('ulok.users_id', userId)
         .inFilter('kplt_approval', ['Waiting for Forum', 'In Progress']);
 
@@ -35,7 +36,7 @@ class KpltRemoteDatasource {
 
     var request = client
         .from('kplt')
-        .select('id, ulok_id, created_at, kplt_approval, ulok!inner(id, nama_ulok, alamat, kecamatan, kabupaten, provinsi)')
+        .select('*, ulok!inner(*)')
         .eq('ulok.users_id', userId)
         .inFilter('kplt_approval', ['OK', 'NOK']);
 
@@ -47,7 +48,6 @@ class KpltRemoteDatasource {
     return response;
   }
 
-  // Fungsi untuk mengambil data ULOK yang butuh input KPLT
   Future<List<Map<String, dynamic>>> getKpltNeedInput({String? query}) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw const AuthException('User not Authenticated');
@@ -72,7 +72,6 @@ class KpltRemoteDatasource {
     if (userId == null) throw const AuthException('User not Authenticated');
 
     try {
-      // Untuk menyimpan URL file yang sudah di-upload
       final Map<String, File> filesToUpload = {
         'pdf_foto': formData.pdfFoto,
         'pdf_pembanding': formData.pdfPembanding,
@@ -88,34 +87,40 @@ class KpltRemoteDatasource {
         'peta_coverage': formData.petaCoverage,
       };
 
-      final Map<String, String> uploadedFileUrls = {};
+      final List<Future> uploadTasks = [];
+      final Map<String, String> filePaths = {}; 
 
-      // Looping untuk upload setiap file
       for (var entry in filesToUpload.entries) {
+        
         final columnName = entry.key;
         final file = entry.value;
-        
-        // Membuat nama file yang unik untuk menghindari tumpang tindih
+
         final fileExtension = file.path.split('.').last;
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$columnName.$fileExtension';
         final filePath = '$userId/${formData.ulokId}/$fileName';
 
-        // Meng-upload file ke Supabase Storage
-        await client.storage.from('kplt-files').upload(
+        debugPrint("Uploading file to: $filePath");
+        
+        filePaths[columnName] = filePath; // Simpan path
+
+        uploadTasks.add(client.storage.from('kplt-files').upload(
               filePath,
               file,
               fileOptions: FileOptions(
-                contentType: lookupMimeType(file.path), // Mendeteksi tipe konten secara otomatis
+                contentType: lookupMimeType(file.path),
                 upsert: false,
               ),
-            );
-
-        // Mendapatkan URL publik dari file yang baru di-upload
-        final publicUrl = client.storage.from('kplt-files').getPublicUrl(filePath);
-        uploadedFileUrls[columnName] = publicUrl;
+            ));
       }
 
-      // Untuk menyimpan data form KPLT ke dalam tabel 'kplt'
+      await Future.wait(uploadTasks);
+
+      final Map<String, String> uploadedFileUrls = {};
+      for (var entry in filePaths.entries) {
+        final publicUrl = client.storage.from('kplt-files').getPublicUrl(entry.value);
+        uploadedFileUrls[entry.key] = publicUrl;
+      }
+
       final Map<String, dynamic> kpltData = {
         'ulok_id': formData.ulokId,
         'branch_id': formData.branchId,
@@ -129,10 +134,10 @@ class KpltRemoteDatasource {
         'pe_rab': formData.peRab,
         ...uploadedFileUrls,
         'progress_toko': 'Running',
-        'kplt_': 'In Progress', 
+        'kplt_approval': 'In Progress',
+        'is_active': true,
       };
 
-      // --- Langkah 3: Masukkan data ke tabel 'kplt' ---
       await client.from('kplt').insert(kpltData);
 
     } catch (e) {
