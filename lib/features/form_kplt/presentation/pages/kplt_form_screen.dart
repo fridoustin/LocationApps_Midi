@@ -6,11 +6,15 @@ import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_form_provider.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/form_helpers.dart';
+import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/file_upload.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/dropdown.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/form_card.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/map_detail.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/text_field.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_detail_section.dart';
 
 class KpltFormPage extends ConsumerStatefulWidget {
@@ -177,64 +181,68 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
               ],
             ),
             const Divider(thickness: 1, height: 32),
-            DetailSectionWidget(
-                title: "Analisa & FPL",
-                iconPath: "assets/icons/analytics.svg", // Ganti dengan ikon yang sesuai
-                children: [
-                  CustomDropdownFormField(
-                      label: "Karakter Lokasi",
-                      items: const ['Padat', 'Sedang', 'Sepi'], // Contoh
-                      value: formState.karakterLokasi,
-                      onChanged: (value) =>
-                          formNotifier.onKarakterLokasiChanged(value!)),
-                  CustomDropdownFormField(
-                      label: "Sosial Ekonomi",
-                      items: const ['A', 'B', 'C'], // Contoh
-                      value: formState.sosialEkonomi,
-                      onChanged: (value) =>
-                          formNotifier.onSosialEkonomiChanged(value!)),
-                  CustomNumberTextFormField(
-                      controller: _skorFplController,
-                      label: "Skor FPL",
-                      onChanged: (value) =>
-                          formNotifier.onSkorFplChanged(value)),
-                  CustomNumberTextFormField(
-                      controller: _stdController,
-                      label: "STD",
-                      onChanged: (value) => 
-                          formNotifier.onStdChanged(value)),
-                  CustomNumberTextFormField(
-                      controller: _apcController,
-                      label: "APC",
-                      onChanged: (value) => 
-                          formNotifier.onApcChanged(value)),
-                  CustomNumberTextFormField(
-                      controller: _spdController,
-                      label: "SPD",
-                      onChanged: (value) =>
-                          formNotifier.onSpdChanged(value))
-                ]),
+            FormCardSection( // Menggunakan FormCardSection seperti di ULOK
+              title: "Analisa & FPL",
+              iconAsset: "assets/icons/analytics.svg",
+              children: [
+                PopupButtonForm(
+                  label: "Karakter Lokasi",
+                  optionsProvider: dropdownOptionsProvider('karakter'), // Kirim providernya
+                  selectedValue: formState.karakterLokasi,
+                  onSelected: (value) => formNotifier.onKarakterLokasiChanged(value!),
+                ),
+                PopupButtonForm(
+                  label: "Sosial Ekonomi",
+                  optionsProvider: dropdownOptionsProvider('social'), // Kirim providernya
+                  selectedValue: formState.sosialEkonomi,
+                  onSelected: (value) => formNotifier.onSosialEkonomiChanged(value!),
+                ),
+                FormTextField(
+                    controller: _skorFplController,
+                    label: "Skor FPL",
+                    keyboardType: TextInputType.number,
+                    onTap: () => formNotifier.onSkorFplChanged(_skorFplController.text),
+                ),
+                FormTextField(
+                    controller: _stdController,
+                    label: "STD",
+                    keyboardType: TextInputType.number,
+                    onTap: () => formNotifier.onStdChanged(_stdController.text),
+                ),
+                FormTextField(
+                    controller: _apcController,
+                    label: "APC",
+                    keyboardType: TextInputType.number,
+                    onTap: () => formNotifier.onApcChanged(_apcController.text)),
+                FormTextField(
+                    controller: _spdController,
+                    label: "SPD",
+                    keyboardType: TextInputType.number,
+                    onTap: () => formNotifier.onSpdChanged(_spdController.text)),
+              ],
+            ),
             const SizedBox(height: 16),
-            DetailSectionWidget(
-                title: "Data PE",
-                iconPath: "assets/icons/data_store.svg", // Ganti dengan ikon yang sesuai
-                children: [
-                  CustomDropdownFormField(
-                      label: "PE Status",
-                      items: const ['Layak', 'Tidak Layak'], // Contoh
-                      value: formState.peStatus,
-                      onChanged: (value) =>
-                          formNotifier.onPeStatusChanged(value!)),
-                  CustomNumberTextFormField(
-                      controller: _peRabController,
-                      label: "PE RAB",
-                      onChanged: (value) =>
-                          formNotifier.onPeRabChanged(value))
-                ]),
+            FormCardSection(
+              title: "Data PE",
+              iconAsset: "assets/icons/data_store.svg",
+              children: [
+                PopupButtonForm(
+                  label: "PE Status",
+                  optionsProvider: dropdownOptionsProvider('PE_Status'), // Kirim providernya
+                  selectedValue: formState.peStatus,
+                  onSelected: (value) => formNotifier.onPeStatusChanged(value!),
+                ),
+                FormTextField(
+                    controller: _peRabController,
+                    label: "PE RAB",
+                    keyboardType: TextInputType.number,
+                    onTap: () => formNotifier.onPeRabChanged(_peRabController.text)),
+              ],
+            ),
             const SizedBox(height: 16),
-            DetailSectionWidget(
+            FormCardSection(
                 title: "Upload Dokumen",
-                iconPath: "assets/icons/upload.svg", // Ganti dengan ikon yang sesuai
+                iconAsset: "assets/icons/upload.svg", // Ganti dengan ikon yang sesuai
                 children: [
                   FileUploadWidget(
                       label: "PDF Foto",
@@ -297,27 +305,45 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                       onTap: () =>
                           pickFile(formNotifier.onFilePicked, 'petaCoverage'))
                 ]),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: formState.status == KpltFormStatus.loading
-                    ? null
-                    : () => formNotifier.submitForm(),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12))),
-                child: formState.status == KpltFormStatus.loading
-                    ? const CircularProgressIndicator(
-                        strokeWidth: 3, color: Colors.white)
-                    : const Text("Simpan Data KPLT",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            )
+            const SizedBox(height: 30),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    // onPressed: formState.status == KpltFormStatus.loading
+                    //     ? null
+                    //     : () => formNotifier.saveDraft(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cardColor,
+                      foregroundColor: AppColors.primaryColor,
+                      side: const BorderSide(color: AppColors.primaryColor),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Simpan Draft'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: formState.status == KpltFormStatus.loading
+                        ? null
+                        : () => formNotifier.submitForm(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: formState.status == KpltFormStatus.loading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Simpan Data KPLT'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

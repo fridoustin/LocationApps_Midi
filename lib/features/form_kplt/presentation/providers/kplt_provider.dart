@@ -38,3 +38,11 @@ final kpltHistoryProvider = FutureProvider.autoDispose<List<FormKPLT>>((ref) asy
   // Memanggil metode yang sesuai dari repository
   return repository.getHistoryKplt(searchQuery);
 });
+
+final dropdownOptionsProvider = FutureProvider.family<List<String>, String>((ref, enumName) async {
+  final supabase = ref.watch(supabaseClientProvider);
+  final response = await supabase
+      .rpc('get_enum_labels', params: {'enum_type_name': enumName});
+  
+  return (response as List).map((item) => item.toString()).toList();
+});
