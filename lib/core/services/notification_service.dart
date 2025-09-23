@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:midi_location/core/widgets/main_layout.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -19,9 +19,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  // Inisialisasi 'diam-diam', tidak meminta izin ke pengguna
-  Future<void> initialize() async {
-    // --- BAGIAN PERMINTAAN IZIN DAN GET TOKEN DIHAPUS DARI SINI ---
+  Future<void> initialize(ProviderContainer container) async {
     
     // Konfigurasi untuk notifikasi lokal (saat aplikasi terbuka)
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -45,22 +43,18 @@ class NotificationService {
     onDidReceiveNotificationResponse: (NotificationResponse response) {
       if (response.payload != null && response.payload!.isNotEmpty) {
         final Map<String, dynamic> data = jsonDecode(response.payload!);
-        _handleNavigation(data);
+        _handleNavigation(data, container);
       }
     },
   );
     
-    // Dengarkan jika token diperbarui (tetap di sini)
     _firebaseMessaging.onTokenRefresh.listen(_saveTokenToDatabase);
 
-    // Setup handler untuk berbagai kondisi aplikasi
-    _setupHandlers();
+    _setupHandlers(container);
   }
 
-  // <<< METHOD BARU UNTUK MEMINTA IZIN DAN MENYIMPAN TOKEN >>>
-  // Panggil method ini dari HomeScreen
+  // Method ini dipanggil di HomeScreen
   Future<void> requestPermissionAndGetToken() async {
-    // 1. Minta izin notifikasi dari pengguna
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
@@ -68,7 +62,6 @@ class NotificationService {
       provisional: false,
     );
 
-    // 2. Jika diizinkan, ambil token dan simpan
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print('User granted permission for notifications.');
       final fcmToken = await _firebaseMessaging.getToken();
@@ -81,7 +74,7 @@ class NotificationService {
     }
   }
 
-  void _setupHandlers() {
+  void _setupHandlers(ProviderContainer container) {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("Got a message whilst in the foreground!");
       if (message.notification != null) {
@@ -90,37 +83,28 @@ class NotificationService {
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('A new onMessageOpenedApp event was published!');
-      _handleNavigation(message.data);
+      print('--- NOTIFICATION TAPPED FROM BACKGROUND ---');
+      print('Received data payload: ${message.data}');
+      _handleNavigation(message.data, container);
     });
 
     _firebaseMessaging.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
-        print('App opened from terminated state by a notification!');
-        _handleNavigation(message.data);
+        print('--- NOTIFICATION TAPPED FROM TERMINATED ---');
+        print('Received data payload: ${message.data}');
+        _handleNavigation(message.data, container);
       }
     });
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
 
-  void _handleNavigation(Map<String, dynamic> data) {
-  //   final screen = data['screen'];
-  //   final ulokId = data['ulokId'];
-
-  //   // Pastikan navigatorKey.currentState tidak null
-  //   if (navigatorKey.currentState != null && screen == '/form-kplt' && ulokId != null) {
-  //     navigatorKey.currentState!.push(
-  //       // PERBAIKAN: Berikan argumen yang dibutuhkan jika halaman Anda memerlukannya
-  //       // Contoh: MaterialPageRoute(builder: (context) => FormKPLTPage(ulokId: ulokId)),
-  //       // Untuk sekarang saya biarkan kosong sesuai kode Anda.
-  //       MaterialPageRoute(builder: (context) => FormKPLTPage()),
-  //     );
-  //   }
+  void _handleNavigation(Map<String, dynamic> data, ProviderContainer container) {
+    print('--- MENYIMPAN DATA NOTIFIKASI KE PROVIDER ---');
+    container.read(initialNotificationProvider.notifier).state = data;
   }
 
   Future<void> _saveTokenToDatabase(String token) async {
-    // ... (tidak ada perubahan di fungsi ini)
     final supabase = Supabase.instance.client;
     final userId = supabase.auth.currentUser?.id;
     if (userId != null) {
@@ -137,7 +121,6 @@ class NotificationService {
   }
 
   void _showLocalNotification(RemoteMessage message) async {
-     // ... (tidak ada perubahan di fungsi ini)
     final notification = message.notification;
     if (notification == null) return;
 
@@ -160,3 +143,9 @@ class NotificationService {
     );
   }
 }
+
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  return NotificationService();
+});
+
+final initialNotificationProvider = StateProvider<Map<String, dynamic>?>((ref) => null);

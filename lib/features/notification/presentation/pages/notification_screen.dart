@@ -4,9 +4,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
+import 'package:midi_location/features/form_kplt/presentation/pages/kplt_notification_handler_page.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 
-// 1. Ubah menjadi ConsumerWidget
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
@@ -30,15 +30,13 @@ class NotificationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 2. Pantau provider untuk mendapatkan data notifikasi
     final notificationsAsync = ref.watch(notificationListProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      // Gunakan CustomTopBar yang sudah ada
       appBar: CustomTopBar.general(
         title: "Notification",
-        showNotificationButton: false, // Sembunyikan ikon di halaman ini
+        showNotificationButton: false,
         leadingWidget: IconButton(
           icon: SvgPicture.asset("assets/icons/left_arrow.svg",
               colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
@@ -58,13 +56,24 @@ class NotificationScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final notification = notifications[index];
                 return GestureDetector(
-                  onTap: () {
-                    // Tandai notifikasi sebagai sudah dibaca
-                    ref.read(notificationRepositoryProvider).markAsRead(notification.id);
-                    // Refresh daftar notifikasi
-                    ref.invalidate(notificationListProvider);
-                    // Di sini Anda bisa menambahkan logika navigasi
-                    // if (notification.ulokId != null) { ... }
+                  onTap: () async {
+                    if (notification.ulokId != null && notification.ulokId!.isNotEmpty) {
+                      await ref.read(notificationRepositoryProvider).markAsRead(notification.id);
+                      ref.invalidate(notificationListProvider);
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => KpltNotificationHandlerPage(
+                              ulokId: notification.ulokId!,
+                            ),
+                          ),
+                        );
+                      }
+                    } else {
+                      await ref.read(notificationRepositoryProvider).markAsRead(notification.id);
+                      ref.invalidate(notificationListProvider);
+                    }
                   },
                   child: Card(
                     color: AppColors.cardColor,

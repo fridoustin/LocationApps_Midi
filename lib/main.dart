@@ -32,9 +32,12 @@ Future<void> main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   
-  await NotificationService().initialize(); 
 
-  runApp(const ProviderScope(child: MyApp()));
+  final container = ProviderContainer();
+  await container.read(notificationServiceProvider).initialize(container);
+
+  // ignore: deprecated_member_use
+  runApp(ProviderScope(parent: container,child: const MyApp()));
 }
 
 final supabase = Supabase.instance.client;
