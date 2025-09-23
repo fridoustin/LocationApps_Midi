@@ -9,7 +9,7 @@ class NotificationRemoteDataSource {
     if (userId == null) throw Exception('User not authenticated');
     return _client
         .from('notifications')
-        .select()
+        .select('*, ulok:ulok_id(*, kplt(*))') 
         .eq('user_id', userId)
         .order('created_at', ascending: false);
   }

@@ -5,6 +5,8 @@ class NotificationEntity {
   final bool isRead;
   final DateTime createdAt;
   final String? ulokId;
+  final String? ulokStatus;
+  final String? kpltId;
 
   NotificationEntity({
     required this.id,
@@ -13,6 +15,8 @@ class NotificationEntity {
     required this.isRead,
     required this.createdAt,
     this.ulokId,
+    this.ulokStatus,
+    this.kpltId,
   });
 
   factory NotificationEntity.fromMap(Map<String, dynamic> map) {

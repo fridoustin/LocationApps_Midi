@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/kplt_notification_handler_page.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_detail_screen.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
@@ -57,22 +60,32 @@ class NotificationScreen extends ConsumerWidget {
                 final notification = notifications[index];
                 return GestureDetector(
                   onTap: () async {
-                    if (notification.ulokId != null && notification.ulokId!.isNotEmpty) {
-                      await ref.read(notificationRepositoryProvider).markAsRead(notification.id);
-                      ref.invalidate(notificationListProvider);
-                      if (context.mounted) {
+                    await ref.read(notificationRepositoryProvider).markAsRead(notification.id);
+                    ref.invalidate(notificationListProvider);
+                    if (notification.ulokId != null && context.mounted) {
+                      if (notification.ulokStatus == 'NOK') {
+                        final ulokDetails = await ref.read(ulokByIdProvider(notification.ulokId!).future);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => KpltNotificationHandlerPage(
-                              ulokId: notification.ulokId!,
-                            ),
-                          ),
+                          MaterialPageRoute(builder: (context) => UlokDetailPage(ulok: ulokDetails)),
                         );
+                      } 
+                      else if (notification.ulokStatus == 'OK') {
+                        if (notification.kpltId == null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => KpltNotificationHandlerPage(ulokId: notification.ulokId!),
+                            ),
+                          );
+                        } 
+                        else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const MainLayout(currentIndex: 2)),
+                          );
+                        }
                       }
-                    } else {
-                      await ref.read(notificationRepositoryProvider).markAsRead(notification.id);
-                      ref.invalidate(notificationListProvider);
                     }
                   },
                   child: Card(
@@ -138,7 +151,7 @@ class NotificationScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryColor)),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryColor, backgroundColor: Color(0xFFFFFFFF),)),
         error: (err, stack) => Center(child: Text("Gagal memuat notifikasi: $err")),
       ),
     );
