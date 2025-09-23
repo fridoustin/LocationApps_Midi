@@ -54,4 +54,18 @@ class UlokRemoteDataSource {
     final response = await request.order('created_at', ascending: false);
     return response;
   }
+
+  Future<Map<String, dynamic>> getUlokById(String ulokId) async {
+    try {
+      final response = await client
+          .from('ulok')
+          .select('*') 
+          .eq('id', ulokId)
+          .single(); 
+      return response;
+    } catch (e) {
+      print('Error fetching ULOK by ID: $e');
+      rethrow;
+    }
+  }
 }

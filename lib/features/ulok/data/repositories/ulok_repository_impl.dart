@@ -45,4 +45,10 @@ class UlokRepositoryImpl implements UlokRepository {
     final data = await dataSource.getHistoryUlok(query);
     return data.map(_mapToEntity).toList();
   }
+
+  @override
+  Future<UsulanLokasi> getUlokById(String ulokId) async {
+    final data = await dataSource.getUlokById(ulokId);
+    return _mapToEntity(data);
+  }
 }

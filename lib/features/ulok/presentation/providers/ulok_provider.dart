@@ -5,7 +5,7 @@ import 'package:midi_location/features/ulok/data/repositories/ulok_repository_im
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/ulok/domain/repositories/ulok_repository.dart';
 
-// 1. Sediakan instance dari DataSource dan Repository
+// Instance dari DataSource dan Repository
 final ulokRemoteDataSourceProvider = Provider<UlokRemoteDataSource>((ref) {
   return UlokRemoteDataSource(ref.watch(supabaseClientProvider));
 });
@@ -16,10 +16,10 @@ final ulokRepositoryProvider = Provider<UlokRepository>((ref) {
 
 final ulokSearchQueryProvider = StateProvider<String>((ref) => '');
 
-// 2. Enum untuk melacak tab yang aktif
+// Enum untuk melacak tab yang aktif
 enum UlokTab { recent, history }
 
-// 3. Provider untuk daftar data ULok, akan mengambil data berdasarkan tab yang aktif
+// Provider untuk daftar data ULok, akan mengambil data berdasarkan tab yang aktif
 final ulokListProvider = FutureProvider<List<UsulanLokasi>>((ref) async {
   final repository = ref.watch(ulokRepositoryProvider);
   final activeTab = ref.watch(ulokTabProvider);
@@ -33,6 +33,12 @@ final ulokListProvider = FutureProvider<List<UsulanLokasi>>((ref) async {
   }
 });
 
-// 4. Provider untuk mengelola state tab yang sedang aktif
+// Provider untuk mengelola state tab yang sedang aktif
 final ulokTabProvider = StateProvider<UlokTab>((ref) => UlokTab.recent);
 final showDraftsProvider = StateProvider<bool>((ref) => false);
+
+final ulokByIdProvider =
+    FutureProvider.family<UsulanLokasi, String>((ref, ulokId) {
+  final repository = ref.watch(ulokRepositoryProvider);
+  return repository.getUlokById(ulokId);
+});
