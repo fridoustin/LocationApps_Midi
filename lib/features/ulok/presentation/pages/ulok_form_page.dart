@@ -7,10 +7,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/custom_success_dialog.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
-import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/file_upload.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/dropdown.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/form_card.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/map_picker.dart';
@@ -18,11 +17,10 @@ import 'package:midi_location/features/ulok/presentation/widgets/text_field.dart
 import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
 import 'package:midi_location/features/wilayah/presentation/providers/wilayah_provider.dart';
 import 'package:midi_location/features/wilayah/presentation/widgets/wilayah_dropdown.dart';
-import 'package:uuid/uuid.dart';
 
 class UlokFormPage extends ConsumerStatefulWidget {
-  final UlokFormData? draftData;
-  const UlokFormPage({super.key, this.draftData});
+  final UlokFormState? initialState;
+  const UlokFormPage({super.key, this.initialState});
 
   @override
   ConsumerState<UlokFormPage> createState() => _UlokFormPageState();
@@ -31,7 +29,6 @@ class UlokFormPage extends ConsumerStatefulWidget {
 class _UlokFormPageState extends ConsumerState<UlokFormPage> {
   final _formKey = GlobalKey<FormState>();
   late final MapController _mapController;
-  late final String _currentLocalId;
 
   // Controllers
   final _namaUlokC = TextEditingController();
@@ -46,42 +43,23 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
   final _namaPemilikC = TextEditingController();
   final _kontakPemilikC = TextEditingController();
 
-  WilayahEntity? _selectedProvince;
-  WilayahEntity? _selectedRegency;
-  WilayahEntity? _selectedDistrict;
-  WilayahEntity? _selectedVillage;
-
-  // State
-  String? _selectedFormatStore;
-  String? _selectedBentukObjek;
-  LatLng? _currentLatLng;
-
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
-    _currentLocalId = widget.draftData?.localId ?? const Uuid().v4();
-
-    if (widget.draftData != null) {
-      final data = widget.draftData!;
-      _namaUlokC.text = data.namaUlok;
-      _alamatC.text = data.alamat;
-      _latLngC.text = "${data.latLng.latitude}, ${data.latLng.longitude}";
-      _currentLatLng = data.latLng;
-      _selectedProvince = WilayahEntity(id: '', name: data.provinsi);
-      _selectedRegency = WilayahEntity(id: '', name: data.kabupaten);
-      _selectedDistrict = WilayahEntity(id: '', name: data.kecamatan);
-      _selectedVillage = WilayahEntity(id: '', name: data.desa);
-      _selectedFormatStore = data.formatStore;
-      _selectedBentukObjek = data.bentukObjek;
-      _alasHakC.text = data.alasHak;
-      _jumlahLantaiC.text = data.jumlahLantai.toString();
-      _lebarDepanC.text = data.lebarDepan.toString();
-      _panjangC.text = data.panjang.toString();
-      _luasC.text = data.luas.toString();
-      _hargaSewaC.text = data.hargaSewa.toString();
-      _namaPemilikC.text = data.namaPemilik;
-      _kontakPemilikC.text = data.kontakPemilik;
+    
+    final initialData = widget.initialState;
+    if (initialData != null) {
+      _namaUlokC.text = initialData.namaUlok ?? '';
+      _alamatC.text = initialData.alamat ?? '';
+      _alasHakC.text = initialData.alasHak ?? '';
+      _jumlahLantaiC.text = initialData.jumlahLantai?.toString() ?? '';
+      _lebarDepanC.text = initialData.lebarDepan?.toString() ?? '';
+      _panjangC.text = initialData.panjang?.toString() ?? '';
+      _luasC.text = initialData.luas?.toString() ?? '';
+      _hargaSewaC.text = initialData.hargaSewa?.toString() ?? '';
+      _namaPemilikC.text = initialData.namaPemilik ?? '';
+      _kontakPemilikC.text = initialData.kontakPemilik ?? '';
     }
   }
 
@@ -102,25 +80,7 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     super.dispose();
   }
 
-  Future<void> _showDraftSavedAndNavigateBack() async {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return const CustomSuccessDialog(
-        title: "Draft anda tersimpan!",
-        iconPath: "assets/icons/draft.svg", 
-      );
-    },
-  );
-
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    if (mounted) Navigator.of(context).pop();
-    if (mounted) Navigator.of(context).pop();
-  }
-
-  Future<void> _openMapDialog() async {
+  Future<void> _openMapDialog(UlokFormNotifier notifier, LatLng? currentLatLng) async { 
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
@@ -134,110 +94,30 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     final LatLng? selectedLatLng = await showDialog<LatLng>(
       // ignore: use_build_context_synchronously
       context: context,
-      builder: (context) => const MapPickerDialog(),
+      builder: (context) => MapPickerDialog(initialPoint: currentLatLng),
     );
-
     if (selectedLatLng != null) {
-      setState(() {
-        _currentLatLng = selectedLatLng;
-        _latLngC.text =
-            "${selectedLatLng.latitude.toStringAsFixed(6)}, ${selectedLatLng.longitude.toStringAsFixed(6)}";
-      });
+      notifier.onLatLngChanged(selectedLatLng);
     }
   }
 
-  Future<void> _showSuccessAndNavigateBack() async {
+  Future<void> _showPopupAndNavigateBack(String message, String iconPath) async {
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16.0)),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.check_circle_outline,
-                  color: AppColors.successColor, size: 80),
-              SizedBox(height: 16),
-              Text(
-                'Berhasil Disubmit!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (BuildContext context) => CustomSuccessDialog(title: message, iconPath: iconPath),
     );
 
-    await Future.delayed(const Duration(seconds: 3));
-
+    await Future.delayed(const Duration(seconds: 2));
     if (mounted) Navigator.of(context).pop();
     if (mounted) Navigator.of(context).pop();
   }
 
-  UlokFormData _collectFormData() {
-    return UlokFormData(
-      localId: _currentLocalId, // Selalu sertakan ID lokal saat ini
-      namaUlok: _namaUlokC.text,
-      latLng: _currentLatLng ?? LatLng(0, 0),
-      provinsi: _selectedProvince?.name ?? '',
-      kabupaten: _selectedRegency?.name ?? '',
-      kecamatan: _selectedDistrict?.name ?? '',
-      desa: _selectedVillage?.name ?? '',
-      alamat: _alamatC.text,
-      formatStore: _selectedFormatStore ?? '',
-      bentukObjek: _selectedBentukObjek ?? '',
-      alasHak: _alasHakC.text,
-      jumlahLantai: int.tryParse(_jumlahLantaiC.text) ?? 0,
-      lebarDepan: double.tryParse(_lebarDepanC.text) ?? 0.0,
-      panjang: double.tryParse(_panjangC.text) ?? 0.0,
-      luas: double.tryParse(_luasC.text) ?? 0.0,
-      hargaSewa: double.tryParse(_hargaSewaC.text) ?? 0.0,
-      namaPemilik: _namaPemilikC.text,
-      kontakPemilik: _kontakPemilikC.text,
-    );
-  }
-
-  void _onSaveDraft() async { // Ubah menjadi async
-    final formData = _collectFormData();
-    final success = await ref.read(ulokFormProvider.notifier).saveDraft(formData);
-
-    if (success && mounted) {
-      // Panggil helper pop-up yang baru kita buat
-      _showDraftSavedAndNavigateBack();
-    } else if (mounted) {
-      // Tambahkan feedback jika gagal menyimpan draft
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menyimpan draft.'), backgroundColor: AppColors.errorColor),
-      );
-    }
-  }
-
-  void _onSubmit() {
-    if ((_formKey.currentState?.validate() ?? false) && _currentLatLng != null) {
-      final formData = _collectFormData();
-      ref.read(ulokFormProvider.notifier).submitForm(formData).then((success) {
-        if (success && mounted) {
-          ref.invalidate(ulokListProvider);
-          ref.invalidate(dashboardStatsProvider);
-          _showSuccessAndNavigateBack();
-        }
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Harap lengkapi semua data wajib, termasuk Latlong.'),
-      ));
-    }
-  }
-
-  Widget _buildMapPreview() {
-    if (_currentLatLng == null) {
+  Widget _buildMapPreview(UlokFormState formState) { // aman
+    if (formState.latLng == null) {
       return const SizedBox.shrink();
     }
-
     return Padding(
       padding: const EdgeInsets.only(top: 16.0),
       child: SizedBox(
@@ -247,7 +127,7 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
           child: FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _currentLatLng!,
+              initialCenter: formState.latLng!,
               initialZoom: 16,
             ),
             children: [
@@ -258,7 +138,7 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
               MarkerLayer(
                 markers: [
                   Marker(
-                    point: _currentLatLng!,
+                    point: formState.latLng!,
                     width: 80,
                     height: 80,
                     child: const Icon(
@@ -314,14 +194,30 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final formState = ref.watch(ulokFormProvider);
+    final formProvider = ulokFormProvider(widget.initialState);
+    final formState = ref.watch(formProvider);
+    final formNotifier = ref.read(formProvider.notifier);
 
-    ref.listen<UlokFormState>(ulokFormProvider, (prev, next) {
-      if (next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: ${next.errorMessage}'),
-          backgroundColor: AppColors.errorColor,
-        ));
+    ref.listen<UlokFormState>(formProvider, (previous, next) {
+      // Sinkronkan controller jika ada perubahan dari state (misal: saat draft dimuat)
+      if (previous?.namaUlok != next.namaUlok) _namaUlokC.text = next.namaUlok ?? '';
+      if (previous?.alamat != next.alamat) _alamatC.text = next.alamat ?? '';
+      if (previous?.alasHak != next.alasHak) _alasHakC.text = next.alasHak ?? '';
+      if (previous?.jumlahLantai != next.jumlahLantai) _jumlahLantaiC.text = next.jumlahLantai?.toString() ?? '';
+      if (previous?.lebarDepan != next.lebarDepan) _lebarDepanC.text = next.lebarDepan?.toString() ?? '';
+      if (previous?.panjang != next.panjang) _panjangC.text = next.panjang?.toString() ?? '';
+      if (previous?.luas != next.luas) _luasC.text = next.luas?.toString() ?? '';
+      if (previous?.hargaSewa != next.hargaSewa) _hargaSewaC.text = next.hargaSewa?.toString() ?? '';
+      if (previous?.namaPemilik != next.namaPemilik) _namaPemilikC.text = next.namaPemilik ?? '';
+      if (previous?.kontakPemilik != next.kontakPemilik) _kontakPemilikC.text = next.kontakPemilik ?? '';
+
+      if (previous?.status != next.status) {
+        if (next.status == UlokFormStatus.success) {
+          _showPopupAndNavigateBack("Data Berhasil Disimpan!", "assets/icons/success.svg");
+        } else if (next.status == UlokFormStatus.error && next.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red));
+        }
       }
     });
 
@@ -353,131 +249,55 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                 title: "Data Usulan Lokasi",
                 iconAsset: "assets/icons/location.svg",
                 children: [
-                  FormTextField(controller: _namaUlokC, label: 'Nama ULOK'),
+                  FormTextField(
+                    controller: _namaUlokC, 
+                    label: 'Nama ULOK',
+                    onChanged: formNotifier.onNamaUlokChanged,
+                  ),
                   SearchableDropdown(
                     label: "Provinsi *",
                     itemsProvider: provincesProvider,
-                    selectedValue: _selectedProvince,
-                    onChanged: (newValue) {
-                      // update local state & providers
-                      setState(() {
-                        _selectedProvince = newValue;
-                        _selectedRegency = null;
-                        _selectedDistrict = null;
-                        _selectedVillage = null;
-                      });
-                      print('DEBUG selectedProvince => id: ${newValue?.id}, name: ${newValue?.name}');
-                      if (newValue != null && newValue.id.isNotEmpty) {
-                        ref.read(selectedProvinceProvider.notifier).state = newValue;
-                        // invalidate downstream so regenciesProvider refetches with proper id
-                        ref.invalidate(regenciesProvider);
-                      } else {
-                        ref.read(selectedProvinceProvider.notifier).state = null;
-                        ref.invalidate(regenciesProvider);
-                      }
-
-                      // reset downstream provider states
-                      ref.read(selectedRegencyProvider.notifier).state = null;
-                      ref.read(selectedDistrictProvider.notifier).state = null;
-                      ref.read(selectedVillageProvider.notifier).state = null;
-                    },
+                    selectedValue: formState.provinsi != null ? WilayahEntity(id: '', name: formState.provinsi!) : null,
+                    onChanged: formNotifier.onProvinceSelected,
                   ),
                   SearchableDropdown(
                     label: "Kabupaten/Kota *",
-                    isEnabled: _selectedProvince != null,
+                    isEnabled: formState.provinsi != null,
                     itemsProvider: regenciesProvider,
-                    selectedValue: _selectedRegency,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedRegency = newValue;
-                        _selectedDistrict = null;
-                        _selectedVillage = null;
-                      });
-
-                      // Debug
-                      // ignore: avoid_print
-                      print('DEBUG selectedRegency => id: ${newValue?.id}, name: ${newValue?.name}');
-
-                      if (newValue != null && newValue.id.isNotEmpty) {
-                        ref.read(selectedRegencyProvider.notifier).state = newValue;
-                        ref.invalidate(districtsProvider);
-                      } else {
-                        ref.read(selectedRegencyProvider.notifier).state = null;
-                        ref.invalidate(districtsProvider);
-                      }
-
-                      ref.read(selectedDistrictProvider.notifier).state = null;
-                      ref.read(selectedVillageProvider.notifier).state = null;
-                    },
+                    selectedValue: formState.kabupaten != null ? WilayahEntity(id: '', name: formState.kabupaten!) : null,
+                    onChanged: formNotifier.onRegencySelected,
                   ),
                   SearchableDropdown(
                     label: "Kecamatan *",
-                    isEnabled: _selectedRegency != null,
+                    isEnabled: formState.kabupaten != null,
                     itemsProvider: districtsProvider,
-                    selectedValue: _selectedDistrict,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedDistrict = newValue;
-                        _selectedVillage = null;
-                      });
-
-                      // Debug
-                      // ignore: avoid_print
-                      print('DEBUG selectedDistrict => id: ${newValue?.id}, name: ${newValue?.name}');
-
-                      if (newValue != null && newValue.id.isNotEmpty) {
-                        ref.read(selectedDistrictProvider.notifier).state = newValue;
-                        ref.invalidate(villagesProvider);
-                      } else {
-                        ref.read(selectedDistrictProvider.notifier).state = null;
-                        ref.invalidate(villagesProvider);
-                      }
-
-                      ref.read(selectedVillageProvider.notifier).state = null;
-                    },
+                    selectedValue: formState.kecamatan != null ? WilayahEntity(id: '', name: formState.kecamatan!) : null,
+                    onChanged: formNotifier.onDistrictSelected,
                   ),
                   SearchableDropdown(
                     label: "Desa/Kelurahan *",
-                    isEnabled: _selectedDistrict != null,
+                    isEnabled: formState.kecamatan != null,
                     itemsProvider: villagesProvider,
-                    selectedValue: _selectedVillage,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedVillage = newValue;
-                      });
-
-                      // Debug
-                      // ignore: avoid_print
-                      print('DEBUG selectedVillage => id: ${newValue?.id}, name: ${newValue?.name}');
-
-                      // juga update provider
-                      if (newValue != null && newValue.id.isNotEmpty) {
-                        ref.read(selectedVillageProvider.notifier).state = newValue;
-                      } else {
-                        ref.read(selectedVillageProvider.notifier).state = null;
-                      }
-                    },
+                    selectedValue: formState.desa != null ? WilayahEntity(id: '', name: formState.desa!) : null,
+                    onChanged: formNotifier.onVillageSelected,
                   ),
-                  FormTextField(controller: _alamatC, label: 'Alamat', maxLines: 3),
                   FormTextField(
-                    controller: _latLngC,
+                    controller: _alamatC, 
+                    label: 'Alamat', 
+                    maxLines: 3, 
+                    onChanged: formNotifier.onAlamatChanged
+                  ),
+                  FormTextField(
+                    controller: TextEditingController(
+                      text: formState.latLng != null
+                          ? '${formState.latLng!.latitude.toStringAsFixed(6)}, ${formState.latLng!.longitude.toStringAsFixed(6)}'
+                          : '',
+                    ),
                     label: 'Latlong',
                     readOnly: true,
-                    onTap: _openMapDialog,
-                    suffixIcon: IconButton(
-                      icon: SvgPicture.asset(
-                        "assets/icons/location.svg",
-                        width: 20,
-                        height: 20,
-                        colorFilter: const ColorFilter.mode(
-                          AppColors.primaryColor,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      onPressed: _openMapDialog,
-                    ),
+                    onTap: () => _openMapDialog(formNotifier, formState.latLng),
                   ),
-                  _buildMapPreview(),
+                  _buildMapPreview(formState),
                 ],
               ),
               const SizedBox(height: 20),
@@ -487,22 +307,22 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                 children: [
                   PopupButtonForm(
                     label: 'Format Store',
-                    optionsProvider: formatStoreOptionsProvider,
-                    selectedValue: _selectedFormatStore,
-                    onSelected: (value) => setState(() => _selectedFormatStore = value),
+                    optionsProvider: ulokDropdownOptionsProvider('format_store'),
+                    selectedValue: formState.formatStore,
+                    onSelected: (value) => formNotifier.onFormatStoreChanged(value!),
                   ),
                   PopupButtonForm(
                     label: 'Bentuk Objek',
-                    optionsProvider: bentukObjekOptionsProvider,
-                    selectedValue: _selectedBentukObjek,
-                    onSelected: (value) => setState(() => _selectedBentukObjek = value),
+                    optionsProvider: ulokDropdownOptionsProvider('bentuk_objek'),
+                    selectedValue: formState.bentukObjek,
+                    onSelected: (value) => formNotifier.onBentukObjekChanged(value!),
                   ),
-                  FormTextField(controller: _alasHakC, label: 'Alas Hak'),
-                  FormTextField(controller: _jumlahLantaiC, label: 'Jumlah Lantai', keyboardType: TextInputType.number),
-                  FormTextField(controller: _lebarDepanC, label: 'Lebar Depan (m)', keyboardType: TextInputType.number),
-                  FormTextField(controller: _panjangC, label: 'Panjang (m)', keyboardType: TextInputType.number),
-                  FormTextField(controller: _luasC, label: 'Luas (m2)', keyboardType: TextInputType.number),
-                  FormTextField(controller: _hargaSewaC, label: 'Harga Sewa (+PPH 10%)', keyboardType: TextInputType.number),
+                  FormTextField(controller: _alasHakC, label: 'Alas Hak', onChanged: formNotifier.onAlasHakChanged),
+                  FormTextField(controller: _jumlahLantaiC, label: 'Jumlah Lantai', keyboardType: TextInputType.number, onChanged: formNotifier.onJumlahLantaiChanged),
+                  FormTextField(controller: _lebarDepanC, label: 'Lebar Depan (m)', keyboardType: TextInputType.number, onChanged: formNotifier.onLebarDepanChanged),
+                  FormTextField(controller: _panjangC, label: 'Panjang (m)', keyboardType: TextInputType.number, onChanged: formNotifier.onPanjangChanged),
+                  FormTextField(controller: _luasC, label: 'Luas (m2)', keyboardType: TextInputType.number, onChanged: formNotifier.onLuasChanged),
+                  FormTextField(controller: _hargaSewaC, label: 'Harga Sewa (+PPH 10%)', keyboardType: TextInputType.number, onChanged: formNotifier.onHargaSewaChanged),
                 ],
               ),
               const SizedBox(height: 20),
@@ -510,8 +330,22 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                 title: "Data Pemilik",
                 iconAsset: "assets/icons/avatar.svg",
                 children: [
-                  FormTextField(controller: _namaPemilikC, label: 'Nama Pemilik'),
-                  FormTextField(controller: _kontakPemilikC, label: 'Kontak Pemilik', keyboardType: TextInputType.phone),
+                  FormTextField(controller: _namaPemilikC, label: 'Nama Pemilik', onChanged: formNotifier.onNamaPemilikChanged),
+                  FormTextField(controller: _kontakPemilikC, label: 'Kontak Pemilik', keyboardType: TextInputType.phone, onChanged: formNotifier.onKontakPemilikChanged),
+                ],
+              ),
+              const SizedBox(height: 20),
+              FormCardSection(
+                title: "Upload Dokumen",
+                iconAsset: "assets/icons/upload.svg",
+                children: [
+                  FileUploadWidget(
+                    label: "Formulir Usulan Lokasi (PDF)",
+                    fileName: formState.formUlokPdf?.path.split('/').last,
+                    onTap: () async {
+                      await pickFile((fieldName, file) => formNotifier.onFilePicked(file), '');
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 30),
@@ -519,7 +353,12 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: formState.action == FormAction.none ? _onSaveDraft : null,
+                      onPressed: () async {
+                        final success = await formNotifier.saveDraft();
+                        if (success && mounted) {
+                          _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.cardColor,
                         foregroundColor: AppColors.primaryColor,
@@ -527,22 +366,24 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: formState.action == FormAction.savingDraft
-                          ? const CircularProgressIndicator(color: AppColors.primaryColor)
-                          : const Text('Simpan Draft'),
+                      child: const Text('Simpan Draft'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: formState.action == FormAction.none ? _onSubmit : null,
+                      onPressed: formState.status == UlokFormStatus.loading ? null : () {
+                        if (_formKey.currentState?.validate() ?? false) {
+                          formNotifier.submitOrUpdateForm();
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: formState.action == FormAction.submitting
+                      child: formState.status == UlokFormStatus.loading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text('Submit'),
                     ),
