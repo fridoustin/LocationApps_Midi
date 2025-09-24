@@ -18,3 +18,13 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 final notificationListProvider = FutureProvider<List<NotificationEntity>>((ref) {
   return ref.watch(notificationRepositoryProvider).getNotifications();
 });
+
+final hasUnreadNotificationProvider = Provider<bool>((ref) {
+  final notificationsAsync = ref.watch(notificationListProvider);
+
+  return notificationsAsync.when(
+    data: (notifications) => notifications.any((notif) => !notif.isRead),
+    loading: () => false,
+    error: (e, st) => false,
+  );
+});

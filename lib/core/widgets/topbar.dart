@@ -14,6 +14,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leadingWidget;
   final bool showNotificationButton;
   final Profile? profileData;
+  final bool hasUnreadNotification;
 
   const CustomTopBar({
     super.key,
@@ -22,16 +23,19 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.title,
     this.leadingWidget,
     this.showNotificationButton = true,
-    this.profileData
+    this.profileData,
+    this.hasUnreadNotification = false
   });
 
   factory CustomTopBar.home({
     required String branchName,
     VoidCallback? onNotificationTap,
+    bool hasUnreadNotification = false,
   }) {
     return CustomTopBar(
       type: TopBarType.home,
       branchName: branchName,
+      hasUnreadNotification: hasUnreadNotification,
     );
   }
 
@@ -39,24 +43,29 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     required String title,
     Widget? leadingWidget,
     bool showNotificationButton = true,
+    bool hasUnreadNotification = false,
   }) {
     return CustomTopBar(
-        type: TopBarType.general,
-        title: title,
-        leadingWidget: leadingWidget,
-        showNotificationButton: showNotificationButton);
+      type: TopBarType.general,
+      title: title,
+      leadingWidget: leadingWidget,
+      showNotificationButton: showNotificationButton,
+      hasUnreadNotification: hasUnreadNotification,
+    );
   }
 
   factory CustomTopBar.profile({
     required String title,
     required Profile profileData,
     VoidCallback? onNotificationTap,
+    bool hasUnreadNotification = false,
   }) {
     return CustomTopBar(
       type: TopBarType.profile,
       title: title,
       profileData: profileData,
-      showNotificationButton: true, // Asumsi tombol notifikasi selalu ada di profil
+      showNotificationButton: true,
+      hasUnreadNotification: hasUnreadNotification,
     );
   }
 
@@ -77,9 +86,27 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
             right: 24,
             child: GestureDetector(
               onTap: () => Navigator.pushNamed(context, '/notification'),
-              child: SvgPicture.asset(
-                'assets/icons/notifikasi.svg',
-                width: 32,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/notifikasi.svg',
+                    width: 32,
+                  ),
+                  if (hasUnreadNotification)
+                    Positioned(
+                      right: 3,
+                      top: 2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

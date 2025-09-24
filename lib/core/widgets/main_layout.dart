@@ -7,6 +7,7 @@ import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
+import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
 import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
@@ -53,12 +54,14 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   PreferredSizeWidget _buildAppBar(int index, WidgetRef ref) {
     final userProfileAsync = ref.watch(userProfileProvider);
+    final hasUnread = ref.watch(hasUnreadNotificationProvider);
 
     switch (index) {
       case 0:
         return userProfileAsync.when(
           data: (profile) => CustomTopBar.home(
             branchName: profile?.branch ?? 'Branch',
+            hasUnreadNotification: hasUnread,
           ),
           loading: () => CustomTopBar.home(branchName: 'Memuat...'),
           error: (err, stack) => CustomTopBar.general(title: 'Gagal Memuat'),
@@ -72,6 +75,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             return CustomTopBar.profile(
               profileData: profile,
               title: _pageTitles[index],
+              hasUnreadNotification: hasUnread,
             );
           },
           loading: () => CustomTopBar.general(title: 'Memuat Profil...'),
@@ -79,7 +83,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               CustomTopBar.general(title: 'Gagal Memuat Profil'),
         );
       default:
-        return CustomTopBar.general(title: _pageTitles[index]);
+        return CustomTopBar.general(
+          title: _pageTitles[index],
+          hasUnreadNotification: hasUnread
+        );
     }
   }
 
