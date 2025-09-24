@@ -52,6 +52,8 @@ class NotificationScreen extends ConsumerWidget {
             return const Center(child: Text("Tidak ada notifikasi."));
           }
           return RefreshIndicator(
+            color: AppColors.primaryColor,
+            backgroundColor: Colors.white,
             onRefresh: () => ref.refresh(notificationListProvider.future),
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
