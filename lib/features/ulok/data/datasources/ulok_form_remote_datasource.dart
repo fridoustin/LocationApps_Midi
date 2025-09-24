@@ -1,4 +1,5 @@
 import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
+import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UlokFormRemoteDataSource {
@@ -9,6 +10,23 @@ class UlokFormRemoteDataSource {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw Exception('User not authenticated');
 
+    String? formUlokUrl;
+
+    final file = data.formUlokPdf;
+    final fileExtension = file.path.split('.').last;
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+    final filePath = '$userId/${data.localId}/$fileName';
+
+    await _client.storage.from('form_ulok').upload(
+          filePath,
+          file,
+          fileOptions: FileOptions(
+            contentType: lookupMimeType(file.path),
+          ),
+        );
+
+    formUlokUrl = _client.storage.from('form_ulok').getPublicUrl(filePath);
+  
     final Map<String, dynamic> row = {
       'users_id': userId,
       'branch_id': branchId,
@@ -32,12 +50,16 @@ class UlokFormRemoteDataSource {
       'kontak_pemilik': data.kontakPemilik,
       'approval_status': 'In Progress',
       'is_active': true,
+      'form_ulok': formUlokUrl,
     };
 
     await _client.from('ulok').insert(row);
   }
 
   Future<void> updateUlok(String ulokId, UlokFormData data) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
+
     final Map<String, dynamic> row = {
       'nama_ulok': data.namaUlok,
       'latitude': data.latLng.latitude.toString(),
@@ -59,7 +81,22 @@ class UlokFormRemoteDataSource {
       'kontak_pemilik': data.kontakPemilik,
       'updated_at': DateTime.now().toIso8601String(),
     };
+
+    final file = data.formUlokPdf;
+    final fileExtension = file.path.split('.').last;
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+    final filePath = '$userId/${data.localId}/$fileName';
+
+    await _client.storage.from('form_ulok').upload(
+          filePath,
+          file,
+          fileOptions: FileOptions(
+            contentType: lookupMimeType(file.path),
+          ),
+        );
     
+    row['form_ulok'] = _client.storage.from('form_ulok').getPublicUrl(filePath);
+      
     await _client.from('ulok').update(row).eq('id', ulokId);
   }
 }

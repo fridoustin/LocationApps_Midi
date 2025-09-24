@@ -1,14 +1,21 @@
+import 'dart:io';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
-import 'package:midi_location/features/profile/presentation/providers/profile_provider.dart';
+import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 import 'package:midi_location/features/ulok/data/datasources/ulok_form_local_datasource.dart';
 import 'package:midi_location/features/ulok/data/datasources/ulok_form_remote_datasource.dart';
 import 'package:midi_location/features/ulok/data/repositories/ulok_form_repository_impl.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/domain/repositories/ulok_form_repository.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
+import 'package:midi_location/features/wilayah/presentation/providers/wilayah_provider.dart';
+import 'package:uuid/uuid.dart';
 
 final connectivityProvider = StreamProvider<ConnectivityResult>((ref) {
   return Connectivity().onConnectivityChanged.map((event) => event.first);
@@ -30,183 +37,158 @@ final ulokFormRepositoryProvider = Provider<UlokFormRepository>((ref) {
   );
 });
 
-final formatStoreOptionsProvider = FutureProvider<List<String>>((ref) async {
+final ulokDropdownOptionsProvider = FutureProvider.family<List<String>, String>((ref, enumName) async {
   final supabase = ref.watch(supabaseClientProvider);
   try {
-    final response = await supabase.rpc(
-      'get_enum_labels',
-      params: {'enum_type_name': 'format_store'},
-    );
+    final response = await supabase.rpc('get_enum_labels', params: {'enum_type_name': enumName});
     return (response as List).map((item) => item.toString()).toList();
   } catch (e) {
-    debugPrint("Error fetching format_store: $e");
+    debugPrint("Error fetching enum '$enumName': $e");
     rethrow;
   }
 });
-
-final bentukObjekOptionsProvider = FutureProvider<List<String>>((ref) async {
-  final supabase = ref.watch(supabaseClientProvider);
-  try {
-    final response = await supabase.rpc(
-      'get_enum_labels',
-      params: {'enum_type_name': 'bentuk_objek'},
-    );
-    return (response as List).map((item) => item.toString()).toList();
-  } catch (e) {
-    debugPrint("Error fetching bentuk_objek: $e");
-    rethrow;
-  }
-});
-
-
-// --- State & Notifier untuk Form Tambah ULOK ---
-enum FormAction { none, savingDraft, submitting }
-
-@immutable
-class UlokFormState {
-  final FormAction action; 
-  final String? successMessage;
-  final String? errorMessage;
-
-  const UlokFormState({
-    this.action = FormAction.none, 
-    this.successMessage,
-    this.errorMessage
-  });
-
-  UlokFormState copyWith({
-    FormAction? action,
-    String? successMessage,
-    String? errorMessage
-  }) {
-    return UlokFormState(
-      action: action ?? this.action,
-      successMessage: successMessage,
-      errorMessage: errorMessage,
-    );
-  }
-}
 
 class UlokFormNotifier extends StateNotifier<UlokFormState> {
   final UlokFormRepository _repository;
   final Ref _ref;
+  final String? _ulokIdToEdit;
 
-  UlokFormNotifier(this._repository, this._ref) : super(const UlokFormState());
+  UlokFormNotifier(this._repository, this._ref, UlokFormState? initialState)
+      : _ulokIdToEdit = initialState?.localId,
+        super(initialState ?? UlokFormState(localId: const Uuid().v4(), status: UlokFormStatus.initial));
 
-  Future<bool> saveDraft(UlokFormData data) async {
-    state = state.copyWith(action: FormAction.savingDraft, errorMessage: null, successMessage: null);
-    try {
-      await _repository.saveDraft(data);
-      state = state.copyWith(action: FormAction.none, successMessage: "ULOK berhasil disimpan sebagai draft.");
-      _ref.invalidate(ulokDraftsProvider);
-      return true;
-    } catch (e) {
-      state = state.copyWith(action: FormAction.none, errorMessage: e.toString());
-      return false;
-    }
-  }
-
-  Future<bool> submitForm(UlokFormData data) async {
-    state = state.copyWith(action: FormAction.submitting, errorMessage: null, successMessage: null);
-    
-    final connectivityResult = await Connectivity().checkConnectivity();
-    // ignore: unrelated_type_equality_checks
-    if (connectivityResult == ConnectivityResult.none) {
-        await saveDraft(data);
-        state = state.copyWith(action: FormAction.none, successMessage: "Tidak ada koneksi. Data disimpan di Draft.");
-        return false;
-    }
-
-    try {
-      final profile = await _ref.read(profileDataProvider.future);
-      await _repository.submitUlok(data, profile.branchId);
-
-      // Jika submit berhasil, hapus draft jika ada
-      await _repository.deleteDraft(data.localId); 
-      
-      state = state.copyWith(action: FormAction.none);
-      _ref.invalidate(ulokDraftsProvider);
-      return true;
-    } catch (e) {
-      await saveDraft(data);
-      state = state.copyWith(action: FormAction.none, errorMessage: "Gagal submit. Disimpan ke Draft. Error: ${e.toString()}");
-      return false;
-    }
-  }
-
-  Future<void> deleteDraft(String localId) async {
-    try {
-      await _repository.deleteDraft(localId);
-      _ref.invalidate(ulokDraftsProvider);
-    } catch (e) {
-      print('Gagal menghapus draft: $e');
-    }
-  }
-}
-
-final ulokFormProvider =
-    StateNotifierProvider<UlokFormNotifier, UlokFormState>((ref) {
-  return UlokFormNotifier(ref.watch(ulokFormRepositoryProvider), ref);
-});
-
-final ulokDraftsProvider = FutureProvider.autoDispose<List<UlokFormData>>((ref) async {
-  final repository = ref.watch(ulokFormRepositoryProvider);
-  final searchQuery = ref.watch(ulokSearchQueryProvider);
-
-  // Ambil semua draft dari local storage
-  final allDrafts = await repository.getDrafts();
-
-  // Jika tidak ada query pencarian, kembalikan semua draft
-  if (searchQuery.isEmpty) {
-    return allDrafts;
-  }
-
-  // Jika ada query, filter draft berdasarkan nama atau alamat
-  final filteredDrafts = allDrafts.where((draft) {
-    final queryLower = searchQuery.toLowerCase();
-    final nameLower = draft.namaUlok.toLowerCase();
-    final addressLower = draft.alamat.toLowerCase();
-
-    return nameLower.contains(queryLower) || addressLower.contains(queryLower);
-  }).toList();
-
-  return filteredDrafts;
-});
-
-// --- State & Notifier untuk Form Edit ULOK ---
-@immutable
-class UlokEditState {
-  final bool isLoading;
-  final String? errorMessage;
-  const UlokEditState({this.isLoading = false, this.errorMessage});
-
-  UlokEditState copyWith({bool? isLoading, String? errorMessage}) {
-    return UlokEditState(
-      isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+  // Methods untuk meng-update setiap field dari UI
+  void onNamaUlokChanged(String value) => state = state.copyWith(namaUlok: value);
+  void onAlamatChanged(String value) => state = state.copyWith(alamat: value);
+  void onLatLngChanged(LatLng value) => state = state.copyWith(latLng: value);
+  void onProvinceSelected(WilayahEntity? province) {
+    state = state.copyWith(
+      provinsi: province?.name,
+      kabupaten: null,
+      kecamatan: null,
+      desa: null,
     );
+    // Update provider wilayah
+    _ref.read(selectedProvinceProvider.notifier).state = province;
+    _ref.invalidate(regenciesProvider);
   }
-}
 
-class UlokEditNotifier extends StateNotifier<UlokEditState> {
-  final UlokFormRepository _repository;
-  UlokEditNotifier(this._repository) : super(const UlokEditState());
+  void onRegencySelected(WilayahEntity? regency) {
+    state = state.copyWith(
+      kabupaten: regency?.name,
+      kecamatan: null,
+      desa: null,
+    );
+    _ref.read(selectedRegencyProvider.notifier).state = regency;
+    _ref.invalidate(districtsProvider);
+  }
 
-  Future<bool> updateUlok(String ulokId, UlokFormData data) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+  void onDistrictSelected(WilayahEntity? district) {
+    state = state.copyWith(
+      kecamatan: district?.name,
+      desa: null,
+    );
+    _ref.read(selectedDistrictProvider.notifier).state = district;
+    _ref.invalidate(villagesProvider);
+  }
+
+  void onVillageSelected(WilayahEntity? village) {
+    state = state.copyWith(desa: village?.name);
+    _ref.read(selectedVillageProvider.notifier).state = village;
+  }
+  void onFormatStoreChanged(String value) => state = state.copyWith(formatStore: value);
+  void onBentukObjekChanged(String value) => state = state.copyWith(bentukObjek: value);
+  void onAlasHakChanged(String value) => state = state.copyWith(alasHak: value);
+  void onNamaPemilikChanged(String value) => state = state.copyWith(namaPemilik: value);
+  void onKontakPemilikChanged(String value) => state = state.copyWith(kontakPemilik: value);
+  void onJumlahLantaiChanged(String value) => state = state.copyWith(jumlahLantai: int.tryParse(value));
+  void onLebarDepanChanged(String value) => state = state.copyWith(lebarDepan: double.tryParse(value));
+  void onPanjangChanged(String value) => state = state.copyWith(panjang: double.tryParse(value));
+  void onLuasChanged(String value) => state = state.copyWith(luas: double.tryParse(value));
+  void onHargaSewaChanged(String value) => state = state.copyWith(hargaSewa: double.tryParse(value));
+  void onFilePicked(File? file) => state = state.copyWith(formUlokPdf: file);
+
+  Future<bool> saveDraft() async {
     try {
-      await _repository.updateUlok(ulokId, data);
-      state = state.copyWith(isLoading: false);
+      await _repository.saveDraft(state);
+      _ref.invalidate(ulokDraftsProvider);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      debugPrint("Error saving draft: $e");
       return false;
+    }
+  }
+
+  Future<void> submitOrUpdateForm() async {
+    final s = state;
+    if (s.namaUlok == null || s.namaUlok!.isEmpty || s.latLng == null || 
+        s.provinsi == null || s.kabupaten == null || s.kecamatan == null || 
+        s.desa == null || s.alamat == null || s.formatStore == null || 
+        s.bentukObjek == null || s.alasHak == null || s.jumlahLantai == null || 
+        s.lebarDepan == null || s.panjang == null || s.luas == null || 
+        s.hargaSewa == null || s.namaPemilik == null || s.kontakPemilik == null ||
+        s.formUlokPdf == null) {
+      state = state.copyWith(status: UlokFormStatus.error, errorMessage: "Harap lengkapi semua data wajib.");
+      await Future.delayed(const Duration(milliseconds: 100)); 
+      state = state.copyWith(status: UlokFormStatus.initial, errorMessage: null);
+      return;
+    }
+
+    state = state.copyWith(status: UlokFormStatus.loading);
+
+    try {
+      final profile = await _ref.read(userProfileProvider.future);
+      if (profile == null) throw Exception("Profil user tidak ditemukan.");
+
+      final formData = UlokFormData(
+        localId: s.localId!,
+        namaUlok: s.namaUlok!,
+        latLng: s.latLng!,
+        provinsi: s.provinsi!,
+        kabupaten: s.kabupaten!,
+        kecamatan: s.kecamatan!,
+        desa: s.desa!,
+        alamat: s.alamat!,
+        formatStore: s.formatStore!,
+        bentukObjek: s.bentukObjek!,
+        alasHak: s.alasHak!,
+        jumlahLantai: s.jumlahLantai!,
+        lebarDepan: s.lebarDepan!,
+        panjang: s.panjang!,
+        luas: s.luas!,
+        hargaSewa: s.hargaSewa!,
+        namaPemilik: s.namaPemilik!,
+        kontakPemilik: s.kontakPemilik!,
+        formUlokPdf: s.formUlokPdf!,
+      );
+
+      if (_ulokIdToEdit == null) {
+        await _repository.submitUlok(formData, profile.branchId);
+        await _repository.deleteDraft(s.localId!); 
+      } else {
+        await _repository.updateUlok(_ulokIdToEdit, formData);
+      }
+      
+      state = state.copyWith(status: UlokFormStatus.success);
+      _ref.invalidate(ulokDraftsProvider);
+      _ref.invalidate(ulokListProvider);
+
+    } catch (e) {
+      state = state.copyWith(status: UlokFormStatus.error, errorMessage: e.toString());
     }
   }
 }
 
-final ulokEditProvider =
-    StateNotifierProvider<UlokEditNotifier, UlokEditState>((ref) {
-  return UlokEditNotifier(ref.watch(ulokFormRepositoryProvider));
+// Provider utama untuk form (bisa untuk create atau edit)
+final ulokFormProvider = StateNotifierProvider.autoDispose
+    .family<UlokFormNotifier, UlokFormState, UlokFormState?>((ref, initialState) {
+  final repository = ref.watch(ulokFormRepositoryProvider);
+  return UlokFormNotifier(repository, ref, initialState);
+});
+
+// Provider untuk memuat daftar draft dari local storage
+final ulokDraftsProvider = FutureProvider.autoDispose<List<UlokFormState>>((ref) async {
+  final repository = ref.watch(ulokFormRepositoryProvider);
+  return repository.getDrafts();
 });
 
