@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/custom_success_dialog.dart';
+import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/core/widgets/file_upload.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
@@ -109,9 +110,14 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
       builder: (BuildContext context) => CustomSuccessDialog(title: message, iconPath: iconPath),
     );
 
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) Navigator.of(context).pop();
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const MainLayout(currentIndex: 1),
+        ),
+        (route) => false, 
+      );
+    }
   }
 
   Widget _buildMapPreview(UlokFormState formState) { // aman
