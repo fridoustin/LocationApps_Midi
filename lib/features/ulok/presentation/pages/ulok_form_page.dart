@@ -205,26 +205,58 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     final formNotifier = ref.read(formProvider.notifier);
 
     ref.listen<UlokFormState>(formProvider, (previous, next) {
-      // Sinkronkan controller jika ada perubahan dari state (misal: saat draft dimuat)
-      if (previous?.namaUlok != next.namaUlok) _namaUlokC.text = next.namaUlok ?? '';
-      if (previous?.alamat != next.alamat) _alamatC.text = next.alamat ?? '';
-      if (previous?.alasHak != next.alasHak) _alasHakC.text = next.alasHak ?? '';
-      if (previous?.jumlahLantai != next.jumlahLantai) _jumlahLantaiC.text = next.jumlahLantai?.toString() ?? '';
-      if (previous?.lebarDepan != next.lebarDepan) _lebarDepanC.text = next.lebarDepan?.toString() ?? '';
-      if (previous?.panjang != next.panjang) _panjangC.text = next.panjang?.toString() ?? '';
-      if (previous?.luas != next.luas) _luasC.text = next.luas?.toString() ?? '';
-      if (previous?.hargaSewa != next.hargaSewa) _hargaSewaC.text = next.hargaSewa?.toString() ?? '';
-      if (previous?.namaPemilik != next.namaPemilik) _namaPemilikC.text = next.namaPemilik ?? '';
-      if (previous?.kontakPemilik != next.kontakPemilik) _kontakPemilikC.text = next.kontakPemilik ?? '';
 
-      if (previous?.status != next.status) {
-        if (next.status == UlokFormStatus.success) {
-          _showPopupAndNavigateBack("Data Berhasil Disimpan!", "assets/icons/success.svg");
-        } else if (next.status == UlokFormStatus.error && next.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        String formatNumber(num? number) {
+          if (number == null) return '';
+          if (number.truncateToDouble() == number) {
+            return number.truncate().toString();
+          }
+          return number.toString();
         }
-      }
+
+        final nextJumlahLantai = formatNumber(next.jumlahLantai);
+        if (_jumlahLantaiC.text != nextJumlahLantai) {
+          _jumlahLantaiC.text = nextJumlahLantai;
+        }
+        
+        final nextLebarDepan = formatNumber(next.lebarDepan);
+        if (_lebarDepanC.text != nextLebarDepan) {
+          _lebarDepanC.text = nextLebarDepan;
+        }
+        
+        final nextPanjang = formatNumber(next.panjang);
+        if (_panjangC.text != nextPanjang) {
+          _panjangC.text = nextPanjang;
+        }
+        
+        final nextLuas = formatNumber(next.luas);
+        if (_luasC.text != nextLuas) {
+          _luasC.text = nextLuas;
+        }
+
+        final nextHargaSewa = formatNumber(next.hargaSewa);
+        if (_hargaSewaC.text != nextHargaSewa) {
+          _hargaSewaC.text = nextHargaSewa;
+        }
+        // Sinkronkan controller jika ada perubahan dari state (misal: saat draft dimuat)
+        if (previous?.namaUlok != next.namaUlok) _namaUlokC.text = next.namaUlok ?? '';
+        if (previous?.alamat != next.alamat) _alamatC.text = next.alamat ?? '';
+        if (previous?.alasHak != next.alasHak) _alasHakC.text = next.alasHak ?? '';
+        if (previous?.namaPemilik != next.namaPemilik) _namaPemilikC.text = next.namaPemilik ?? '';
+        if (previous?.kontakPemilik != next.kontakPemilik) _kontakPemilikC.text = next.kontakPemilik ?? '';
+
+        if (previous?.status != next.status) {
+          if (next.status == UlokFormStatus.success) {
+            _showPopupAndNavigateBack("Data Berhasil Disimpan!", "assets/icons/success.svg");
+          } else if (next.status == UlokFormStatus.error && next.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red));
+          }
+        }
+      });
     });
 
     return Scaffold(
