@@ -54,7 +54,7 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
   final String? _ulokIdToEdit;
 
   UlokFormNotifier(this._repository, this._ref, UlokFormState? initialState)
-      : _ulokIdToEdit = initialState?.localId,
+      : _ulokIdToEdit = initialState?.ulokId,
         super(initialState ?? UlokFormState(localId: const Uuid().v4(), status: UlokFormStatus.initial));
 
   // Methods untuk meng-update setiap field dari UI
@@ -121,13 +121,28 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
 
   Future<void> submitOrUpdateForm() async {
     final s = state;
+    bool isFormValid = true;
     if (s.namaUlok == null || s.namaUlok!.isEmpty || s.latLng == null || 
         s.provinsi == null || s.kabupaten == null || s.kecamatan == null || 
         s.desa == null || s.alamat == null || s.formatStore == null || 
         s.bentukObjek == null || s.alasHak == null || s.jumlahLantai == null || 
         s.lebarDepan == null || s.panjang == null || s.luas == null || 
-        s.hargaSewa == null || s.namaPemilik == null || s.kontakPemilik == null ||
-        s.formUlokPdf == null) {
+        s.hargaSewa == null || s.namaPemilik == null || s.kontakPemilik == null) {
+      isFormValid = false;
+    }
+
+    final bool isFileMissing;
+    if (_ulokIdToEdit != null) { 
+      isFileMissing = s.formUlokPdf == null && (s.existingFormUlokUrl == null || s.existingFormUlokUrl!.isEmpty);
+    } else { 
+      isFileMissing = s.formUlokPdf == null;
+    }
+    
+    if (isFileMissing) {
+      isFormValid = false;
+    }
+    
+    if (!isFormValid) {
       state = state.copyWith(status: UlokFormStatus.error, errorMessage: "Harap lengkapi semua data wajib.");
       await Future.delayed(const Duration(milliseconds: 100)); 
       state = state.copyWith(status: UlokFormStatus.initial, errorMessage: null);
@@ -141,37 +156,39 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
       if (profile == null) throw Exception("Profil user tidak ditemukan.");
 
       final formData = UlokFormData(
-        localId: s.localId!,
-        namaUlok: s.namaUlok!,
-        latLng: s.latLng!,
-        provinsi: s.provinsi!,
-        kabupaten: s.kabupaten!,
-        kecamatan: s.kecamatan!,
-        desa: s.desa!,
-        alamat: s.alamat!,
-        formatStore: s.formatStore!,
-        bentukObjek: s.bentukObjek!,
-        alasHak: s.alasHak!,
-        jumlahLantai: s.jumlahLantai!,
-        lebarDepan: s.lebarDepan!,
-        panjang: s.panjang!,
-        luas: s.luas!,
-        hargaSewa: s.hargaSewa!,
-        namaPemilik: s.namaPemilik!,
-        kontakPemilik: s.kontakPemilik!,
-        formUlokPdf: s.formUlokPdf!,
+        localId: state.localId,
+        namaUlok: state.namaUlok!,
+        latLng: state.latLng!,
+        provinsi: state.provinsi!,
+        kabupaten: state.kabupaten!,
+        kecamatan: state.kecamatan!,
+        desa: state.desa!,
+        alamat: state.alamat!,
+        formatStore: state.formatStore!,
+        bentukObjek: state.bentukObjek!,
+        alasHak: state.alasHak!,
+        jumlahLantai: state.jumlahLantai!,
+        lebarDepan: state.lebarDepan!,
+        panjang: state.panjang!,
+        luas: state.luas!,
+        hargaSewa: state.hargaSewa!,
+        namaPemilik: state.namaPemilik!,
+        kontakPemilik: state.kontakPemilik!,
+        formUlokPdf: state.formUlokPdf,
+        existingFormUlokUrl: state.existingFormUlokUrl,
       );
 
       if (_ulokIdToEdit == null) {
         await _repository.submitUlok(formData, profile.branchId);
-        await _repository.deleteDraft(s.localId!); 
+        await _repository.deleteDraft(state.localId); 
       } else {
         await _repository.updateUlok(_ulokIdToEdit, formData);
       }
+
+      final _ = await _ref.refresh(ulokDraftsProvider.future);
+      final _ = await _ref.refresh(ulokListProvider.future);
       
       state = state.copyWith(status: UlokFormStatus.success);
-      _ref.invalidate(ulokDraftsProvider);
-      _ref.invalidate(ulokListProvider);
 
     } catch (e) {
       state = state.copyWith(status: UlokFormStatus.error, errorMessage: e.toString());

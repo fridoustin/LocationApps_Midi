@@ -1,14 +1,15 @@
 import 'dart:io';
 
+import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:uuid/uuid.dart';
 
 enum UlokFormStatus { initial, loading, success, error }
 
-class UlokFormState {
+class UlokFormState extends Equatable{
   final String? ulokId;
-  final String? localId;
+  final String localId;
   final UlokFormStatus status;
   final String? errorMessage;
   final String? namaUlok;
@@ -29,10 +30,11 @@ class UlokFormState {
   final String? namaPemilik;
   final String? kontakPemilik;
   final File? formUlokPdf;
+  final String? existingFormUlokUrl;
 
-  UlokFormState({
+  const UlokFormState({
     this.ulokId,
-    this.localId,
+    required this.localId,
     this.status = UlokFormStatus.initial,
     this.errorMessage,
     this.namaUlok,
@@ -53,6 +55,7 @@ class UlokFormState {
     this.namaPemilik,
     this.kontakPemilik,
     this.formUlokPdf,
+    this.existingFormUlokUrl,
   });
 
   UlokFormState copyWith({
@@ -78,6 +81,7 @@ class UlokFormState {
     String? namaPemilik,
     String? kontakPemilik,
     File? formUlokPdf,
+    String? existingFormUlokUrl,
   }) {
     return UlokFormState(
       ulokId: ulokId ?? this.ulokId,
@@ -102,6 +106,7 @@ class UlokFormState {
       namaPemilik: namaPemilik ?? this.namaPemilik,
       kontakPemilik: kontakPemilik ?? this.kontakPemilik,
       formUlokPdf: formUlokPdf ?? this.formUlokPdf,
+      existingFormUlokUrl: existingFormUlokUrl ?? this.existingFormUlokUrl,
     );
   }
 
@@ -159,6 +164,7 @@ Map<String, dynamic> toJson() {
     );
   }
 
+  @override
   List<Object?> get props => [ulokId, localId, status, namaUlok, latLng,provinsi, kabupaten, kecamatan, desa, alamat, formatStore, bentukObjek, alasHak, jumlahLantai, lebarDepan, panjang, luas, hargaSewa, namaPemilik, kontakPemilik, formUlokPdf];
 
   factory UlokFormState.fromUsulanLokasi(UsulanLokasi ulok) {
@@ -182,6 +188,7 @@ Map<String, dynamic> toJson() {
       hargaSewa: ulok.hargaSewa,
       namaPemilik: ulok.namaPemilik,
       kontakPemilik: ulok.kontakPemilik,
+      existingFormUlokUrl: ulok.formUlok,
     );
   }
 }

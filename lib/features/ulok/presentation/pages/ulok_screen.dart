@@ -230,12 +230,10 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                               ),
                             ),
                             onPressed: () async {
-                              if (draft.localId != null) {
-                                // Panggil repository langsung & refresh provider
-                                await ref.read(ulokFormRepositoryProvider).deleteDraft(draft.localId!);
-                                ref.invalidate(ulokDraftsProvider);
-                              }
-                              // ignore: use_build_context_synchronously
+                              // Panggil repository langsung & refresh provider
+                              await ref.read(ulokFormRepositoryProvider).deleteDraft(draft.localId);
+                              ref.invalidate(ulokDraftsProvider);
+                                                          // ignore: use_build_context_synchronously
                               Navigator.of(dialogContext).pop(); 
                             },
                             child: const Text('Hapus'),

@@ -7,7 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/custom_success_dialog.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/file_upload.dart';
+import 'package:midi_location/core/widgets/file_upload.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/dropdown.dart';
@@ -342,6 +342,7 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                   FileUploadWidget(
                     label: "Formulir Usulan Lokasi (PDF)",
                     fileName: formState.formUlokPdf?.path.split('/').last,
+                    existingFileUrl: formState.existingFormUlokUrl,
                     onTap: () async {
                       await pickFile((fieldName, file) => formNotifier.onFilePicked(file), '');
                     },

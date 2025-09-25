@@ -21,7 +21,8 @@ class UlokFormData {
   final double hargaSewa;
   final String namaPemilik;
   final String kontakPemilik;
-  final File formUlokPdf;
+  final File? formUlokPdf;
+  final String? existingFormUlokUrl;
 
   UlokFormData({
     required this.localId,
@@ -42,6 +43,7 @@ class UlokFormData {
     required this.hargaSewa,
     required this.namaPemilik,
     required this.kontakPemilik,
-    required this.formUlokPdf,
+    this.formUlokPdf,
+    this.existingFormUlokUrl,
   });
 }
