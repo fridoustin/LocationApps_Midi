@@ -28,6 +28,7 @@ class UlokFormPage extends ConsumerStatefulWidget {
 }
 
 class _UlokFormPageState extends ConsumerState<UlokFormPage> {
+  bool get _isEditMode => widget.initialState?.ulokId != null;
   final _formKey = GlobalKey<FormState>();
   late final MapController _mapController;
 
@@ -388,46 +389,53 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                 ],
               ),
               const SizedBox(height: 30),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final success = await formNotifier.saveDraft();
-                        if (success && mounted) {
-                          _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.cardColor,
-                        foregroundColor: AppColors.primaryColor,
-                        side: const BorderSide(color: AppColors.primaryColor),
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child : Row(
+                  children: [
+                    if (widget.initialState?.ulokId == null) ...[
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final success = await formNotifier.saveDraft();
+                            if (success && mounted) {
+                              _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.cardColor,
+                            foregroundColor: AppColors.primaryColor,
+                            side: const BorderSide(color: AppColors.primaryColor),
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Simpan Draft'),
+                        ),
                       ),
-                      child: const Text('Simpan Draft'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: formState.status == UlokFormStatus.loading ? null : () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          formNotifier.submitOrUpdateForm();
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      const SizedBox(width: 10),
+                    ],
+                    
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: formState.status == UlokFormStatus.loading ? null : () {
+                          if (_formKey.currentState?.validate() ?? false) {
+                            formNotifier.submitOrUpdateForm();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: formState.status == UlokFormStatus.loading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            // Ganti teks tombol berdasarkan mode Create vs. Edit
+                            : Text(_isEditMode ? 'Update Data' : 'Submit'),
                       ),
-                      child: formState.status == UlokFormStatus.loading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Submit'),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
             ],

@@ -465,49 +465,52 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                           pickFile(formNotifier.onFilePicked, 'petaCoverage'))
                 ]),
             const SizedBox(height: 30),
-            Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: formState.status == KpltFormStatus.loading ? null : () async {
-                        final success = await formNotifier.saveDraft();
-                        if (success && mounted) {
-                          _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.cardColor,
-                        foregroundColor: AppColors.primaryColor,
-                        side: const BorderSide(color: AppColors.primaryColor),
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Simpan Draft'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: formState.status == KpltFormStatus.loading ? null : () async {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          final success = await formNotifier.submitForm();
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child :Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: formState.status == KpltFormStatus.loading ? null : () async {
+                          final success = await formNotifier.saveDraft();
                           if (success && mounted) {
-                            _showPopupAndNavigateBack("Data Berhasil Disubmit!", "assets/icons/success.svg");
+                            _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
                           }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.cardColor,
+                          foregroundColor: AppColors.primaryColor,
+                          side: const BorderSide(color: AppColors.primaryColor),
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Simpan Draft'),
                       ),
-                      child: formState.status == KpltFormStatus.loading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Simpan Data KPLT'),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: formState.status == KpltFormStatus.loading ? null : () async {
+                          if (_formKey.currentState?.validate() ?? false) {
+                            final success = await formNotifier.submitForm();
+                            if (success && mounted) {
+                              _showPopupAndNavigateBack("Data Berhasil Disubmit!", "assets/icons/success.svg");
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: formState.status == KpltFormStatus.loading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Simpan Data KPLT'),
+                      ),
+                    ),
+                  ],
+                )
               ),
             const SizedBox(height: 20),
           ],
