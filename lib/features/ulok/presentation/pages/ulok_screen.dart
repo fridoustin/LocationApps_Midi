@@ -152,6 +152,8 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
         }
         return RefreshIndicator(
           onRefresh: () => ref.refresh(ulokListProvider.future),
+          color: AppColors.primaryColor,
+          backgroundColor: AppColors.cardColor,
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: ulokList.length,
