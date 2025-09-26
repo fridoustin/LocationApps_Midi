@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -10,7 +11,7 @@ import 'package:midi_location/core/widgets/custom_success_dialog.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_form_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/file_upload.dart';
+import 'package:midi_location/core/widgets/file_upload.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/dropdown.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/form_card.dart';
@@ -30,11 +31,26 @@ class KpltFormPage extends ConsumerStatefulWidget {
 }
 
 class _KpltFormPageState extends ConsumerState<KpltFormPage> {
+  final _formKey = GlobalKey<FormState>();
   final _skorFplController = TextEditingController();
   final _stdController = TextEditingController();
   final _apcController = TextEditingController();
   final _spdController = TextEditingController();
   final _peRabController = TextEditingController();
+
+  // Flags to track if user is currently typing
+  bool _isUserTypingSkorFpl = false;
+  bool _isUserTypingStd = false;
+  bool _isUserTypingApc = false;
+  bool _isUserTypingSpd = false;
+  bool _isUserTypingPeRab = false;
+
+  // Debounce timers
+  Timer? _skorFplDebounceTimer;
+  Timer? _stdDebounceTimer;
+  Timer? _apcDebounceTimer;
+  Timer? _spdDebounceTimer;
+  Timer? _peRabDebounceTimer;
 
   @override
   void dispose() {
@@ -43,45 +59,80 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     _apcController.dispose();
     _spdController.dispose();
     _peRabController.dispose();
+    
+    // Cancel all timers
+    _skorFplDebounceTimer?.cancel();
+    _stdDebounceTimer?.cancel();
+    _apcDebounceTimer?.cancel();
+    _spdDebounceTimer?.cancel();
+    _peRabDebounceTimer?.cancel();
+    
     super.dispose();
   }
 
-  void _showDraftSavedPopup() {
-  showDialog(
-    context: context,
-    builder: (context) => const CustomSuccessDialog(
-      title: "Draft anda tersimpan!",
-      iconPath: "assets/icons/draft.svg",
-    ),
-  );
-
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if(Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(); // Tutup dialog
-      }
-      if(Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(); 
-      }
-    });
-  }
-
-  Future<void> _showSubmitSuccessAndNavigateBack() async {
-  
+  Future<void> _showPopupAndNavigateBack(String message, String iconPath) async {
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const CustomSuccessDialog(
-          title: "Data Berhasil Disubmit!",
-          iconPath: "assets/icons/success.svg", 
-        );
-      },
+      builder: (BuildContext context) =>
+          CustomSuccessDialog(title: message, iconPath: iconPath),
     );
 
     await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
+  }
 
-    if (mounted) Navigator.of(context).pop(); 
-    if (mounted) Navigator.of(context).pop(); 
+  String _formatNumber(num? number) {
+    if (number == null) return '';
+    if (number.truncateToDouble() == number) return number.truncate().toString();
+    return number.toString();
+  }
+
+  void _updateControllerIfNeeded(
+    TextEditingController controller,
+    String newValue,
+    bool isUserTyping,
+  ) {
+    if (!isUserTyping && controller.text != newValue) {
+      // Save cursor position
+      final selection = controller.selection;
+      controller.text = newValue;
+      
+      // Restore cursor position if it's still valid
+      if (selection.start <= newValue.length) {
+        controller.selection = selection;
+      }
+    }
+  }
+
+  void _handleTextFieldChange(
+    String value,
+    Function(String) onChanged,
+    Function() setUserTypingTrue,
+    Timer? debounceTimer,
+    Function(Timer?) setDebounceTimer,
+  ) {
+    setUserTypingTrue();
+    
+    // Cancel previous timer
+    debounceTimer?.cancel();
+    
+    // Set new timer
+    setDebounceTimer(Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        onChanged(value);
+        // Reset typing flag after a short delay
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            setState(() {
+              // Reset the corresponding typing flag
+            });
+          }
+        });
+      }
+    }));
   }
 
   @override
@@ -106,37 +157,50 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
 
     // Listener untuk menampilkan Snackbar dan navigasi
     ref.listen<KpltFormState>(formProvider, (previous, next) {
-      final prevStatus = previous?.status;
-      final nextStatus = next.status;
+      // Update controllers only when user is not typing
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
 
-      if (prevStatus != nextStatus) {
-        if (nextStatus == KpltFormStatus.success) {
-          _showSubmitSuccessAndNavigateBack(); 
-        } else if (nextStatus == KpltFormStatus.error) {
-          if (ModalRoute.of(context)?.isCurrent != true) {
-            Navigator.of(context).pop();
-          }
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Error: ${next.errorMessage}'),
-            backgroundColor: AppColors.primaryColor,
-          ));
+        _updateControllerIfNeeded(
+          _skorFplController,
+          _formatNumber(next.skorFpl),
+          _isUserTypingSkorFpl,
+        );
+
+        _updateControllerIfNeeded(
+          _stdController,
+          _formatNumber(next.std),
+          _isUserTypingStd,
+        );
+
+        _updateControllerIfNeeded(
+          _apcController,
+          _formatNumber(next.apc),
+          _isUserTypingApc,
+        );
+
+        _updateControllerIfNeeded(
+          _spdController,
+          _formatNumber(next.spd),
+          _isUserTypingSpd,
+        );
+
+        _updateControllerIfNeeded(
+          _peRabController,
+          _formatNumber(next.peRab),
+          _isUserTypingPeRab,
+        );
+      });
+
+      // Handle status aksi
+      if (previous?.status != next.status) {
+        if (next.status == KpltFormStatus.error && next.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red),
+          );
+          // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+          ref.read(formProvider.notifier).state = next.copyWith(status: KpltFormStatus.initial, errorMessage: null);
         }
-      }
-
-      if (previous?.skorFpl != next.skorFpl) {
-        _skorFplController.text = next.skorFpl?.toString() ?? '';
-      }
-      if (previous?.std != next.std) {
-        _stdController.text = next.std?.toString() ?? '';
-      }
-      if (previous?.apc != next.apc) {
-        _apcController.text = next.apc?.toString() ?? '';
-      }
-      if (previous?.spd != next.spd) {
-        _spdController.text = next.spd?.toString() ?? '';
-      }
-      if (previous?.peRab != next.peRab) {
-        _peRabController.text = next.peRab?.toString() ?? '';
       }
     });
 
@@ -260,28 +324,52 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                   onSelected: (value) => formNotifier.onSosialEkonomiChanged(value!),
                 ),
                 FormTextField(
-                    controller: _skorFplController,
-                    label: "Skor FPL",
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) => formNotifier.onSkorFplChanged(value),
+                  controller: _skorFplController,
+                  label: "Skor FPL",
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => _handleTextFieldChange(
+                    value,
+                    formNotifier.onSkorFplChanged,
+                    () => _isUserTypingSkorFpl = true,
+                    _skorFplDebounceTimer,
+                    (timer) => _skorFplDebounceTimer = timer,
+                  ),
                 ),
                 FormTextField(
-                    controller: _stdController,
-                    label: "STD",
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) => formNotifier.onStdChanged(value),
+                  controller: _stdController,
+                  label: "STD",
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => _handleTextFieldChange(
+                    value,
+                    formNotifier.onStdChanged,
+                    () => _isUserTypingStd = true,
+                    _stdDebounceTimer,
+                    (timer) => _stdDebounceTimer = timer,
+                  ),
                 ),
                 FormTextField(
-                    controller: _apcController,
-                    label: "APC",
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) => formNotifier.onApcChanged(value)
+                  controller: _apcController,
+                  label: "APC",
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => _handleTextFieldChange(
+                    value,
+                    formNotifier.onApcChanged,
+                    () => _isUserTypingApc = true,
+                    _apcDebounceTimer,
+                    (timer) => _apcDebounceTimer = timer,
+                  ),
                 ),
                 FormTextField(
-                    controller: _spdController,
-                    label: "SPD",
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) => formNotifier.onSpdChanged(value)
+                  controller: _spdController,
+                  label: "SPD",
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => _handleTextFieldChange(
+                    value,
+                    formNotifier.onSpdChanged,
+                    () => _isUserTypingSpd = true,
+                    _spdDebounceTimer,
+                    (timer) => _spdDebounceTimer = timer,
+                  ),
                 ),
               ],
             ),
@@ -297,10 +385,16 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                   onSelected: (value) => formNotifier.onPeStatusChanged(value!),
                 ),
                 FormTextField(
-                    controller: _peRabController,
-                    label: "PE RAB",
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) => formNotifier.onPeRabChanged(value)
+                  controller: _peRabController,
+                  label: "PE RAB",
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => _handleTextFieldChange(
+                    value,
+                    formNotifier.onPeRabChanged,
+                    () => _isUserTypingPeRab = true,
+                    _peRabDebounceTimer,
+                    (timer) => _peRabDebounceTimer = timer,
+                  ),
                 ),
               ],
             ),
@@ -372,49 +466,49 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                 ]),
             const SizedBox(height: 30),
             Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: formState.status == KpltFormStatus.loading
-                      ? null
-                      : () async { // Jadikan async
-                          final success = await formNotifier.saveDraft();
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: formState.status == KpltFormStatus.loading ? null : () async {
+                        final success = await formNotifier.saveDraft();
+                        if (success && mounted) {
+                          _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cardColor,
+                        foregroundColor: AppColors.primaryColor,
+                        side: const BorderSide(color: AppColors.primaryColor),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Simpan Draft'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: formState.status == KpltFormStatus.loading ? null : () async {
+                        if (_formKey.currentState?.validate() ?? false) {
+                          final success = await formNotifier.submitForm();
                           if (success && mounted) {
-                            _showDraftSavedPopup();
+                            _showPopupAndNavigateBack("Data Berhasil Disubmit!", "assets/icons/success.svg");
                           }
-                        },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.cardColor,
-                      foregroundColor: AppColors.primaryColor,
-                      side: const BorderSide(color: AppColors.primaryColor),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: formState.status == KpltFormStatus.loading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Simpan Data KPLT'),
                     ),
-                    child: const Text('Simpan Draft'),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: formState.status == KpltFormStatus.loading
-                        ? null
-                        : () {
-                          debugPrint("--- SUBMIT BUTTON PRESSED ---");
-                          formNotifier.submitForm();
-                        },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: formState.status == KpltFormStatus.loading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Simpan Data KPLT'),
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
             const SizedBox(height: 20),
           ],
         ),
