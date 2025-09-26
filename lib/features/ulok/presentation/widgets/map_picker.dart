@@ -5,7 +5,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 
 class MapPickerDialog extends StatefulWidget {
-  const MapPickerDialog({super.key});
+  final LatLng? initialPoint;
+  const MapPickerDialog({super.key, this.initialPoint});
 
   @override
   State<MapPickerDialog> createState() => MapPickerDialogState();
@@ -19,7 +20,12 @@ class MapPickerDialogState extends State<MapPickerDialog> {
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    if (widget.initialPoint != null) {
+      _pickedLatLng = widget.initialPoint;
+      _isLoading = false;
+    } else {
+      _getCurrentLocation();
+    }
   }
 
   Future<void> _getCurrentLocation() async {

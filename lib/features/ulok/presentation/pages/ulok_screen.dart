@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_ulok.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/draft_card.dart';
@@ -150,18 +151,23 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
           return const Center(child: Text('Tidak ada data ULok.'));
         }
         return RefreshIndicator(
+          onRefresh: () => ref.refresh(ulokListProvider.future),
           color: AppColors.primaryColor,
           backgroundColor: AppColors.cardColor,
-          onRefresh: () {
-            ref.read(ulokSearchQueryProvider.notifier).state = '';
-            _searchController.clear();
-            return ref.refresh(ulokListProvider.future);
-          },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: ulokList.length,
             itemBuilder: (context, index) {
-              return UlokCard(ulok: ulokList[index]);
+              final ulok = ulokList[index];
+              return GestureDetector(
+                onTap: () {
+                  final initialState = UlokFormState.fromUsulanLokasi(ulok);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => UlokFormPage(initialState: initialState),
+                  ));
+                },
+                child: UlokCard(ulok: ulok),
+              );
             },
           ),
         );
@@ -191,7 +197,7 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                 draft: draft,
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => UlokFormPage(draftData: draft),
+                    builder: (context) => UlokFormPage(initialState: draft),
                   ));
                 },
                 onDeletePressed: () {
@@ -202,7 +208,7 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                         backgroundColor: AppColors.backgroundColor,
                         title: const Text('Hapus Draft'),
                         content: Text(
-                            'Apakah Anda yakin ingin menghapus draft "${draft.namaUlok.isEmpty ? '(Tanpa Nama)' : draft.namaUlok}"?'),
+                            'Apakah Anda yakin ingin menghapus draft "${draft.namaUlok ?? '(Tanpa Nama)'}"?'),
                         actions: <Widget>[
                           OutlinedButton(
                             style: OutlinedButton.styleFrom(
@@ -225,13 +231,16 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            onPressed: () {
-                              ref.read(ulokFormProvider.notifier).deleteDraft(draft.localId);
+                            onPressed: () async {
+                              // Panggil repository langsung & refresh provider
+                              await ref.read(ulokFormRepositoryProvider).deleteDraft(draft.localId);
+                              ref.invalidate(ulokDraftsProvider);
+                                                          // ignore: use_build_context_synchronously
                               Navigator.of(dialogContext).pop(); 
                             },
                             child: const Text('Hapus'),
                           ),
-                        ],
+                        ]
                       );
                     },
                   );

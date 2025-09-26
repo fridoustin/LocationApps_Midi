@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_detail_screen.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_edit_page.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 
 class UlokCard extends StatelessWidget {
   final UsulanLokasi ulok;
@@ -67,10 +68,14 @@ class UlokCard extends StatelessWidget {
                     maintainAnimation: true,
                     maintainSize: true,
                     child: IconButton(
-                      onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => UlokEditPage(ulok: ulok))),
+                      onPressed: () {
+                        final initialState = UlokFormState.fromUsulanLokasi(ulok);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UlokFormPage(initialState: initialState)),
+                        );
+                      },
                       icon: SvgPicture.asset(
                         'assets/icons/editulok.svg',
                         width: 24,

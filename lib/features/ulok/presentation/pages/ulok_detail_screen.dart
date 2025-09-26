@@ -1,20 +1,39 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_edit_page.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_detail_section.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UlokDetailPage extends StatelessWidget {
   final UsulanLokasi ulok;
   const UlokDetailPage({super.key, required this.ulok});
   static const String route = '/ulok/detail';
+
+  Future<void> _launchURL(BuildContext context, String? urlString) async {
+    if (urlString == null || urlString.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Link dokumen tidak tersedia.')),
+      );
+      return;
+    }
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tidak bisa membuka link: $urlString')),
+      );
+    }
+  }
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -192,16 +211,53 @@ class UlokDetailPage extends StatelessWidget {
                 ),
               ],
             ),
+
+            if (ulok.formUlok != null && ulok.formUlok!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              DetailSectionWidget(
+                title: "Form Ulok",
+                iconPath: "assets/icons/lampiran.svg",
+                children: [
+                  InkWell(
+                    onTap: () => _launchURL(context, ulok.formUlok),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              ulok.formUlok!.split('/').last.split('?').first,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 24),
             
             if (ulok.status == 'In Progress') ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => UlokEditPage(ulok: ulok))),
+                  onPressed: () {
+                    final initialState = UlokFormState.fromUsulanLokasi(ulok);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => UlokFormPage(initialState: initialState)));
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: Colors.white,

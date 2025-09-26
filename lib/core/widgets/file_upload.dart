@@ -10,15 +10,22 @@ class FileUploadWidget extends StatelessWidget {
   final String label;
   final String? fileName;
   final VoidCallback onTap;
+  final String? existingFileUrl;
 
   const FileUploadWidget(
       {super.key,
       required this.label,
       this.fileName,
-      required this.onTap});
+      required this.onTap,
+      this.existingFileUrl
+      });
 
   @override
   Widget build(BuildContext context) {
+    String displayedName = fileName ?? 
+        (existingFileUrl != null && existingFileUrl!.isNotEmpty 
+            ? existingFileUrl!.split('/').last.split('?').first 
+            : 'Pilih file...');
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: InkWell(
@@ -35,9 +42,10 @@ class FileUploadWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  fileName ?? 'Pilih file...',
+                  displayedName,
                   style: TextStyle(
-                      color: fileName != null ? Colors.black : Colors.grey[600]),
+                      // ignore: unnecessary_null_comparison
+                      color: displayedName != null ? Colors.black : Colors.grey[600]),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

@@ -297,7 +297,7 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
   }
 
   // --- Method utama untuk submit form ---
-  Future<void> submitForm() async {
+  Future<bool> submitForm() async {
     debugPrint("--- CHECKING STATE ON SUBMIT ---");
     debugPrint(state.toJson().toString());
     final s = state; 
@@ -309,8 +309,9 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
         s.video360Siang == null || s.video360Malam == null || s.petaCoverage == null)
     {
       state = state.copyWith(status: KpltFormStatus.error, errorMessage: 'Harap lengkapi semua data.');
+      await Future.delayed(const Duration(milliseconds: 100));
       state = state.copyWith(status: KpltFormStatus.initial, errorMessage: null);
-      return;
+      return false;
     }
 
     state = state.copyWith(status: KpltFormStatus.loading);
@@ -342,12 +343,17 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
       );
 
       await _repository.submitKplt(formData);
-      state = state.copyWith(status: KpltFormStatus.success);
-
       await _draftManager.deleteDraft(_ulokId);
+
+      final _ = await _ref.refresh(kpltNeedInputProvider.future);
+      final _ = await _ref.refresh(kpltInProgressProvider.future);
+
+      state = state.copyWith(status: KpltFormStatus.initial);
+      return true;
 
     } catch (e) {
       state = state.copyWith(status: KpltFormStatus.error, errorMessage: e.toString());
+      return false;
     }
   }
 }

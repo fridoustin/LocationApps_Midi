@@ -19,6 +19,7 @@ class UsulanLokasi {
   final double? hargaSewa;
   final String? namaPemilik;
   final String? kontakPemilik;
+  final String? formUlok;
 
   UsulanLokasi({
     required this.id,
@@ -41,5 +42,6 @@ class UsulanLokasi {
     this.hargaSewa,
     this.namaPemilik,
     this.kontakPemilik,
+    this.formUlok
   });
 }
