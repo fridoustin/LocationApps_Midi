@@ -1,4 +1,5 @@
 import 'package:midi_location/features/ulok/data/datasources/ulok_remote_datasource.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/ulok/domain/repositories/ulok_repository.dart';
 
@@ -36,14 +37,14 @@ class UlokRepositoryImpl implements UlokRepository {
   }
 
   @override
-  Future<List<UsulanLokasi>> getRecentUlok(String query) async {
-    final data = await dataSource.getRecentUlok(query);
+  Future<List<UsulanLokasi>> getRecentUlok({required String query, required UlokFilter filter}) async {
+    final data = await dataSource.getRecentUlok(query: query, filter: filter);
     return data.map(_mapToEntity).toList();
   }
 
   @override
-  Future<List<UsulanLokasi>> getHistoryUlok(String query) async {
-    final data = await dataSource.getHistoryUlok(query);
+  Future<List<UsulanLokasi>> getHistoryUlok({required String query, required UlokFilter filter}) async {
+    final data = await dataSource.getHistoryUlok(query: query, filter: filter);
     return data.map(_mapToEntity).toList();
   }
 

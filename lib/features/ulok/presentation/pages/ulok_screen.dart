@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_ulok.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/draft_card.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_card.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/ulok/presentation/widgets/ulok_filter_dialog.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_list_skeleton.dart';
 
 class ULOKPage extends ConsumerStatefulWidget {
@@ -49,9 +51,20 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
     });
   }
 
+  int _computeFilterBadgeCount(UlokFilter filter) {
+    int c = 0;
+    if (filter.status != null) c++;
+    if (filter.year != null) {
+      c++;
+    }
+    return c;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isShowingDrafts = ref.watch(showDraftsProvider);
+    final currentFilter = ref.watch(ulokFilterProvider);
+    final badgeCount = _computeFilterBadgeCount(currentFilter);
 
     return Column(
       children: [
@@ -126,23 +139,76 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                 ),
               ),
               const SizedBox(width: 16),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.filter_list_alt),
+
+              GestureDetector(
+                onTap: () async {
+                  final current = ref.read(ulokFilterProvider);
+
+                  final newFilter = await showModalBottomSheet<UlokFilter>(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => UlokFilterDialog(initialFilter: current),
+                  );
+
+                  if (newFilter != null) {
+                    ref.read(ulokFilterProvider.notifier).state = newFilter;
+                    ref.invalidate(ulokListProvider);
+                  }
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      height: 50,
+                      width: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardColor,               
+                        borderRadius: BorderRadius.circular(12),  
+                        border: Border.all(color: Colors.grey),   
+                      ),
+                      child: Center(
+                        child: Icon(Icons.filter_list_alt, color: AppColors.primaryColor),
+                      ),
+                    ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        right: -4,
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          constraints: const BoxConstraints(minWidth: 20, minHeight: 18),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              badgeCount > 99 ? '99+' : badgeCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-
-        // Daftar Usulan Lokasi
         Expanded(
-          child: isShowingDrafts
-              ? _buildDraftsList()
-              : _buildOnlineList(),
+          child: isShowingDrafts ? _buildDraftsList() : _buildOnlineList(),
         ),
       ],
     );
   }
+
   Widget _buildOnlineList() {
     final ulokListAsync = ref.watch(ulokListProvider);
     return ulokListAsync.when(
@@ -208,7 +274,8 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                         backgroundColor: AppColors.backgroundColor,
                         title: const Text('Hapus Draft'),
                         content: Text(
-                            'Apakah Anda yakin ingin menghapus draft "${draft.namaUlok ?? '(Tanpa Nama)'}"?'),
+                          'Apakah Anda yakin ingin menghapus draft "${draft.namaUlok ?? '(Tanpa Nama)'}"?',
+                        ),
                         actions: <Widget>[
                           OutlinedButton(
                             style: OutlinedButton.styleFrom(
@@ -232,15 +299,14 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
                               ),
                             ),
                             onPressed: () async {
-                              // Panggil repository langsung & refresh provider
                               await ref.read(ulokFormRepositoryProvider).deleteDraft(draft.localId);
                               ref.invalidate(ulokDraftsProvider);
-                                                          // ignore: use_build_context_synchronously
-                              Navigator.of(dialogContext).pop(); 
+                              // ignore: use_build_context_synchronously
+                              Navigator.of(dialogContext).pop();
                             },
                             child: const Text('Hapus'),
                           ),
-                        ]
+                        ],
                       );
                     },
                   );
@@ -255,4 +321,3 @@ class _ULOKPageState extends ConsumerState<ULOKPage> {
     );
   }
 }
-
