@@ -13,25 +13,72 @@ import 'package:midi_location/features/ulok/presentation/widgets/helpers/info_ro
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_detail_section.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart'; 
+import 'package:open_file_plus/open_file_plus.dart';   
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io';
 
 class UlokDetailPage extends StatelessWidget {
   final UsulanLokasi ulok;
   const UlokDetailPage({super.key, required this.ulok});
   static const String route = '/ulok/detail';
 
-  Future<void> _launchURL(BuildContext context, String? urlString) async {
-    if (urlString == null || urlString.isEmpty) {
+  Future<void> _openOrDownloadFile(BuildContext context, String? pathOrUrl, String ulokId) async {
+    if (pathOrUrl == null || pathOrUrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Link dokumen tidak tersedia.')),
       );
       return;
     }
-    final Uri url = Uri.parse(urlString);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tidak bisa membuka link: $urlString')),
-      );
+
+    // --- LOGIKA BARU: Cek apakah input adalah URL atau path ---
+    String relativePath;
+    if (pathOrUrl.startsWith('http')) {
+      // Jika ini URL, ekstrak path-nya
+      try {
+        final pathStartIndex = pathOrUrl.indexOf('form_ulok/') + 'form_ulok/'.length;
+        relativePath = pathOrUrl.substring(pathStartIndex);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Format URL tidak valid.')));
+        return;
+      }
+    } else {
+      // Jika ini sudah path, gunakan langsung
+      relativePath = pathOrUrl;
+    }
+    // ----------------------------------------------------
+
+    // Sisa logika tetap sama, tapi menggunakan 'relativePath'
+    final directory = await getApplicationDocumentsDirectory();
+    final localFileName = relativePath.split('/').last;
+    final localPath = '${directory.path}/$localFileName';
+    final localFile = File(localPath);
+
+    if (await localFile.exists()) {
+      print("Membuka file dari penyimpanan lokal: $localPath");
+      await OpenFile.open(localPath);
+    } else {
+      print("File tidak ditemukan lokal, men-download dari: $relativePath");
+      try {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mengunduh file...')),
+        );
+        
+        final supabase = Supabase.instance.client;
+        // Gunakan 'relativePath' untuk men-download
+        final fileBytes = await supabase.storage.from('form_ulok').download(relativePath);
+        
+        await localFile.writeAsBytes(fileBytes, flush: true);
+        print("File berhasil disimpan di: $localPath");
+
+        await OpenFile.open(localPath);
+
+      } catch (e) {
+        print("Gagal mengunduh atau membuka file: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengunduh file: $e')),
+        );
+      }
     }
   }
 
@@ -219,7 +266,7 @@ class UlokDetailPage extends StatelessWidget {
                 iconPath: "assets/icons/lampiran.svg",
                 children: [
                   InkWell(
-                    onTap: () => _launchURL(context, ulok.formUlok),
+                    onTap: () => _openOrDownloadFile(context, ulok.formUlok, ulok.id),
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),

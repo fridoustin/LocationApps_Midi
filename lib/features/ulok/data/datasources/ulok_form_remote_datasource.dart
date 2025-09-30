@@ -102,7 +102,7 @@ class UlokFormRemoteDataSource {
 
         final file = data.formUlokPdf!;
         final originalFileName = file.path.split('/').last;
-        final filePath = '$userId/${DateTime.now().millisecondsSinceEpoch}_${originalFileName}';
+        final filePath = '$ulokId/${DateTime.now().millisecondsSinceEpoch}_${originalFileName}';
 
         await _client.storage.from('form_ulok').upload(
               filePath,
@@ -110,7 +110,7 @@ class UlokFormRemoteDataSource {
               fileOptions: FileOptions(upsert: false),
             );
         
-        rowData['form_ulok'] = _client.storage.from('form_ulok').getPublicUrl(filePath);
+        rowData['form_ulok'] = filePath;
       }
       
       await _client.from('ulok').update(rowData).eq('id', ulokId);
