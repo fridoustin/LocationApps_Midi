@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/month_picker.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
-import 'package:month_picker_dialog/month_picker_dialog.dart';
 
 class UlokFilterDialog extends StatefulWidget {
   final UlokFilter initialFilter;
@@ -50,17 +50,18 @@ class _UlokFilterDialogState extends State<UlokFilterDialog> {
   }
 
   Future<void> _pickMonth(BuildContext context) async {
-    final now = DateTime.now();
-    final picked = await showMonthPicker(
-      context: context,
-      initialDate: _selectedMonthYear ?? now,
-      firstDate: DateTime(now.year - 10, 1),
-      lastDate: DateTime(now.year + 1, 12),
-    );
-    if (picked != null) {
-      setState(() => _selectedMonthYear = DateTime(picked.year, picked.month));
-    }
+  final picked = await CustomMonthPicker.show(
+    context,
+    initialDate: _selectedMonthYear,
+    primaryColor: AppColors.primaryColor,
+    firstDate: DateTime(DateTime.now().year - 10, 1),
+    lastDate: DateTime(DateTime.now().year + 1, 12),
+  );
+  
+  if (picked != null && mounted) {
+    setState(() => _selectedMonthYear = picked);
   }
+}
 
   @override
   Widget build(BuildContext context) {
