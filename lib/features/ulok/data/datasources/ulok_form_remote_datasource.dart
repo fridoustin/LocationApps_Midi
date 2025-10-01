@@ -19,7 +19,7 @@ class UlokFormRemoteDataSource {
     if (data.formUlokPdf != null) {
       final file = data.formUlokPdf!;
       final fileExtension = file.path.split('.').last;
-      final filePath = '$ulokId/ulok/${DateTime.now().millisecondsSinceEpoch}_Form_Ulok.$fileExtension';
+      final filePath = '$ulokId/ulok/${DateTime.now().millisecondsSinceEpoch}_form_ulok.$fileExtension';
 
       await _client.storage.from('file_storage').upload(
             filePath,
@@ -100,7 +100,7 @@ class UlokFormRemoteDataSource {
 
         final file = data.formUlokPdf!;
         final fileExtension = file.path.split('.').last;
-        final filePath = '$ulokId/ulok/${DateTime.now().millisecondsSinceEpoch}_Form_Ulok.$fileExtension';
+        final filePath = '$ulokId/ulok/${DateTime.now().millisecondsSinceEpoch}_form_ulok.$fileExtension';
 
         await _client.storage.from('file_storage').upload(
               filePath,
