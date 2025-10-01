@@ -14,7 +14,7 @@ import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_col
 import 'package:midi_location/features/ulok/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_detail_section.dart';
 import 'package:path_provider/path_provider.dart'; 
-import 'package:open_file_plus/open_file_plus.dart';   
+import 'package:open_filex/open_filex.dart';  
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
@@ -64,7 +64,7 @@ class UlokDetailPage extends StatelessWidget {
 
     if (await localFile.exists()) {
       print("Membuka file dari penyimpanan lokal: $localPath");
-      await OpenFile.open(localPath);
+      await OpenFilex.open(localPath);
     } else {
       print("File tidak ditemukan lokal, men-download dari: $relativePath");
       _showLoadingDialog(context);
@@ -77,7 +77,7 @@ class UlokDetailPage extends StatelessWidget {
         await localFile.writeAsBytes(fileBytes, flush: true);
         print("File berhasil disimpan di: $localPath");
 
-        await OpenFile.open(localPath);
+        await OpenFilex.open(localPath);
 
       } catch (e) {
         Navigator.of(context).pop();
