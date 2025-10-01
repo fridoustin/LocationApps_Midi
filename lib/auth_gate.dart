@@ -1,3 +1,5 @@
+// lib/auth_gate.dart
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,12 +14,16 @@ import 'package:midi_location/features/notification/presentation/provider/notifi
 import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<Map<String, dynamic>?>(initialNotificationProvider, (previous, next) {
+    ref.listen<Map<String, dynamic>?>(initialNotificationProvider, (
+      previous,
+      next,
+    ) {
       if (next != null) {
         final screen = next['screen'];
         final ulokId = next['ulokId'];
@@ -28,11 +34,11 @@ class AuthGate extends ConsumerWidget {
               builder: (context) => KpltNotificationHandlerPage(ulokId: ulokId),
             ),
           );
-          // Reset provider agar tidak menavigasi lagi
           ref.read(initialNotificationProvider.notifier).state = null;
         }
       }
     });
+
     ref.listen(authStateProvider, (previous, next) {
       final isLoggedIn = next.valueOrNull != null;
       final wasLoggedOut = previous?.valueOrNull == null;
@@ -42,7 +48,8 @@ class AuthGate extends ConsumerWidget {
         ref.invalidate(dashboardStatsProvider);
         ref.invalidate(ulokListProvider);
         ref.invalidate(notificationListProvider);
-        ref.invalidate(timeRangeProvider);
+        // DIUBAH: Baris ini dihapus karena timeRangeProvider sudah tidak ada
+        // ref.invalidate(timeRangeProvider);
         ref.invalidate(ulokTabProvider);
         ref.invalidate(kpltNeedInputProvider);
         ref.invalidate(kpltInProgressProvider);
@@ -54,13 +61,15 @@ class AuthGate extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
 
     if (connectivityStatus.isLoading || authState.isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (connectivityStatus.hasError || authState.hasError) {
       return Scaffold(
-        body: Center(child: Text('Terjadi error: ${connectivityStatus.error ?? authState.error}')),
+        body: Center(
+          child: Text(
+            'Terjadi error: ${connectivityStatus.error ?? authState.error}',
+          ),
+        ),
       );
     }
 
