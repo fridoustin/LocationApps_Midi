@@ -7,17 +7,42 @@ class DashboardRepositoryImpl implements DashboardRepository {
   DashboardRepositoryImpl(this._dataSource);
 
   @override
-  Future<DashboardStats> getDashboardStats({required String timeRange}) async {
-    final data = await _dataSource.getDashboardStats(timeRange: timeRange);
-    
-    // Parsing data JSON dari Supabase menjadi objek Dart
-    return DashboardStats(
-      totalUlok: data['total_ulok'] ?? 0,
-      ulokApproved: data['ulok_approved'] ?? 0,
-      monthlyApprovedData: (data['monthly_data'] as List<dynamic>?)
-          ?.map((e) => MonthlyApproved(month: e['month'], count: e['count']))
-          .toList() ?? [],
-      statusCounts: Map<String, int>.from(data['status_counts'] ?? {}),
-    );
+  Future<DashboardStats> getDashboardStats({
+    required int year,
+    int? month,
+  }) async {
+    try {
+      final data = await _dataSource.getDashboardStats(
+        year: year,
+        month: month,
+      );
+
+      List<MonthlyData> parseMonthlyData(List<dynamic>? rawData) {
+        if (rawData == null) return [];
+        return rawData
+            .map((item) => MonthlyData.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+
+      final monthlyUlokData = parseMonthlyData(data['monthly_ulok_data']);
+      final monthlyKpltData = parseMonthlyData(data['monthly_kplt_data']);
+
+      return DashboardStats(
+        totalUlok: (data['total_ulok'] as num?)?.toInt() ?? 0,
+        totalKplt: (data['total_kplt'] as num?)?.toInt() ?? 0,
+
+        ulokStatusCounts: Map<String, int>.from(
+          data['ulok_status_counts'] ?? {},
+        ),
+        kpltStatusCounts: Map<String, int>.from(
+          data['kplt_status_counts'] ?? {},
+        ),
+        monthlyUlokData: monthlyUlokData,
+        monthlyKpltData: monthlyKpltData,
+      );
+    } catch (e) {
+      print('Error parsing dashboard stats: $e');
+      rethrow;
+    }
   }
 }

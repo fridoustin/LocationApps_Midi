@@ -13,10 +13,7 @@ import 'package:midi_location/features/profile/presentation/widgets/textField.da
 class EditProfilePage extends ConsumerStatefulWidget {
   final Profile currentProfile;
 
-  const EditProfilePage({
-    super.key,
-    required this.currentProfile,
-  });
+  const EditProfilePage({super.key, required this.currentProfile});
 
   @override
   ConsumerState<EditProfilePage> createState() => _EditProfilePageState();
@@ -34,7 +31,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _nameController = TextEditingController(text: widget.currentProfile.name);
     _phoneController = TextEditingController(text: widget.currentProfile.phone);
     _emailController = TextEditingController(text: widget.currentProfile.email);
-    _nikController = TextEditingController(text: widget.currentProfile.nik ?? '-');
+    _nikController = TextEditingController(
+      text: widget.currentProfile.nik ?? '-',
+    );
   }
 
   @override
@@ -89,9 +88,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil berhasil diperbarui!'), backgroundColor: AppColors.successColor),
+        const SnackBar(
+          content: Text('Profil berhasil diperbarui!'),
+          backgroundColor: AppColors.successColor,
+        ),
       );
-      // Refresh provider profil agar data di halaman sebelumnya terupdate
       ref.invalidate(profileDataProvider);
       Navigator.pop(context);
     }
@@ -105,7 +106,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     ref.listen<EditProfileState>(editProfileProvider, (previous, next) {
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!), backgroundColor: AppColors.errorColor),
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.errorColor,
+          ),
         );
       }
     });
@@ -129,18 +133,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           children: [
             ProfileAvatar(
               imageFile: state.imageFile,
-              avatarUrl: profile.avatarUrl, // KIRIM URL AVATAR LAMA KE WIDGET
+              avatarUrl: profile.avatarUrl,
               onEditTap: () => _showImageSourceActionSheet(context),
             ),
             const SizedBox(height: 40),
-            
+
             Column(
               children: [
                 ProfileTextField(controller: _nameController, label: "Nama"),
                 const SizedBox(height: 16),
                 ProfileTextField(
-                  controller: _nikController, 
-                  label: "NIK", 
+                  controller: _nikController,
+                  label: "NIK",
                   isEnabled: false,
                   keyboardType: TextInputType.number,
                 ),
@@ -168,23 +172,24 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: state.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                    child:
+                        state.isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Text(
+                              "Save",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.cardColor,
+                              ),
                             ),
-                          )
-                        : const Text(
-                            "Save",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.cardColor,
-                            ),
-                          ),
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -196,4 +201,3 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 }
-

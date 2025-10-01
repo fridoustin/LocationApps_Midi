@@ -10,10 +10,10 @@ class ToggleSwitchSkeleton extends StatelessWidget {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: Container(
-        height: 40, // Sesuaikan dengan tinggi toggle Anda
+        height: 40,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20), // Sesuaikan dengan radius toggle Anda
+          borderRadius: BorderRadius.circular(20),
         ),
       ),
     );
