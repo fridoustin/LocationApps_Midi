@@ -1,4 +1,5 @@
 import 'package:midi_location/features/ulok/data/datasources/ulok_remote_datasource.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/ulok/domain/repositories/ulok_repository.dart';
 
@@ -31,18 +32,24 @@ class UlokRepositoryImpl implements UlokRepository {
       hargaSewa: (map['harga_sewa'] as num?)?.toDouble(),
       namaPemilik: map['nama_pemilik'],
       kontakPemilik: map['kontak_pemilik'],
+      formUlok: map['form_ulok'],
+      approvalIntip: map['approval_intip'],
+      tanggalApprovalIntip: map['tanggal_approval_intip'] != null
+          ? DateTime.parse(map['tanggal_approval_intip'])
+          : null,
+      fileIntip: map['file_intip'],
     );
   }
 
   @override
-  Future<List<UsulanLokasi>> getRecentUlok(String query) async {
-    final data = await dataSource.getRecentUlok(query);
+  Future<List<UsulanLokasi>> getRecentUlok({required String query, required UlokFilter filter}) async {
+    final data = await dataSource.getRecentUlok(query: query, filter: filter);
     return data.map(_mapToEntity).toList();
   }
 
   @override
-  Future<List<UsulanLokasi>> getHistoryUlok(String query) async {
-    final data = await dataSource.getHistoryUlok(query);
+  Future<List<UsulanLokasi>> getHistoryUlok({required String query, required UlokFilter filter}) async {
+    final data = await dataSource.getHistoryUlok(query: query, filter: filter);
     return data.map(_mapToEntity).toList();
   }
 

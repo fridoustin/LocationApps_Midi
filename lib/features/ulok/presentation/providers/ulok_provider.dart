@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:midi_location/features/ulok/data/datasources/ulok_remote_datasource.dart';
 import 'package:midi_location/features/ulok/data/repositories/ulok_repository_impl.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/ulok/domain/repositories/ulok_repository.dart';
 
@@ -25,11 +26,12 @@ final ulokListProvider = FutureProvider<List<UsulanLokasi>>((ref) async {
   final activeTab = ref.watch(ulokTabProvider);
 
   final searchQuery = ref.watch(ulokSearchQueryProvider);
+  final filter = ref.watch(ulokFilterProvider);
 
   if (activeTab == UlokTab.recent) {
-    return repository.getRecentUlok(searchQuery);
+    return repository.getRecentUlok(query: searchQuery, filter: filter);
   } else {
-    return repository.getHistoryUlok(searchQuery);
+    return repository.getHistoryUlok(query: searchQuery, filter: filter);
   }
 });
 
@@ -42,3 +44,5 @@ final ulokByIdProvider =
   final repository = ref.watch(ulokRepositoryProvider);
   return repository.getUlokById(ulokId);
 });
+
+final ulokFilterProvider = StateProvider<UlokFilter>((ref) => UlokFilter());

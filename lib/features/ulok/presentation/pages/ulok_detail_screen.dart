@@ -1,20 +1,93 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_edit_page.dart';
+import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_detail_section.dart';
+import 'package:path_provider/path_provider.dart'; 
+import 'package:open_file_plus/open_file_plus.dart';   
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io';
 
 class UlokDetailPage extends StatelessWidget {
   final UsulanLokasi ulok;
   const UlokDetailPage({super.key, required this.ulok});
   static const String route = '/ulok/detail';
+
+  void _showLoadingDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(
+      child: CircularProgressIndicator(
+        backgroundColor: Colors.white,
+        color: AppColors.primaryColor,
+      ),
+    ),
+  );
+}
+
+  Future<void> _openOrDownloadFile(BuildContext context, String? pathOrUrl, String ulokId) async {
+    if (pathOrUrl == null || pathOrUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dokumen tidak tersedia.')),
+      );
+      return;
+    }
+
+    String relativePath;
+    if (pathOrUrl.startsWith('http')) {
+      try {
+        final publicIndex = pathOrUrl.indexOf('/public/') + '/public/'.length;
+        final bucketAndPath = pathOrUrl.substring(publicIndex);
+        relativePath = bucketAndPath.substring(bucketAndPath.indexOf('/') + 1);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Format URL lama tidak valid.')));
+        return;
+      }
+    } else {
+      relativePath = pathOrUrl;
+    }
+    final directory = await getApplicationDocumentsDirectory();
+    final localFileName = relativePath.split('/').last;
+    final localPath = '${directory.path}/$localFileName';
+    final localFile = File(localPath);
+
+    if (await localFile.exists()) {
+      print("Membuka file dari penyimpanan lokal: $localPath");
+      await OpenFile.open(localPath);
+    } else {
+      print("File tidak ditemukan lokal, men-download dari: $relativePath");
+      _showLoadingDialog(context);
+
+      try {
+        final supabase = Supabase.instance.client;
+        final fileBytes = await supabase.storage.from('file_storage').download(relativePath);
+        Navigator.of(context).pop();
+
+        await localFile.writeAsBytes(fileBytes, flush: true);
+        print("File berhasil disimpan di: $localPath");
+
+        await OpenFile.open(localPath);
+
+      } catch (e) {
+        Navigator.of(context).pop();
+        print("Gagal mengunduh atau membuka file: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengunduh file: $e')),
+        );
+      }
+    }
+  }
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -27,6 +100,20 @@ class UlokDetailPage extends StatelessWidget {
       default:
         return Colors.grey;
     }
+  }
+
+  bool _isImageFile(String? filePath) {
+    if (filePath == null) return false;
+    final lowercasedPath = filePath.toLowerCase();
+    return lowercasedPath.endsWith('.png') ||
+            lowercasedPath.endsWith('.jpg') ||
+            lowercasedPath.endsWith('.jpeg');
+  }
+
+  String _getPublicUrl(String filePath) {
+    return Supabase.instance.client.storage
+        .from('file_storage') 
+        .getPublicUrl(filePath);
   }
 
   @override
@@ -192,16 +279,123 @@ class UlokDetailPage extends StatelessWidget {
                 ),
               ],
             ),
+
+            if (ulok.approvalIntip != null) ...[
+              const SizedBox(height: 16),
+              DetailSectionWidget(
+                title: "Data Intip",
+                iconPath: "assets/icons/analisis.svg",
+                children: [
+                  TwoColumnRowWidget(
+                    label1: "Status Intip",
+                    value1: ulok.approvalIntip ?? '-',
+                    label2: "Tanggal Intip",
+                    value2: ulok.tanggalApprovalIntip != null
+                        ? DateFormat('dd MMMM yyyy').format(ulok.tanggalApprovalIntip!)
+                        : '-',
+                  ),
+                  
+                  if (ulok.fileIntip != null && ulok.fileIntip!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      "File Intip:", 
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.black54
+                      )
+                    ),
+                    const SizedBox(height: 8),
+
+                    _isImageFile(ulok.fileIntip)
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            _getPublicUrl(ulok.fileIntip!),
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(child: CircularProgressIndicator(
+                                backgroundColor: Color(0xFFFFFFFF),
+                                color: AppColors.primaryColor,
+                              ));
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(child: Text('Gagal memuat gambar.'));
+                            },
+                          ),
+                        )
+                      : InkWell(
+                          onTap: () => _openOrDownloadFile(context, ulok.fileIntip, ulok.id),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    ulok.fileIntip!.split('/').last,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        ),
+                  ]
+                ],
+              ),
+            ],
+
+            if (ulok.formUlok != null && ulok.formUlok!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              DetailSectionWidget(
+                title: "Form Ulok",
+                iconPath: "assets/icons/lampiran.svg",
+                children: [
+                  InkWell(
+                    onTap: () => _openOrDownloadFile(context, ulok.formUlok, ulok.id),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              ulok.formUlok!.split('/').last.split('?').first,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 24),
             
             if (ulok.status == 'In Progress') ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => UlokEditPage(ulok: ulok))),
+                  onPressed: () {
+                    final initialState = UlokFormState.fromUsulanLokasi(ulok);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => UlokFormPage(initialState: initialState)));
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: Colors.white,

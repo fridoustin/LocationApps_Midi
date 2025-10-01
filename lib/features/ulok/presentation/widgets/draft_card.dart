@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
+import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
 
 class UlokDraftCard extends StatelessWidget {
-  final UlokFormData draft;
+  final UlokFormState draft;
   final VoidCallback onTap;
   final VoidCallback onDeletePressed;
 
@@ -16,9 +16,12 @@ class UlokDraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fullAddress = draft.alamat.isEmpty
+    final namaDraft = draft.namaUlok ?? '';
+    final alamatDraft = draft.alamat ?? '';
+
+    final fullAddress = alamatDraft.isEmpty
         ? '(Alamat belum diisi)'
-        : draft.alamat;
+        : alamatDraft;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -39,7 +42,7 @@ class UlokDraftCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      draft.namaUlok.isEmpty ? '(Tanpa Nama)' : draft.namaUlok,
+                      namaDraft.isEmpty ? '(Tanpa Nama)' : namaDraft,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -63,7 +66,7 @@ class UlokDraftCard extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.grey[700],
                   height: 1.4,
-                  fontStyle: draft.alamat.isEmpty ? FontStyle.italic : FontStyle.normal,
+                  fontStyle: alamatDraft.isEmpty ? FontStyle.italic : FontStyle.normal,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
