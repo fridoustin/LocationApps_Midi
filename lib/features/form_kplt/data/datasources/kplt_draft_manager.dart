@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:midi_location/features/form_kplt/presentation/providers/kplt_form_provider.dart';
+import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_state.dart';
 import 'package:path_provider/path_provider.dart';
 
 class KpltDraftManager {
