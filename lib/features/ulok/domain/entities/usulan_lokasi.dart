@@ -20,6 +20,9 @@ class UsulanLokasi {
   final String? namaPemilik;
   final String? kontakPemilik;
   final String? formUlok;
+  final String? approvalIntip;
+  final DateTime? tanggalApprovalIntip;
+  final String? fileIntip;
 
   UsulanLokasi({
     required this.id,
@@ -42,6 +45,9 @@ class UsulanLokasi {
     this.hargaSewa,
     this.namaPemilik,
     this.kontakPemilik,
-    this.formUlok
+    this.formUlok,
+    this.approvalIntip,
+    this.tanggalApprovalIntip,
+    this.fileIntip
   });
 }

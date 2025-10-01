@@ -32,7 +32,12 @@ class UlokRepositoryImpl implements UlokRepository {
       hargaSewa: (map['harga_sewa'] as num?)?.toDouble(),
       namaPemilik: map['nama_pemilik'],
       kontakPemilik: map['kontak_pemilik'],
-      formUlok: map['form_ulok']
+      formUlok: map['form_ulok'],
+      approvalIntip: map['approval_intip'],
+      tanggalApprovalIntip: map['tanggal_approval_intip'] != null
+          ? DateTime.parse(map['tanggal_approval_intip'])
+          : null,
+      fileIntip: map['file_intip'],
     );
   }
 
