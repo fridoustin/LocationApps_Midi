@@ -1,5 +1,6 @@
 // ignore_for_file: unnecessary_brace_in_string_interps
 
+import 'package:flutter/cupertino.dart';
 import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
 import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,25 +13,27 @@ class UlokFormRemoteDataSource {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw Exception('User not authenticated');
 
-    String? formUlokUrl;
+    final ulokId = data.localId;
+    String? formUlokPath;
 
-    final file = data.formUlokPdf;
-    final cleanNamaUlok = data.namaUlok.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
-    final fileExtension = file?.path.split('.').last;
-    final fileName = 'form_ulok_${cleanNamaUlok}.$fileExtension';
-    final filePath = '$userId/$fileName';
+    if (data.formUlokPdf != null) {
+      final file = data.formUlokPdf!;
+      final fileExtension = file.path.split('.').last;
+      final filePath = '$ulokId/ulok/${DateTime.now().millisecondsSinceEpoch}_Form_Ulok.$fileExtension';
 
-    await _client.storage.from('form_ulok').upload(
-          filePath,
-          file!,
-          fileOptions: FileOptions(
-            contentType: lookupMimeType(file.path),
-          ),
-        );
+      await _client.storage.from('file_storage').upload(
+            filePath,
+            file,
+            fileOptions: FileOptions(
+              contentType: lookupMimeType(file.path),
+            ),
+          );
 
-    formUlokUrl = _client.storage.from('form_ulok').getPublicUrl(filePath);
+      formUlokPath = filePath;
+    }
   
     final Map<String, dynamic> row = {
+      'id': ulokId,
       'users_id': userId,
       'branch_id': branchId,
       'nama_ulok': data.namaUlok,
@@ -53,7 +56,7 @@ class UlokFormRemoteDataSource {
       'kontak_pemilik': data.kontakPemilik,
       'approval_status': 'In Progress',
       'is_active': true,
-      'form_ulok': formUlokUrl,
+      'form_ulok': formUlokPath,
     };
 
     await _client.from('ulok').insert(row);
@@ -89,22 +92,17 @@ class UlokFormRemoteDataSource {
       if (data.formUlokPdf != null) {
         if (data.existingFormUlokUrl != null && data.existingFormUlokUrl!.isNotEmpty) {
           try {
-            final oldFileUrl = data.existingFormUlokUrl!;
-            final pathStartIndex = oldFileUrl.indexOf('form_ulok/') + 'form_ulok/'.length;
-            final encodedPath = oldFileUrl.substring(pathStartIndex);
-            final decodedPath = Uri.decodeComponent(encodedPath);
-            await _client.storage.from('form_ulok').remove([decodedPath]);
-
+            await _client.storage.from('file_storage').remove([data.existingFormUlokUrl!]);
           } catch (e) {
-            rethrow;
+            debugPrint("Gagal menghapus file lama: $e");
           }
         }
 
         final file = data.formUlokPdf!;
-        final originalFileName = file.path.split('/').last;
-        final filePath = '$ulokId/${DateTime.now().millisecondsSinceEpoch}_${originalFileName}';
+        final fileExtension = file.path.split('.').last;
+        final filePath = '$ulokId/ulok/${DateTime.now().millisecondsSinceEpoch}_Form_Ulok.$fileExtension';
 
-        await _client.storage.from('form_ulok').upload(
+        await _client.storage.from('file_storage').upload(
               filePath,
               file,
               fileOptions: FileOptions(upsert: false),
