@@ -48,6 +48,12 @@ class KpltRepositoryImpl implements KpltRepository {
       hargaSewa: _toDouble(ulokData['harga_sewa']),
       namaPemilik: ulokData['nama_pemilik'],
       kontakPemilik: ulokData['kontak_pemilik'],
+      formUlok: map['form_ulok'],
+      approvalIntip: map['approval_intip'],
+      tanggalApprovalIntip: map['tanggal_approval_intip'] != null
+          ? DateTime.parse(map['tanggal_approval_intip'])
+          : null,
+      fileIntip: map['file_intip'],
     );
   }
 
@@ -81,6 +87,12 @@ class KpltRepositoryImpl implements KpltRepository {
       hargaSewa: _toDouble(map['harga_sewa']),
       namaPemilik: map['nama_pemilik'],
       kontakPemilik: map['kontak_pemilik'],
+      formUlok: map['form_ulok'],
+      approvalIntip: map['approval_intip'],
+      tanggalApprovalIntip: map['tanggal_approval_intip'] != null
+          ? DateTime.parse(map['tanggal_approval_intip'])
+          : null,
+      fileIntip: map['file_intip'],
     );
   }
 

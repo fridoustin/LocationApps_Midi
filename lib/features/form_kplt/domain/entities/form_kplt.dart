@@ -20,6 +20,10 @@ class FormKPLT {
   final double? hargaSewa;
   final String? namaPemilik;
   final String? kontakPemilik;
+  final String? formUlok;
+  final String? approvalIntip;
+  final DateTime? tanggalApprovalIntip;
+  final String? fileIntip;
 
   FormKPLT({
     required this.id,
@@ -43,5 +47,9 @@ class FormKPLT {
     this.hargaSewa,
     this.namaPemilik,
     this.kontakPemilik,
+    this.formUlok,
+    this.approvalIntip,
+    this.fileIntip,
+    this.tanggalApprovalIntip
   });
 }
