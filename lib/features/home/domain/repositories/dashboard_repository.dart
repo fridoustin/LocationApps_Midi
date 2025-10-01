@@ -1,6 +1,7 @@
+// lib/features/home/domain/repositories/dashboard_repository.dart
+
 import 'package:midi_location/features/home/domain/entities/dashboard.dart';
 
 abstract class DashboardRepository {
-  // Ambil semua data statistik berdasarkan rentang waktu (bulan/tahun)
-  Future<DashboardStats> getDashboardStats({required String timeRange});
+  Future<DashboardStats> getDashboardStats({required int year, int? month});
 }
