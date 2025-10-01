@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,6 +22,9 @@ import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_col
 import 'package:midi_location/features/ulok/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/text_field.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/ulok_detail_section.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class KpltFormPage extends ConsumerStatefulWidget {
   final UsulanLokasi ulok;
@@ -71,6 +75,86 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     super.dispose();
   }
 
+  void _showLoadingDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(
+      child: CircularProgressIndicator(
+        backgroundColor: Colors.white,
+        color: AppColors.primaryColor,
+      ),
+    ),
+  );
+}
+
+  Future<void> _openOrDownloadFile(BuildContext context, String? pathOrUrl, String ulokId) async {
+    if (pathOrUrl == null || pathOrUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dokumen tidak tersedia.')),
+      );
+      return;
+    }
+
+    String relativePath;
+    if (pathOrUrl.startsWith('http')) {
+      try {
+        final publicIndex = pathOrUrl.indexOf('/public/') + '/public/'.length;
+        final bucketAndPath = pathOrUrl.substring(publicIndex);
+        relativePath = bucketAndPath.substring(bucketAndPath.indexOf('/') + 1);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Format URL lama tidak valid.')));
+        return;
+      }
+    } else {
+      relativePath = pathOrUrl;
+    }
+    final directory = await getApplicationDocumentsDirectory();
+    final localFileName = relativePath.split('/').last;
+    final localPath = '${directory.path}/$localFileName';
+    final localFile = File(localPath);
+
+    if (await localFile.exists()) {
+      print("Membuka file dari penyimpanan lokal: $localPath");
+      await OpenFilex.open(localPath);
+    } else {
+      print("File tidak ditemukan lokal, men-download dari: $relativePath");
+      _showLoadingDialog(context);
+
+      try {
+        final supabase = Supabase.instance.client;
+        final fileBytes = await supabase.storage.from('file_storage').download(relativePath);
+        Navigator.of(context).pop();
+
+        await localFile.writeAsBytes(fileBytes, flush: true);
+        print("File berhasil disimpan di: $localPath");
+
+        await OpenFilex.open(localPath);
+
+      } catch (e) {
+        Navigator.of(context).pop();
+        print("Gagal mengunduh atau membuka file: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengunduh file: $e')),
+        );
+      }
+    }
+  }
+
+  bool _isImageFile(String? filePath) {
+    if (filePath == null) return false;
+    final lowercasedPath = filePath.toLowerCase();
+    return lowercasedPath.endsWith('.png') ||
+            lowercasedPath.endsWith('.jpg') ||
+            lowercasedPath.endsWith('.jpeg');
+  }
+
+  String _getPublicUrl(String filePath) {
+    return Supabase.instance.client.storage
+        .from('file_storage') 
+        .getPublicUrl(filePath);
+  }
+
   Future<void> _showPopupAndNavigateBack(String message, String iconPath) async {
     if (!mounted) return;
     showDialog(
@@ -97,11 +181,8 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     bool isUserTyping,
   ) {
     if (!isUserTyping && controller.text != newValue) {
-      // Save cursor position
       final selection = controller.selection;
       controller.text = newValue;
-      
-      // Restore cursor position if it's still valid
       if (selection.start <= newValue.length) {
         controller.selection = selection;
       }
@@ -116,19 +197,14 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     Function(Timer?) setDebounceTimer,
   ) {
     setUserTypingTrue();
-    
-    // Cancel previous timer
     debounceTimer?.cancel();
-    
-    // Set new timer
+  
     setDebounceTimer(Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
         onChanged(value);
-        // Reset typing flag after a short delay
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
             setState(() {
-              // Reset the corresponding typing flag
             });
           }
         });
@@ -307,6 +383,110 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                 ),
               ],
             ),
+
+            if (widget.ulok.approvalIntip != null) ...[
+              const SizedBox(height: 16),
+              DetailSectionWidget(
+                title: "Data Intip",
+                iconPath: "assets/icons/analisis.svg",
+                children: [
+                  TwoColumnRowWidget(
+                    label1: "Status Intip",
+                    value1: widget.ulok.approvalIntip ?? '-',
+                    label2: "Tanggal Intip",
+                    value2: widget.ulok.tanggalApprovalIntip != null
+                        ? DateFormat('dd MMMM yyyy').format(widget.ulok.tanggalApprovalIntip!)
+                        : '-',
+                  ),
+                  
+                  if (widget.ulok.fileIntip != null && widget.ulok.fileIntip!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      "File Intip:", 
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.black54
+                      )
+                    ),
+                    const SizedBox(height: 8),
+
+                    _isImageFile(widget.ulok.fileIntip)
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            _getPublicUrl(widget.ulok.fileIntip!),
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(child: CircularProgressIndicator(
+                                backgroundColor: Color(0xFFFFFFFF),
+                                color: AppColors.primaryColor,
+                              ));
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(child: Text('Gagal memuat gambar.'));
+                            },
+                          ),
+                        )
+                      : InkWell(
+                          onTap: () => _openOrDownloadFile(context, widget.ulok.fileIntip, widget.ulok.id),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    widget.ulok.fileIntip!.split('/').last,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        ),
+                  ]
+                ],
+              ),
+            ],
+
+            if (widget.ulok.formUlok != null && widget.ulok.formUlok!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              DetailSectionWidget(
+                title: "Form Ulok",
+                iconPath: "assets/icons/lampiran.svg",
+                children: [
+                  InkWell(
+                    onTap: () => _openOrDownloadFile(context, widget.ulok.formUlok, widget.ulok.id),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              widget.ulok.formUlok!.split('/').last.split('?').first,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const Divider(thickness: 1, height: 32),
             FormCardSection( 
               title: "Analisa & FPL",

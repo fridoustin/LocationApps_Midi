@@ -73,6 +73,10 @@ class RecentKpltView extends ConsumerWidget {
                               hargaSewa: kpltItem.hargaSewa,
                               namaPemilik: kpltItem.namaPemilik,
                               kontakPemilik: kpltItem.kontakPemilik,
+                              formUlok: kpltItem.formUlok,
+                              approvalIntip: kpltItem.approvalIntip,
+                              tanggalApprovalIntip: kpltItem.tanggalApprovalIntip,
+                              fileIntip: kpltItem.fileIntip
                             );
 
                             // Panggil Navigasi
