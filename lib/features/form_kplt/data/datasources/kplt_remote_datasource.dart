@@ -161,4 +161,18 @@ class KpltRemoteDatasource {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> getKpltById(String kpltId) async {
+    try {
+      final response = await client
+          .from('kplt')
+          .select() 
+          .eq('id', kpltId) 
+          .single(); 
+
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

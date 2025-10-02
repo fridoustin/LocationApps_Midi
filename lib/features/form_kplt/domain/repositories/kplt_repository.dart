@@ -6,4 +6,5 @@ abstract class KpltRepository {
   Future<List<FormKPLT>> getKpltNeedInput(String query);
   Future<List<FormKPLT>> getHistoryKplt(String query);
   Future<void> submitKplt(KpltFormData formData);
+  Future<FormKPLT> getKpltById(String kpltId); 
 }
