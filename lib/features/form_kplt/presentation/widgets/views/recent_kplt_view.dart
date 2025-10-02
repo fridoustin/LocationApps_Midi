@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_detail_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.dart';
@@ -127,10 +128,24 @@ class RecentKpltView extends ConsumerWidget {
                 else
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-                        child: KpltCard(kplt: list[index]),
-                      ),
+                      (context, index) {
+                        final kpltItem = list[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => KpltDetailScreen(kpltId: kpltItem.id),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16), 
+                            child: KpltCard(kplt: kpltItem),
+                          ),
+                        );
+                      },
                       childCount: list.length,
                     ),
                   ),

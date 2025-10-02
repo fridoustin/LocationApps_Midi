@@ -46,3 +46,9 @@ final dropdownOptionsProvider = FutureProvider.family<List<String>, String>((ref
   
   return (response as List).map((item) => item.toString()).toList();
 });
+
+final kpltDetailProvider = 
+    FutureProvider.family<FormKPLT, String>((ref, kpltId) {
+  final repository = ref.watch(kpltRepositoryProvider); 
+  return repository.getKpltById(kpltId);
+});
