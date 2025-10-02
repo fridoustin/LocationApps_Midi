@@ -70,6 +70,7 @@ class KpltRemoteDatasource {
   Future<void> submitKplt(KpltFormData formData) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw const AuthException('User not Authenticated');
+    final List<String> uploadedFilePaths = [];
 
     try {
       final Map<String, File> filesToUpload = {
@@ -87,38 +88,28 @@ class KpltRemoteDatasource {
         'peta_coverage': formData.petaCoverage,
       };
 
-      final List<Future> uploadTasks = [];
-      final Map<String, String> filePaths = {}; 
+      final Map<String, String> uploadedFileColumnData = {};
 
-      for (var entry in filesToUpload.entries) {
-        
+      for (final entry in filesToUpload.entries) {
         final columnName = entry.key;
         final file = entry.value;
-
+        final ulokId = formData.ulokId;
         final fileExtension = file.path.split('.').last;
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$columnName.$fileExtension';
-        final filePath = '$userId/${formData.ulokId}/$fileName';
+        final filePath = '$ulokId/kplt/${DateTime.now().millisecondsSinceEpoch}_$columnName.$fileExtension';
 
         debugPrint("Uploading file to: $filePath");
         
-        filePaths[columnName] = filePath; // Simpan path
+        await client.storage.from('file_storage').upload(
+          filePath,
+          file,
+          fileOptions: FileOptions(
+            contentType: lookupMimeType(file.path),
+            upsert: false,
+          ),
+        );
 
-        uploadTasks.add(client.storage.from('kplt-files').upload(
-              filePath,
-              file,
-              fileOptions: FileOptions(
-                contentType: lookupMimeType(file.path),
-                upsert: false,
-              ),
-            ));
-      }
-
-      await Future.wait(uploadTasks);
-
-      final Map<String, String> uploadedFileUrls = {};
-      for (var entry in filePaths.entries) {
-        final publicUrl = client.storage.from('kplt-files').getPublicUrl(entry.value);
-        uploadedFileUrls[entry.key] = publicUrl;
+        uploadedFilePaths.add(filePath);
+        uploadedFileColumnData[columnName] = filePath;
       }
 
       final Map<String, dynamic> kpltData = {
@@ -132,15 +123,41 @@ class KpltRemoteDatasource {
         'apc': formData.apc,
         'spd': formData.spd,
         'pe_rab': formData.peRab,
-        ...uploadedFileUrls,
+        ...uploadedFileColumnData,
         'progress_toko': 'Running',
         'kplt_approval': 'In Progress',
         'is_active': true,
+        'nama_kplt': formData.namaKplt,
+        'latitude': formData.latLng.latitude,
+        'longitude': formData.latLng.longitude,
+        'desa_kelurahan': formData.desa,
+        'kecamatan': formData.kecamatan,
+        'kabupaten': formData.kabupaten,
+        'provinsi': formData.provinsi,
+        'alamat': formData.alamat,
+        'format_store': formData.formatStore,
+        'bentuk_objek': formData.bentukObjek,
+        'alas_hak': formData.alasHak,
+        'jumlah_lantai': formData.jumlahLantai,
+        'lebar_depan': formData.lebarDepan,
+        'panjang': formData.panjang,
+        'luas': formData.luas,
+        'harga_sewa': formData.hargaSewa,
+        'nama_pemilik': formData.namaPemilik,
+        'kontak_pemilik': formData.kontakPemilik,
+        'form_ulok': formData.formUlok,
+        'approval_intip_status': formData.approvalIntip,
+        'tanggal_approval_intip': formData.tanggalApprovalIntip.toIso8601String(),
+        'file_intip': formData.fileIntip
       };
-
       await client.from('kplt').insert(kpltData);
 
     } catch (e) {
+      debugPrint("Error submitting KPLT: $e. Rolling back storage uploads...");
+      if (uploadedFilePaths.isNotEmpty) {
+        await client.storage.from('file_storage').remove(uploadedFilePaths);
+        debugPrint("Rollback successful. Deleted files: $uploadedFilePaths");
+      }
       rethrow;
     }
   }

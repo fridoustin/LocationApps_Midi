@@ -36,7 +36,6 @@ class KpltFormPage extends ConsumerStatefulWidget {
 }
 
 class _KpltFormPageState extends ConsumerState<KpltFormPage> {
-  final _formKey = GlobalKey<FormState>();
   final _skorFplController = TextEditingController();
   final _stdController = TextEditingController();
   final _apcController = TextEditingController();
@@ -561,7 +560,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
               children: [
                 PopupButtonForm(
                   label: "PE Status",
-                  optionsProvider: dropdownOptionsProvider('PE_Status'), 
+                  optionsProvider: dropdownOptionsProvider('pe_status'), 
                   selectedValue: formState.peStatus,
                   onSelected: (value) => formNotifier.onPeStatusChanged(value!),
                 ),
@@ -672,11 +671,9 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: formState.status == KpltFormStatus.loading ? null : () async {
-                          if (_formKey.currentState?.validate() ?? false) {
-                            final success = await formNotifier.submitForm();
-                            if (success && mounted) {
-                              _showPopupAndNavigateBack("Data Berhasil Disubmit!", "assets/icons/success.svg");
-                            }
+                          final success = await formNotifier.submitForm();
+                          if (success && mounted) {
+                            _showPopupAndNavigateBack("Data Berhasil Disubmit!", "assets/icons/success.svg");
                           }
                         },
                         style: ElevatedButton.styleFrom(

@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 import 'package:midi_location/features/form_kplt/data/datasources/kplt_draft_manager.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_state.dart';
 import 'package:midi_location/features/form_kplt/domain/repositories/kplt_repository.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 
 final kpltDraftManagerProvider = Provider((_) => KpltDraftManager());
 
@@ -142,6 +144,22 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
     state = state.copyWith(status: KpltFormStatus.loading);
 
     try {
+      final ulokDetail = await _ref.read(ulokByIdProvider(_ulokId).future);
+
+      if (ulokDetail.latLong == null || ulokDetail.latLong!.isEmpty) {
+        throw Exception('Data Latitude/Longitude dari ULOK tidak ditemukan.');
+      }
+
+      final parts = ulokDetail.latLong!.split(',');
+      if (parts.length != 2) {
+        throw Exception('Format Latitude/Longitude tidak valid.');
+      }
+
+      final latLngObject = LatLng(
+        double.parse(parts[0].trim()), 
+        double.parse(parts[1].trim()), 
+      );
+
       final formData = KpltFormData(
         ulokId: s.ulokId,
         branchId: s.branchId!,
@@ -165,6 +183,27 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
         video360Siang: s.video360Siang!,
         video360Malam: s.video360Malam!,
         petaCoverage: s.petaCoverage!,
+        namaKplt: ulokDetail.namaLokasi,
+        provinsi: ulokDetail.provinsi,
+        kabupaten: ulokDetail.kabupaten,
+        kecamatan: ulokDetail.kecamatan,
+        desa: ulokDetail.desaKelurahan,
+        alamat: ulokDetail.alamat,
+        latLng: latLngObject,
+        formatStore: ulokDetail.formatStore!,
+        bentukObjek: ulokDetail.bentukObjek!,
+        alasHak: ulokDetail.alasHak!,
+        jumlahLantai: ulokDetail.jumlahLantai!,
+        lebarDepan: ulokDetail.lebarDepan!,
+        panjang: ulokDetail.panjang!,
+        luas: ulokDetail.luas!,
+        hargaSewa: ulokDetail.hargaSewa!,
+        namaPemilik: ulokDetail.namaPemilik!,
+        kontakPemilik: ulokDetail.kontakPemilik!,
+        approvalIntip: ulokDetail.approvalIntip!,
+        tanggalApprovalIntip: ulokDetail.tanggalApprovalIntip!,
+        fileIntip: ulokDetail.fileIntip!,
+        formUlok: ulokDetail.formUlok!
       );
 
       await _repository.submitKplt(formData);
