@@ -135,15 +135,6 @@ class _KpltDetailView extends StatelessWidget {
                 ),
               ),
             ),
-            if (filePath != null && filePath.isNotEmpty)
-              Text(
-                filePath.split('/').last.length > 20 
-                  ? '...${filePath.split('/').last.substring(filePath.split('/').last.length - 15)}' 
-                  : filePath.split('/').last,
-                style: const TextStyle(color: Colors.grey),
-                overflow: TextOverflow.ellipsis,
-              ),
-            const SizedBox(width: 8),
             Icon(Icons.open_in_new_rounded, color: filePath != null && filePath.isNotEmpty ? Colors.grey : Colors.transparent),
           ],
         ),
@@ -333,21 +324,24 @@ class _KpltDetailView extends StatelessWidget {
           ]),
           
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                // TODO: Navigasi ke Halaman Edit KPLT
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          if (kplt.status == 'In Progress' || kplt.status == 'Waiting for Forum') ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // TODO: Navigasi ke Halaman Edit KPLT
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("Edit Data KPLT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
-              child: const Text("Edit Data KPLT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
-          ),
+            const SizedBox(height: 24),
+          ]
         ],
       ),
     );
