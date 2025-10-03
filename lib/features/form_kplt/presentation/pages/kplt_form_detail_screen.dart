@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/form_kplt/presentation/pages/kplt_edit_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/ulok/presentation/widgets/helpers/two_column_row.dart';
@@ -329,7 +330,12 @@ class _KpltDetailView extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // TODO: Navigasi ke Halaman Edit KPLT
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => KpltEditPage(kplt: kplt),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
