@@ -93,7 +93,6 @@ class FormKPLT {
     this.petaCoverage,
   });
 
-  // Helper functions sudah benar
   static double? _parseDouble(dynamic value) {
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value);
@@ -126,27 +125,27 @@ class FormKPLT {
       ulokId: map['ulok_id'],
       status: map['kplt_approval'],
       tanggal: DateTime.parse(map['created_at']),
-      namaLokasi: ulokData['nama_ulok'] ?? '',
-      alamat: ulokData['alamat'] ?? '',
-      kecamatan: ulokData['kecamatan'] ?? '',
-      desaKelurahan: ulokData['desa_kelurahan'] ?? '',
-      kabupaten: ulokData['kabupaten'] ?? '',
-      provinsi: ulokData['provinsi'] ?? '',
+      namaLokasi: map['nama_kplt'] ?? ulokData['nama_ulok'] ?? '',
+      alamat: map['alamat'] ?? ulokData['alamat'] ?? '',
+      kecamatan: map['kecamatan'] ?? ulokData['kecamatan'] ?? '',
+      desaKelurahan: map['desa_kelurahan'] ?? ulokData['desa_kelurahan'] ?? '',
+      kabupaten: map['kabupaten'] ?? ulokData['kabupaten'] ?? '',
+      provinsi: map['provinsi'] ?? ulokData['provinsi'] ?? '',
       latLong: latLongValue,
-      formatStore: ulokData['format_store'],
-      bentukObjek: ulokData['bentuk_objek'],
-      alasHak: ulokData['alas_hak'],
-      jumlahLantai: _parseInt(ulokData['jumlah_lantai']),
-      lebarDepan: _parseDouble(ulokData['lebar_depan']),
-      panjang: _parseDouble(ulokData['panjang']),
-      luas: _parseDouble(ulokData['luas']),
-      hargaSewa: _parseDouble(ulokData['harga_sewa']),
-      namaPemilik: ulokData['nama_pemilik'],
-      kontakPemilik: ulokData['kontak_pemilik'],
-      formUlok: ulokData['form_ulok'],
-      approvalIntip: ulokData['approval_intip_status'],
-      fileIntip: ulokData['file_intip'],
-      tanggalApprovalIntip: ulokData['tanggal_approval_intip'] == null ? null : DateTime.parse(ulokData['tanggal_approval_intip']),
+      formatStore: map['format_store'] ?? ulokData['format_store'],
+      bentukObjek: map['bentuk_objek'] ?? ulokData['bentuk_objek'],
+      alasHak: map['alas_hak'] ?? ulokData['alas_hak'],
+      jumlahLantai: _parseInt(map['jumlah_lantai']),
+      lebarDepan: _parseDouble(map['lebar_depan']),
+      panjang: _parseDouble(map['panjang']),
+      luas: _parseDouble(map['luas']),
+      hargaSewa: _parseDouble(map['harga_sewa']),
+      namaPemilik: map['nama_pemilik'] ?? ulokData['nama_pemilik'],
+      kontakPemilik: map['kontak_pemilik'] ?? ulokData['kontak_pemilik'],
+      formUlok: map['form_ulok'] ?? ulokData['form_ulok'],
+      approvalIntip: map['approval_intip_status'] ?? ulokData['approval_intip_status'],
+      fileIntip: map['file_intip'] ?? ulokData['file_intip'],
+      tanggalApprovalIntip: map['tanggal_approval_intip'] == null ? null : DateTime.parse(map['tanggal_approval_intip']),
       karakterLokasi: map['karakter_lokasi'],
       sosialEkonomi: map['sosial_ekonomi'],
       peStatus: map['pe_status'],
@@ -172,7 +171,6 @@ class FormKPLT {
 
   /// Factory #2: Untuk data dari ULOK murni (Need Input)
   factory FormKPLT.fromUlokMap(Map<String, dynamic> map) {
-    // PERBAIKAN DI SINI: Gunakan _parseDouble
     final lat = _parseDouble(map['latitude']);
     final lon = _parseDouble(map['longitude']);
     String? latLongValue;
@@ -232,7 +230,6 @@ class FormKPLT {
 
   /// Factory #3: Untuk data dari KPLT murni (Detail Screen)
   factory FormKPLT.fromKpltDetailMap(Map<String, dynamic> map) {
-    // PERBAIKAN DI SINI: Gunakan _parseDouble
     final lat = _parseDouble(map['latitude']);
     final lon = _parseDouble(map['longitude']);
     String? latLongValue;
@@ -240,7 +237,6 @@ class FormKPLT {
       latLongValue = '$lat,$lon';
     }
 
-    // Kode lainnya sudah benar
     return FormKPLT(
       id: map['id'],
       ulokId: map['ulok_id'],
