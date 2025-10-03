@@ -7,4 +7,5 @@ abstract class KpltRepository {
   Future<List<FormKPLT>> getHistoryKplt(String query);
   Future<void> submitKplt(KpltFormData formData);
   Future<FormKPLT> getKpltById(String kpltId); 
+  Future<void> updateKplt(String kpltId, Map<String, dynamic> data, {required FormKPLT originalKplt});
 }

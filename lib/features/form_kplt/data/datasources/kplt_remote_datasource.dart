@@ -175,4 +175,15 @@ class KpltRemoteDatasource {
       rethrow;
     }
   }
+
+  Future<void> updateKplt(String kpltId, Map<String, dynamic> data) async {
+    try {
+      await client
+          .from('kplt')
+          .update(data)
+          .eq('id', kpltId);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
