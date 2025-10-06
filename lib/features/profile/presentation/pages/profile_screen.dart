@@ -1,13 +1,13 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
-import 'package:midi_location/features/profile/presentation/providers/profile_provider.dart';
-import 'package:midi_location/features/profile/presentation/widgets/InfoCard/info_card.dart';
-import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
+import 'package:midi_location/features/profile/presentation/widgets/InfoCard/info_card.dart';
+import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -24,6 +24,7 @@ class ProfilePage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: 4),
               profileAsync.when(
                 data: (profile) {
                   return InfoCard(profileData: profile);
@@ -33,12 +34,9 @@ class ProfilePage extends ConsumerWidget {
                     (err, stack) =>
                         const Center(child: Text('Gagal memuat informasi.')),
               ),
-              const SizedBox(height: 19),
-              // Widget Kartu Bantuan
+              const SizedBox(height: 23),
               const SupportCard(),
-              // PERUBAHAN DI SINI: Tambahkan SizedBox untuk spasi vertikal
-              const SizedBox(height: 20),
-              // Tombol Logout
+              const SizedBox(height: 27),
               _buildLogoutButton(context, ref),
             ],
           ),
@@ -47,26 +45,10 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  // Widget untuk Tombol Logout
   Widget _buildLogoutButton(BuildContext context, WidgetRef ref) {
-    // PERUBAHAN DI SINI: Hapus widget Padding
     return ElevatedButton(
-      onPressed: () async {
-        try {
-          await ref.read(authRepositoryProvider).signOut();
-          ref.invalidate(profileDataProvider);
-          ref.invalidate(dashboardStatsProvider);
-          if (!context.mounted) return;
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const AuthGate()),
-            (route) => false,
-          );
-        } catch (e) {
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Logout gagal: ${e.toString()}")),
-          );
-        }
+      onPressed: () {
+        _showLogoutConfirmationDialog(context, ref);
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryColor,
@@ -79,6 +61,137 @@ class ProfilePage extends ConsumerWidget {
         "Logout",
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (BuildContext dialogContext) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.75,
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+              decoration: BoxDecoration(
+                color: AppColors.cardColor,
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Anda yakin ingin keluar?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 90,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            foregroundColor: AppColors.black,
+
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ).copyWith(
+                            overlayColor:
+                                MaterialStateProperty.resolveWith<Color?>((
+                                  Set<MaterialState> states,
+                                ) {
+                                  if (states.contains(MaterialState.pressed)) {
+                                    return Colors.black.withOpacity(0.12);
+                                  }
+                                  return null;
+                                }),
+                          ),
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop();
+                          },
+                          child: const Text(
+                            'Tidak',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      SizedBox(
+                        width: 90,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            foregroundColor: Colors.white,
+
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ).copyWith(
+                            overlayColor:
+                                MaterialStateProperty.resolveWith<Color?>((
+                                  Set<MaterialState> states,
+                                ) {
+                                  if (states.contains(MaterialState.pressed)) {
+                                    return Colors.black.withOpacity(0.12);
+                                  }
+                                  return null;
+                                }),
+                          ),
+                          onPressed: () async {
+                            Navigator.of(dialogContext).pop();
+                            try {
+                              await ref.read(authRepositoryProvider).signOut();
+                              ref.invalidate(userProfileProvider);
+                              ref.invalidate(dashboardStatsProvider);
+                              if (!context.mounted) return;
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (context) => const AuthGate(),
+                                ),
+                                (route) => false,
+                              );
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "Logout gagal: ${e.toString()}",
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text(
+                            'Ya',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
