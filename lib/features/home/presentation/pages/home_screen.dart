@@ -1,5 +1,3 @@
-// lib/features/home/presentation/pages/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -61,8 +59,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(filteredDashboardStatsProvider);
     final profileAsync = ref.watch(userProfileProvider);
-    final selectedMonth = ref.watch(selectedMonthProvider);
-    final selectedYear = ref.watch(selectedYearProvider);
+
+    final selectedMonthForUI = ref.watch(selectedMonthProvider);
+    final selectedYearForUI = ref.watch(selectedYearProvider);
+
+    final dataMonth = ref.watch(dataFilterMonthProvider);
+    final dataYear = ref.watch(dataFilterYearProvider);
+
     final selectedView = ref.watch(selectedDashboardViewProvider);
 
     return Container(
@@ -118,13 +121,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                         isUlokView ? "ULok Statistics" : "KPLT Statistics";
 
                     String title = isUlokView ? "ULok" : "KPLT";
-                    final yearToDisplay = selectedYear ?? DateTime.now().year;
-
-                    if (selectedMonth != null) {
-                      final monthName = months[selectedMonth - 1];
-                      title = '$title - $monthName $yearToDisplay';
-                    } else if (selectedYear != null) {
-                      title = '$title - Tahun $yearToDisplay';
+                    if (dataMonth != null) {
+                      final monthName = months[dataMonth - 1];
+                      title = '$title - $monthName $dataYear';
+                    } else {
+                      title = '$title - Tahun $dataYear';
                     }
 
                     return Column(
@@ -135,7 +136,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             Expanded(
                               child: FilterDropdown<int?>(
                                 hintText: 'Pilih Bulan',
-                                value: selectedMonth,
+                                value: selectedMonthForUI,
                                 items: List.generate(months.length, (index) {
                                   return DropdownMenuItem(
                                     value: index + 1,
@@ -146,10 +147,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ref
                                       .read(selectedMonthProvider.notifier)
                                       .state = value;
+                                  ref
+                                      .read(dataFilterMonthProvider.notifier)
+                                      .state = value;
                                 },
                                 onClear: () {
                                   ref
                                       .read(selectedMonthProvider.notifier)
+                                      .state = null;
+                                  ref
+                                      .read(dataFilterMonthProvider.notifier)
                                       .state = null;
                                 },
                               ),
@@ -158,7 +165,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             Expanded(
                               child: FilterDropdown<int?>(
                                 hintText: 'Pilih Tahun',
-                                value: selectedYear,
+                                value: selectedYearForUI,
                                 items:
                                     years.map((year) {
                                       return DropdownMenuItem(
@@ -167,21 +174,27 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       );
                                     }).toList(),
                                 onChanged: (value) {
+                                  final newYear = value ?? DateTime.now().year;
                                   ref
                                       .read(selectedYearProvider.notifier)
                                       .state = value;
+                                  ref
+                                      .read(dataFilterYearProvider.notifier)
+                                      .state = newYear;
                                 },
                                 onClear: () {
                                   ref
                                       .read(selectedYearProvider.notifier)
                                       .state = null;
+                                  ref
+                                      .read(dataFilterYearProvider.notifier)
+                                      .state = DateTime.now().year;
                                 },
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 20),
-
                         Row(
                           children: [
                             Expanded(
@@ -299,19 +312,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ? MonthlyUlokBarChart(
                                     key: const ValueKey('ulok_chart'),
                                     data: stats.monthlyUlokData,
-                                    year: selectedYear,
+                                    year: dataYear,
                                   )
                                   : MonthlyKpltBarChart(
                                     key: const ValueKey('kplt_chart'),
                                     data: stats.monthlyKpltData,
-                                    year: selectedYear,
+                                    year: dataYear,
                                   ),
                         ),
-                        const SizedBox(height: 24),
                       ],
                     );
                   },
-
                   loading: () => const HomepageSkeleton(),
                   error:
                       (err, stack) =>
