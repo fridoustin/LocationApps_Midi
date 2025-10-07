@@ -103,7 +103,7 @@ class UlokCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    width: 110,
+                    width: 120,
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     decoration: BoxDecoration(
                       color: _getStatusColor(ulok.status),

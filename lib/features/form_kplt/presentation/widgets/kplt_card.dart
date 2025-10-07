@@ -84,20 +84,19 @@ class KpltCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  // 1. Berikan lebar yang tetap
-                  width: 110, 
+                  width: 120, 
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(
                     color: _getStatusColor(kplt.status),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  // 2. Gunakan Center untuk memusatkan teks
                   child: Center(
                     child: Text(
                       kplt.status,
                       style: const TextStyle(
                           color: AppColors.cardColor,
                           fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
                     ),
                   ),
                 ),
