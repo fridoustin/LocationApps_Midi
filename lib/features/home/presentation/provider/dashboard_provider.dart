@@ -19,8 +19,11 @@ final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   return DashboardRepositoryImpl(ref.watch(dashboardRemoteDataSourceProvider));
 });
 
-final selectedYearProvider = StateProvider<int?>((ref) => DateTime.now().year);
-final selectedMonthProvider = StateProvider<int?>(
+final selectedYearProvider = StateProvider<int?>((ref) => null);
+final selectedMonthProvider = StateProvider<int?>((ref) => null);
+
+final dataFilterYearProvider = StateProvider<int>((ref) => DateTime.now().year);
+final dataFilterMonthProvider = StateProvider<int?>(
   (ref) => DateTime.now().month,
 );
 
@@ -29,9 +32,7 @@ final selectedDashboardViewProvider = StateProvider<DashboardView>(
 );
 
 final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) {
-  final selectedYear = ref.watch(selectedYearProvider);
-  final yearToFetch = selectedYear ?? DateTime.now().year;
-  ref.watch(selectedYearProvider);
+  final yearToFetch = ref.watch(dataFilterYearProvider);
 
   return ref
       .watch(dashboardRepositoryProvider)
@@ -42,84 +43,37 @@ final filteredDashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((
   ref,
 ) {
   final asyncStats = ref.watch(dashboardStatsProvider);
-  final selectedMonth = ref.watch(selectedMonthProvider);
-  final selectedYear = ref.watch(selectedYearProvider);
+  final monthToFilter = ref.watch(dataFilterMonthProvider);
 
   return asyncStats.when(
     data: (stats) {
-      List<MonthlyData> createEmptyMonthlyData() {
-        const List<String> monthNames = [
-          'Januari',
-          'Februari',
-          'Maret',
-          'April',
-          'Mei',
-          'Juni',
-          'Juli',
-          'Agustus',
-          'September',
-          'Oktober',
-          'November',
-          'Desember',
-        ];
-        return monthNames.map((monthName) {
-          return MonthlyData(
-            month: monthName,
-            total: 0,
-            approved: 0,
-            ok: 0,
-            nok: 0,
-            inProgress: 0,
-          );
-        }).toList();
+      if (monthToFilter == null) {
+        return AsyncValue.data(stats);
       }
 
-      if (selectedMonth == null && selectedYear == null) {
-        final emptyMonthlyData = createEmptyMonthlyData();
+      final monthIndex = monthToFilter - 1;
+      if (monthIndex >= 0 && monthIndex < stats.monthlyUlokData.length) {
+        final ulokDataForMonth = stats.monthlyUlokData[monthIndex];
+        final kpltDataForMonth = stats.monthlyKpltData[monthIndex];
+
         return AsyncValue.data(
           DashboardStats(
-            totalUlok: 0,
-            totalKplt: 0,
-            ulokStatusCounts: {'OK': 0, 'NOK': 0, 'In Progress': 0},
-            kpltStatusCounts: {'OK': 0, 'NOK': 0, 'In Progress': 0},
-            monthlyUlokData: emptyMonthlyData,
-            monthlyKpltData: emptyMonthlyData,
+            totalUlok: ulokDataForMonth.total,
+            totalKplt: kpltDataForMonth.total,
+            ulokStatusCounts: {
+              'OK': ulokDataForMonth.ok,
+              'NOK': ulokDataForMonth.nok,
+              'In Progress': ulokDataForMonth.inProgress,
+            },
+            kpltStatusCounts: {
+              'OK': kpltDataForMonth.approved,
+              'NOK': kpltDataForMonth.total - kpltDataForMonth.approved,
+              'In Progress': 0,
+            },
+            monthlyUlokData: stats.monthlyUlokData,
+            monthlyKpltData: stats.monthlyKpltData,
           ),
         );
-      }
-
-      if (selectedMonth != null) {
-        final monthIndex = selectedMonth - 1;
-        if (monthIndex >= 0 && monthIndex < stats.monthlyUlokData.length) {
-          final ulokDataForMonth = stats.monthlyUlokData[monthIndex];
-          final kpltDataForMonth = stats.monthlyKpltData[monthIndex];
-
-          return AsyncValue.data(
-            DashboardStats(
-              totalUlok: ulokDataForMonth.total,
-              totalKplt: kpltDataForMonth.total,
-              ulokStatusCounts: {
-                'OK': ulokDataForMonth.ok,
-                'NOK': ulokDataForMonth.nok,
-                'In Progress': ulokDataForMonth.inProgress,
-              },
-              kpltStatusCounts: {
-                'OK': kpltDataForMonth.approved,
-                'NOK': 0,
-                'In Progress': 0,
-              },
-
-              monthlyUlokData:
-                  selectedYear != null
-                      ? stats.monthlyUlokData
-                      : createEmptyMonthlyData(),
-              monthlyKpltData:
-                  selectedYear != null
-                      ? stats.monthlyKpltData
-                      : createEmptyMonthlyData(),
-            ),
-          );
-        }
       }
 
       return AsyncValue.data(stats);

@@ -4,9 +4,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
+import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 import 'package:midi_location/features/profile/domain/entities/profile.dart';
 import 'package:midi_location/features/profile/presentation/providers/edit_profile_provider.dart';
-import 'package:midi_location/features/profile/presentation/providers/profile_provider.dart';
 import 'package:midi_location/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:midi_location/features/profile/presentation/widgets/textField.dart';
 
@@ -79,6 +79,24 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   }
 
   Future<void> _onSave() async {
+    final List<String> changedFields = [];
+    final state = ref.read(editProfileProvider);
+
+    if (_nameController.text != widget.currentProfile.name) {
+      changedFields.add('Nama');
+    }
+    if (_phoneController.text != widget.currentProfile.phone) {
+      changedFields.add('Nomor Telepon');
+    }
+    if (state.imageFile != null) {
+      changedFields.add('Foto Profil');
+    }
+
+    if (changedFields.isEmpty) {
+      Navigator.pop(context);
+      return;
+    }
+
     final notifier = ref.read(editProfileProvider.notifier);
     final success = await notifier.saveProfile(
       name: _nameController.text,
@@ -86,14 +104,25 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       nik: _nikController.text,
       phone: _phoneController.text,
     );
+
     if (success && mounted) {
+      String successMessage;
+      if (changedFields.length > 1) {
+        final lastField = changedFields.removeLast();
+        successMessage =
+            '${changedFields.join(', ')} dan $lastField berhasil diperbarui.';
+      } else {
+        successMessage = '${changedFields.first} berhasil diperbarui.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profil berhasil diperbarui!'),
+        SnackBar(
+          content: Text(successMessage),
           backgroundColor: AppColors.successColor,
         ),
       );
-      ref.invalidate(profileDataProvider);
+
+      ref.invalidate(userProfileProvider);
       Navigator.pop(context);
     }
   }
@@ -137,7 +166,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               onEditTap: () => _showImageSourceActionSheet(context),
             ),
             const SizedBox(height: 40),
-
             Column(
               children: [
                 ProfileTextField(controller: _nameController, label: "Nama"),
