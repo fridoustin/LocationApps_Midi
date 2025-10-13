@@ -90,7 +90,12 @@ class SearchableDropdown extends ConsumerWidget {
 
             decoratorProps: DropDownDecoratorProps(
               decoration: InputDecoration(
-                hintText: selectedValue?.name ?? 'Pilih opsi',
+                hintText: selectedValue?.name ?? 'Pilih $label',
+                hintStyle: TextStyle(
+                  color: AppColors.black.withOpacity(0.5),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 filled: true,
                 fillColor: isEnabled ? Colors.grey[100] : Colors.grey[200],
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

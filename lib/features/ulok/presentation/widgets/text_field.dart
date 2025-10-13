@@ -31,11 +31,24 @@ class FormTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Style values to match dropdown look
+    final hintStyle = TextStyle(
+      color: AppColors.black.withOpacity(0.5),
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+    );
+    final textStyle = TextStyle(
+      color: AppColors.black,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // header label
           RichText(
             text: TextSpan(
               style: const TextStyle(
@@ -62,6 +75,7 @@ class FormTextField extends StatelessWidget {
             readOnly: readOnly,
             onTap: onTap,
             onChanged: onChanged,
+            style: textStyle,
             validator: validator ??
                 (value) {
                   if (isRequired && (value == null || value.isEmpty)) {
@@ -71,14 +85,15 @@ class FormTextField extends StatelessWidget {
                 },
             decoration: InputDecoration(
               hintText: hint ?? 'Masukkan $label',
+              hintStyle: hintStyle,
               filled: true,
-              fillColor: Colors.grey[100],
+              fillColor: Colors.grey[100], // same as dropdown
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               suffixIcon: suffixIcon,
             ),
           ),
