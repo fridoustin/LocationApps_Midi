@@ -26,6 +26,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 final authStateProvider = StreamProvider<User?>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
+  final supabaseClient = ref.watch(supabaseClientProvider);
+
   return authRepository.onAuthStateChange.asyncMap((appUser) async {
     try {
       if (appUser == null) {
@@ -36,18 +38,23 @@ final authStateProvider = StreamProvider<User?>((ref) {
       if (isAllowed) {
         return appUser;
       } else {
-        await authRepository.signOut();
+        final session = supabaseClient.auth.currentSession;
+        if (session != null) {
+          try {
+            await authRepository.signOut();
+          } catch (_) {}
+        }
         return null;
       }
     } catch (e) {
-      try {
-        await authRepository.signOut();
-      } catch (_) {}
+      final session = supabaseClient.auth.currentSession;
+      if (session != null) {
+        try {
+          await authRepository.signOut();
+        } catch (_) {}
+      }
       return null;
     }
-  }).handleError((e) async {
-    try {
-      await authRepository.signOut();
-    } catch (_) {}
+  }).handleError((_) {
   });
 });

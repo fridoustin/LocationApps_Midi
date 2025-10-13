@@ -58,36 +58,53 @@ class _MyAppState extends ConsumerState<MyApp> {
     _setupAuthListener();
   }
 
+  bool _isHandlingAuthChange = false;
+
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) async {
         final AuthChangeEvent event = data.event;
-        if (event == AuthChangeEvent.passwordRecovery) {
-          navigatorKey.currentState?.pushNamedAndRemoveUntil(
-            UpdatePasswordPage.route,
-            (route) => false,
-          );
-          return;
+        if (_isHandlingAuthChange) return;
+        _isHandlingAuthChange = true;
+        try {
+          if (event == AuthChangeEvent.passwordRecovery) {
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              UpdatePasswordPage.route,
+              (route) => false,
+            );
+            return;
+          }
+
+          if (event == AuthChangeEvent.signedOut) {
+            try {
+              navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                LoginPage.route,
+                (route) => false,
+              );
+            } catch (_) {}
+            return;
+          }
+        } finally {
+          Future.microtask(() => _isHandlingAuthChange = false);
         }
-        if (event == AuthChangeEvent.signedOut) {
-          try {
-            await supabase.auth.signOut();
-          } catch (_) {}
+      },
+      onError: (err) async {
+        if (_isHandlingAuthChange) return;
+        _isHandlingAuthChange = true;
+        try {
+          final session = supabase.auth.currentSession;
+          if (session != null) {
+            try {
+              await supabase.auth.signOut();
+            } catch (_) {}
+          }
           navigatorKey.currentState?.pushNamedAndRemoveUntil(
             LoginPage.route,
             (route) => false,
           );
-          return;
+        } finally {
+          Future.microtask(() => _isHandlingAuthChange = false);
         }
-      },
-      onError: (err) async {
-        try {
-          await supabase.auth.signOut();
-        } catch (_) {}
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          LoginPage.route,
-          (route) => false,
-        );
       },
     );
   }

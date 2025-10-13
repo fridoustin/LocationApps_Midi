@@ -154,23 +154,23 @@ class ProfilePage extends ConsumerWidget {
                           onPressed: () async {
                             Navigator.of(dialogContext).pop();
                             try {
-                              await ref.read(authRepositoryProvider).signOut();
+                              final client = ref.read(supabaseClientProvider);
+                              final session = client.auth.currentSession;
+                              if (session != null) {
+                                await client.auth.signOut(); 
+                              }
                               ref.invalidate(userProfileProvider);
                               ref.invalidate(dashboardStatsProvider);
                               if (!context.mounted) return;
                               Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(
-                                  builder: (context) => const AuthGate(),
-                                ),
+                                MaterialPageRoute(builder: (context) => const AuthGate()),
                                 (route) => false,
                               );
                             } catch (e) {
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(
-                                    "Logout gagal: ${e.toString()}",
-                                  ),
+                                  content: Text("Logout gagal: ${e.toString()}"),
                                 ),
                               );
                             }
