@@ -35,7 +35,12 @@ class KpltFormPage extends ConsumerStatefulWidget {
   ConsumerState<KpltFormPage> createState() => _KpltFormPageState();
 }
 
-class _KpltFormPageState extends ConsumerState<KpltFormPage> {
+class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerProviderStateMixin {
+  bool _isDetailExpanded = false;
+
+  late final AnimationController _expandController;
+  late final Animation<double> _expandAnimation;
+
   final _skorFplController = TextEditingController();
   final _stdController = TextEditingController();
   final _apcController = TextEditingController();
@@ -72,6 +77,19 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     _peRabDebounceTimer?.cancel();
     
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _expandController =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 280));
+    _expandAnimation = CurvedAnimation(parent: _expandController, curve: Curves.easeInOut);
+    if (_isDetailExpanded) {
+      _expandController.value = 1.0;
+    } else {
+      _expandController.value = 0.0;
+    }
   }
 
   void _showLoadingDialog(BuildContext context) {
@@ -245,6 +263,54 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     }));
   }
 
+  Widget _smallToggleIcon({required bool up, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              up ? 'Tutup Detail' : 'Buka Detail',
+              style: const TextStyle(color: AppColors.primaryColor, fontSize: 12)
+              ),
+            const SizedBox(width: 8),
+            SizedBox(
+          height: 40,
+          child: Center(
+            child: Icon(
+                  up ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.primaryColor,
+                  size: 22,
+                ),
+              ),
+            ),
+          ]
+        )
+      ),
+    );
+  }
+
+  void _expand() {
+    setState(() {
+      _isDetailExpanded = true;
+      _expandController.forward();
+    });
+  }
+
+  void _collapse() {
+    _expandController.reverse().then((_) {
+      if (mounted) {
+        setState(() {
+          _isDetailExpanded = false;
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final formattedDate = DateFormat("dd MMMM yyyy").format(widget.ulok.tanggal);
@@ -331,139 +397,145 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(12)),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.ulok.namaLokasi,
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
+            // title card
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(widget.ulok.namaLokasi, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Row(children: [
-                      SvgPicture.asset("assets/icons/time.svg",
-                          width: 14,
-                          height: 14,
-                          colorFilter: const ColorFilter.mode(
-                              Colors.grey, BlendMode.srcIn)),
+                      SvgPicture.asset("assets/icons/time.svg", width: 14, height: 14, colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn)),
                       const SizedBox(width: 4),
-                      Text("Approved on $formattedDate",
-                          style:
-                              const TextStyle(color: Colors.grey, fontSize: 12))
-                    ])
+                      Text("Approved on $formattedDate", style: const TextStyle(color: Colors.grey, fontSize: 12))
+                    ]),
+                    const SizedBox(height: 12)
                   ]),
-            ),
-            const SizedBox(height: 16),
-            DetailSectionWidget(
-                title: "Data Usulan Lokasi",
-                iconPath: "assets/icons/location.svg",
-                children: [
-                  InfoRowWidget(label: "Alamat", value: fullAddress),
-                  InfoRowWidget(
-                      label: "LatLong", value: widget.ulok.latLong ?? "-"),
-                  const SizedBox(height: 12),
-                  InteractiveMapWidget(position: latLng)
-                ]),
-            const SizedBox(height: 16),
-            DetailSectionWidget(
-                title: "Data Store",
-                iconPath: "assets/icons/data_store.svg",
-                children: [
-                  TwoColumnRowWidget(
-                    label1: "Format Store",
-                    value1: widget.ulok.formatStore ?? '-',
-                    label2: "Bentuk Objek",
-                    value2: widget.ulok.bentukObjek ?? '-',
-                  ),
-                  TwoColumnRowWidget(
-                    label1: "Alas Hak",
-                    value1: widget.ulok.alasHak ?? '-',
-                    label2: "Jumlah Lantai",
-                    value2: widget.ulok.jumlahLantai?.toString() ?? '-'
-                  ),
-                  TwoColumnRowWidget(
-                    label1: "Lebar Depan (m)",
-                    value1: "${widget.ulok.lebarDepan ?? '-'}",
-                    label2: "Panjang (m)",
-                    value2: "${widget.ulok.panjang ?? '-'}"
-                  ),
-                  TwoColumnRowWidget(
-                    label1: "Luas (m2)",
-                    value1: "${widget.ulok.luas ?? '-'}",
-                    label2: "Harga Sewa",
-                    value2: widget.ulok.hargaSewa != null
-                        ? NumberFormat.currency(
-                          locale: 'id_ID',
-                          symbol: 'Rp ',
-                          decimalDigits: 0,
-                        ).format(widget.ulok.hargaSewa)
-                        : '-'
-                  ),
-                ]),
-            const SizedBox(height: 16),
-
-            DetailSectionWidget(
-              title: "Data Pemilik",
-              iconPath: "assets/icons/profile.svg",
-              children: [
-                TwoColumnRowWidget(
-                  label1: "Nama Pemilik",
-                  value1: widget.ulok.namaPemilik ?? '-',
-                  label2: "Kontak Pemilik",
-                  value2: widget.ulok.kontakPemilik ?? '-',
                 ),
+                // small icon visually attached to bottom center of title card (when collapsed)
+                if (!_isDetailExpanded)
+                  Positioned(
+                    bottom: -20,
+                    left: 0,
+                    right: 0,
+                    top: 60,
+                    child: Center(
+                      child: _smallToggleIcon(
+                        up: false,
+                        onTap: _expand,
+                      ),
+                    ),
+                  ),
               ],
             ),
 
-            if (widget.ulok.approvalIntip != null) ...[
-              const SizedBox(height: 16),
-              DetailSectionWidget(
-                title: "Data Intip",
-                iconPath: "assets/icons/analisis.svg",
-                children: [
-                  TwoColumnRowWidget(
-                    label1: "Status Intip",
-                    value1: widget.ulok.approvalIntip ?? '-',
-                    label2: "Tanggal Intip",
-                    value2: widget.ulok.tanggalApprovalIntip != null
-                        ? DateFormat('dd MMMM yyyy').format(widget.ulok.tanggalApprovalIntip!)
-                        : '-',
-                  ),
-                  
-                  if (widget.ulok.fileIntip != null && widget.ulok.fileIntip!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      "File Intip:", 
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Colors.black54
-                      )
-                    ),
-                    const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-                    _isImageFile(widget.ulok.fileIntip)
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            _getPublicUrl(widget.ulok.fileIntip!),
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(child: CircularProgressIndicator(
-                                backgroundColor: Color(0xFFFFFFFF),
-                                color: AppColors.primaryColor,
-                              ));
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(child: Text('Gagal memuat gambar.'));
-                            },
-                          ),
-                        )
-                      : InkWell(
-                          onTap: () => _openOrDownloadFile(context, widget.ulok.fileIntip, widget.ulok.id),
+            // Expandable area with smooth height animation
+            SizeTransition(
+              sizeFactor: _expandAnimation,
+              axisAlignment: -1.0,
+              child: Column(
+                children: [
+                  DetailSectionWidget(
+                    title: "Data Usulan Lokasi",
+                    iconPath: "assets/icons/location.svg",
+                    children: [
+                      InfoRowWidget(label: "Alamat", value: fullAddress),
+                      InfoRowWidget(label: "LatLong", value: widget.ulok.latLong ?? "-"),
+                      const SizedBox(height: 12),
+                      InteractiveMapWidget(position: latLng),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  DetailSectionWidget(
+                    title: "Data Store",
+                    iconPath: "assets/icons/data_store.svg",
+                    children: [
+                      TwoColumnRowWidget(label1: "Format Store", value1: widget.ulok.formatStore ?? '-', label2: "Bentuk Objek", value2: widget.ulok.bentukObjek ?? '-'),
+                      TwoColumnRowWidget(label1: "Alas Hak", value1: widget.ulok.alasHak ?? '-', label2: "Jumlah Lantai", value2: widget.ulok.jumlahLantai?.toString() ?? '-'),
+                      TwoColumnRowWidget(label1: "Lebar Depan (m)", value1: "${widget.ulok.lebarDepan ?? '-'}", label2: "Panjang (m)", value2: "${widget.ulok.panjang ?? '-'}"),
+                      TwoColumnRowWidget(label1: "Luas (m2)", value1: "${widget.ulok.luas ?? '-'}", label2: "Harga Sewa", value2: widget.ulok.hargaSewa != null ? NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.ulok.hargaSewa) : '-'),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  DetailSectionWidget(
+                    title: "Data Pemilik",
+                    iconPath: "assets/icons/profile.svg",
+                    children: [
+                      TwoColumnRowWidget(label1: "Nama Pemilik", value1: widget.ulok.namaPemilik ?? '-', label2: "Kontak Pemilik", value2: widget.ulok.kontakPemilik ?? '-'),
+                    ],
+                  ),
+
+                  // Data Intip: keep file intip
+                  if (widget.ulok.approvalIntip != null) ...[
+                    const SizedBox(height: 16),
+                    DetailSectionWidget(
+                      title: "Data Intip",
+                      iconPath: "assets/icons/analisis.svg",
+                      children: [
+                        TwoColumnRowWidget(
+                          label1: "Status Intip",
+                          value1: widget.ulok.approvalIntip ?? '-',
+                          label2: "Tanggal Intip",
+                          value2: widget.ulok.tanggalApprovalIntip != null ? DateFormat('dd MMMM yyyy').format(widget.ulok.tanggalApprovalIntip!) : '-',
+                        ),
+
+                        if (widget.ulok.fileIntip != null && widget.ulok.fileIntip!.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          const Text("File Intip:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
+                          const SizedBox(height: 8),
+                          _isImageFile(widget.ulok.fileIntip)
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    _getPublicUrl(widget.ulok.fileIntip!),
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(child: CircularProgressIndicator(backgroundColor: Color(0xFFFFFFFF), color: AppColors.primaryColor));
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Center(child: Text('Gagal memuat gambar.'));
+                                    },
+                                  ),
+                                )
+                              : InkWell(
+                                  onTap: () => _openOrDownloadFile(context, widget.ulok.fileIntip, widget.ulok.id),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                                        const SizedBox(width: 12),
+                                        Expanded(child: Text(widget.ulok.fileIntip!.split('/').last, overflow: TextOverflow.ellipsis)),
+                                        const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                        ]
+                      ],
+                    ),
+                  ],
+
+                  if (widget.ulok.formUlok != null && widget.ulok.formUlok!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    DetailSectionWidget(
+                      title: "Form Ulok",
+                      iconPath: "assets/icons/lampiran.svg",
+                      children: [
+                        InkWell(
+                          onTap: () => _openOrDownloadFile(context, widget.ulok.formUlok, widget.ulok.id),
                           borderRadius: BorderRadius.circular(8),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -473,53 +545,31 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    widget.ulok.fileIntip!.split('/').last,
+                                    widget.ulok.formUlok!.split('/').last.split('?').first,
+                                    style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                const SizedBox(width: 8),
                                 const Icon(Icons.open_in_new_rounded, color: Colors.grey),
                               ],
                             ),
                           ),
                         ),
-                  ]
-                ],
-              ),
-            ],
-
-            if (widget.ulok.formUlok != null && widget.ulok.formUlok!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              DetailSectionWidget(
-                title: "Form Ulok",
-                iconPath: "assets/icons/lampiran.svg",
-                children: [
-                  InkWell(
-                    onTap: () => _openOrDownloadFile(context, widget.ulok.formUlok, widget.ulok.id),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              widget.ulok.formUlok!.split('/').last.split('?').first,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                        ],
-                      ),
+                      ],
                     ),
-                  ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // bottom toggle icon (to collapse)
+                  Center(child: _smallToggleIcon(up: true, onTap: _collapse)),
+
+                  const SizedBox(height: 12),
                 ],
               ),
-            ],
+            ),
+
             const Divider(thickness: 1, height: 32),
             FormCardSection( 
               title: "Analisa & FPL",
