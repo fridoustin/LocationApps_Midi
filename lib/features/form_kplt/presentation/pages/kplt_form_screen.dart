@@ -188,23 +188,57 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
     }
   }
 
+  void _tryComputeSpdAndUpdate() {
+    double? parseNum(String s) {
+      if (s.trim().isEmpty) return null;
+      final normalized = s.replaceAll(',', '').trim();
+      return double.tryParse(normalized);
+    }
+
+    final stdVal = parseNum(_stdController.text);
+    final apcVal = parseNum(_apcController.text);
+
+    if (stdVal == null || apcVal == null) return;
+    if (_isUserTypingSpd) return;
+    final computed = stdVal * apcVal;
+
+    String toPlainString(double v) {
+      if (v.truncateToDouble() == v) {
+        return v.truncate().toString();
+      } else {
+        return v.toString();
+      }
+    }
+
+    final computedStr = toPlainString(computed);
+    try {
+      final provider = ref.read(kpltFormProvider(widget.ulok.id).notifier);
+      provider.onSpdChanged(computedStr);
+    } catch (e) {
+      _spdController.text = computedStr;
+    }
+  }
+
   void _handleTextFieldChange(
     String value,
     Function(String) onChanged,
     Function() setUserTypingTrue,
     Timer? debounceTimer,
-    Function(Timer?) setDebounceTimer,
-  ) {
+    Function(Timer?) setDebounceTimer, [
+    VoidCallback? afterDebounce,
+  ]) {
     setUserTypingTrue();
     debounceTimer?.cancel();
   
     setDebounceTimer(Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
         onChanged(value);
+        if (afterDebounce != null) {
+          afterDebounce();
+        }
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
-            setState(() {
-            });
+            setState(() {});
           }
         });
       }
@@ -525,6 +559,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                     () => _isUserTypingStd = true,
                     _stdDebounceTimer,
                     (timer) => _stdDebounceTimer = timer,
+                    _tryComputeSpdAndUpdate, // <-- after debounce compute attempt
                   ),
                 ),
                 FormTextField(
@@ -537,6 +572,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                     () => _isUserTypingApc = true,
                     _apcDebounceTimer,
                     (timer) => _apcDebounceTimer = timer,
+                    _tryComputeSpdAndUpdate, // <-- after debounce compute attempt
                   ),
                 ),
                 FormTextField(
