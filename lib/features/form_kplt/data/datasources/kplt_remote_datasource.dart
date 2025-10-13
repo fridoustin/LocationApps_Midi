@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
+import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
 import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,9 +11,14 @@ class KpltRemoteDatasource {
   KpltRemoteDatasource(this.client);
 
   // Query untuk mengambil data 'Recent'
-  Future<List<Map<String, dynamic>>> getRecentKplt({String? query}) async {
+  Future<List<Map<String, dynamic>>> getRecentKplt({String? query, KpltFilter? filter}) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw const AuthException('User not Authenticated');
+
+    final statusLower = filter?.status?.toLowerCase();
+    if (statusLower == 'need input' || statusLower == 'need_input') {
+      return <Map<String, dynamic>>[];
+    }
 
     var request = client
         .from('kplt')
@@ -24,15 +30,35 @@ class KpltRemoteDatasource {
       request = request.ilike('ulok.nama_ulok', '%$query%');
     }
 
+    if (filter != null && filter.status != null) {
+      final mapped = _mapUIStatusToDB(filter.status!);
+      if (mapped.toLowerCase() != 'need input' && mapped.toLowerCase() != 'need_input') {
+        request = request.eq('kplt_approval', mapped);
+      }
+    }
+
+    if (filter != null && filter.year != null) {
+      final month = filter.month ?? 1;
+      final start = DateTime(filter.year!, month, 1);
+      final end = DateTime(filter.year!, filter.month ?? 12, 31, 23, 59, 59);
+      request = request.gte('created_at', start.toIso8601String()).lte('created_at', end.toIso8601String());
+    }
     final response = await request.order('created_at', ascending: false);
-    
-    return response;
+
+    final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return data;
   }
 
   // Query untuk mengambil data 'History'
-  Future<List<Map<String, dynamic>>> getHistoryKplt({String? query}) async {
+  Future<List<Map<String, dynamic>>> getHistoryKplt({String? query, KpltFilter? filter}) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw const AuthException('User not Authenticated');
+
+    final statusLower = filter?.status?.toLowerCase();
+    if (statusLower == 'need input' || statusLower == 'need_input') {
+      debugPrint('getHistoryKplt: filter is Need Input -> returning empty (history should be empty)');
+      return <Map<String, dynamic>>[];
+    }
 
     var request = client
         .from('kplt')
@@ -44,26 +70,57 @@ class KpltRemoteDatasource {
       request = request.ilike('ulok.nama_ulok', '%$query%');
     }
 
+    if (filter != null && filter.status != null) {
+      final mapped = _mapUIStatusToDB(filter.status!);
+      if (mapped.toLowerCase() != 'need input' && mapped.toLowerCase() != 'need_input') {
+        request = request.eq('kplt_approval', mapped);
+      }
+    }
+
+    if (filter != null && filter.year != null) {
+      final month = filter.month ?? 1;
+      final start = DateTime(filter.year!, month, 1);
+      final end = DateTime(filter.year!, filter.month ?? 12, 31, 23, 59, 59);
+      request = request.gte('created_at', start.toIso8601String()).lte('created_at', end.toIso8601String());
+    }
+
     final response = await request.order('created_at', ascending: false);
-    return response;
+    final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return data;
   }
 
-  Future<List<Map<String, dynamic>>> getKpltNeedInput({String? query}) async {
+  Future<List<Map<String, dynamic>>> getKpltNeedInput({String? query, KpltFilter? filter}) async {
     final userId = client.auth.currentUser?.id;
     if (userId == null) throw const AuthException('User not Authenticated');
 
-    var request = client
-        .from('ulok') 
-        .select('*, kplt(ulok_id)')
-        .eq('users_id', userId)
-        .eq('approval_status', 'OK')
-        .isFilter('kplt', null);
+    final statusLower = filter?.status?.toLowerCase();
+    if (statusLower == null || statusLower == 'need input' || statusLower == 'need_input') {
+      var request = client
+          .from('ulok')
+          .select('*, kplt(ulok_id)')
+          .eq('users_id', userId)
+          .eq('approval_status', 'OK')
+          .isFilter('kplt', null);
 
-    if (query != null && query.isNotEmpty) {
-      request = request.ilike('nama_ulok', '%$query%');
+      if (query != null && query.isNotEmpty) {
+        request = request.ilike('nama_ulok', '%$query%');
+      }
+
+      if (filter != null && filter.year != null) {
+        final month = filter.month ?? 1;
+        final start = DateTime(filter.year!, month, 1);
+        final end = DateTime(filter.year!, filter.month ?? 12, 31, 23, 59, 59);
+        request = request.gte('updated_at', start.toIso8601String()).lte('updated_at', end.toIso8601String());
+      }
+
+      debugPrint('Fetching need-input KPLT (ulok): query="$query" filter=${filter?.toString()}');
+      final response = await request.order('updated_at', ascending: false);
+      final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      return data;
     }
-    final response = await request.order('updated_at', ascending: false);
-    return response;
+
+    debugPrint('getKpltNeedInput: filter.status=${filter?.status} -> returning empty (Perlu Input = ULok tanpa KPLT)');
+    return <Map<String, dynamic>>[];
   }
 
   // Fungsi untuk submit form KPLT
@@ -184,6 +241,25 @@ class KpltRemoteDatasource {
           .eq('id', kpltId);
     } catch (e) {
       rethrow;
+    }
+  }
+
+    String _mapUIStatusToDB(String uiStatus) {
+    switch (uiStatus.toLowerCase()) {
+      case 'in progress':
+      case 'in_progress':
+        return 'In Progress'; 
+      case 'waiting for forum':
+      case 'waiting':
+        return 'Waiting for Forum';
+      case 'ok':
+        return 'OK';
+      case 'nok':
+        return 'NOK';
+      case 'done':
+        return 'OK';
+      default:
+        return uiStatus.trim();
     }
   }
 }
