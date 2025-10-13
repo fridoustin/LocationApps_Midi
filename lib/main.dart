@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/routes/route.dart';
 import 'package:midi_location/core/services/notification_service.dart';
+import 'package:midi_location/features/auth/presentation/pages/login_screen.dart';
 import 'package:midi_location/features/auth/presentation/pages/update_password_screen.dart';
 import 'package:midi_location/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -58,16 +59,37 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   void _setupAuthListener() {
-    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      final AuthChangeEvent event = data.event;
-      
-      if (event == AuthChangeEvent.passwordRecovery) {
+    _authSubscription = supabase.auth.onAuthStateChange.listen(
+      (data) async {
+        final AuthChangeEvent event = data.event;
+        if (event == AuthChangeEvent.passwordRecovery) {
+          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            UpdatePasswordPage.route,
+            (route) => false,
+          );
+          return;
+        }
+        if (event == AuthChangeEvent.signedOut) {
+          try {
+            await supabase.auth.signOut();
+          } catch (_) {}
+          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            LoginPage.route,
+            (route) => false,
+          );
+          return;
+        }
+      },
+      onError: (err) async {
+        try {
+          await supabase.auth.signOut();
+        } catch (_) {}
         navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          UpdatePasswordPage.route,
+          LoginPage.route,
           (route) => false,
         );
-      }
-    });
+      },
+    );
   }
 
   @override
@@ -79,7 +101,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey, // Pastikan navigatorKey sudah terpasang
+      navigatorKey: navigatorKey, 
       title: 'Midi Location App',
       theme: ThemeData(
         primarySwatch: Colors.red,
