@@ -11,6 +11,11 @@ import 'package:midi_location/core/routes/route.dart';
 import 'package:midi_location/core/services/notification_service.dart';
 import 'package:midi_location/features/auth/presentation/pages/login_screen.dart';
 import 'package:midi_location/features/auth/presentation/pages/update_password_screen.dart';
+import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
+import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
+import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -74,7 +79,23 @@ class _MyAppState extends ConsumerState<MyApp> {
             );
             return;
           }
+          if (event == AuthChangeEvent.signedIn) {
+            final container = ProviderScope.containerOf(navigatorKey.currentContext!, listen: false);
+            container.invalidate(userProfileProvider);
+            container.invalidate(dashboardStatsProvider);
+            container.invalidate(ulokListProvider);
+            container.invalidate(notificationListProvider);
+            container.invalidate(ulokTabProvider);
+            container.invalidate(kpltNeedInputProvider);
+            container.invalidate(kpltInProgressProvider);
+            container.invalidate(kpltHistoryProvider);
 
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              '/',
+              (route) => false,
+            );
+            return;
+          }
           if (event == AuthChangeEvent.signedOut) {
             try {
               navigatorKey.currentState?.pushNamedAndRemoveUntil(

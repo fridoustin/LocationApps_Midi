@@ -40,10 +40,9 @@ class AuthGate extends ConsumerWidget {
     });
 
     ref.listen(authStateProvider, (previous, next) {
-      final isLoggedIn = next.valueOrNull != null;
-      final wasLoggedOut = previous?.valueOrNull == null;
+      final user = next.valueOrNull;
 
-      if (isLoggedIn && wasLoggedOut) {
+      if (user != null) {
         ref.invalidate(userProfileProvider);
         ref.invalidate(dashboardStatsProvider);
         ref.invalidate(ulokListProvider);

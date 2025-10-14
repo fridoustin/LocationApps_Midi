@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
+import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/profile/presentation/widgets/InfoCard/info_card.dart';
 import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -135,33 +138,35 @@ class ProfilePage extends ConsumerWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryColor,
                             foregroundColor: Colors.white,
-
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ).copyWith(
-                            overlayColor:
-                                MaterialStateProperty.resolveWith<Color?>((
-                                  Set<MaterialState> states,
-                                ) {
-                                  if (states.contains(MaterialState.pressed)) {
-                                    return Colors.black.withOpacity(0.12);
-                                  }
-                                  return null;
-                                }),
+                            overlayColor: MaterialStateProperty.resolveWith<Color?>((states) {
+                              if (states.contains(MaterialState.pressed)) {
+                                return Colors.black.withOpacity(0.12);
+                              }
+                              return null;
+                            }),
                           ),
                           onPressed: () async {
                             Navigator.of(dialogContext).pop();
                             try {
-                              final client = ref.read(supabaseClientProvider);
-                              final session = client.auth.currentSession;
-                              if (session != null) {
-                                await client.auth.signOut(); 
-                              }
+                              await ref.read(authRepositoryProvider).signOut();
+
+                              ref.invalidate(authStateProvider);
                               ref.invalidate(userProfileProvider);
                               ref.invalidate(dashboardStatsProvider);
+                              ref.invalidate(ulokListProvider);
+                              ref.invalidate(notificationListProvider);
+                              ref.invalidate(ulokTabProvider);
+                              ref.invalidate(kpltNeedInputProvider);
+                              ref.invalidate(kpltInProgressProvider);
+                              ref.invalidate(kpltHistoryProvider);
+
                               if (!context.mounted) return;
+
                               Navigator.of(context).pushAndRemoveUntil(
                                 MaterialPageRoute(builder: (context) => const AuthGate()),
                                 (route) => false,
