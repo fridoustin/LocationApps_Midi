@@ -82,8 +82,8 @@ class NavigationBarWidget extends StatelessWidget {
                 ),
                 NavigationBarItemWidget(
                   index: 3,
-                  iconAsset: 'assets/icons/profile.svg',
-                  label: "Profile",
+                  iconAsset: 'assets/icons/penugasan.svg',
+                  label: "Tugas",
                   isSelected: currentIndex == 3,
                   onTap: () => onItemTapped?.call(3),
                 ),
