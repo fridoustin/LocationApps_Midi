@@ -4,11 +4,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_detail_screen.dart';
-import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_input_card.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_list_skeleton.dart';
-import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 
 class AllKpltListPage extends ConsumerWidget {
   static const String route = '/all-kplt-list';
@@ -48,43 +47,15 @@ class AllKpltListPage extends ConsumerWidget {
               final kpltItem = ordered[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: InkWell(
-                  onTap: () {
-                    if (needInput) {
-                      final ulokDataForForm = UsulanLokasi(
-                        id: kpltItem.ulokId,
-                        namaLokasi: kpltItem.namaLokasi,
-                        alamat: kpltItem.alamat,
-                        kecamatan: kpltItem.kecamatan,
-                        desaKelurahan: kpltItem.desaKelurahan,
-                        kabupaten: kpltItem.kabupaten,
-                        provinsi: kpltItem.provinsi,
-                        status: kpltItem.status,
-                        tanggal: kpltItem.tanggal,
-                        latLong: kpltItem.latLong,
-                        formatStore: kpltItem.formatStore,
-                        bentukObjek: kpltItem.bentukObjek,
-                        alasHak: kpltItem.alasHak,
-                        jumlahLantai: kpltItem.jumlahLantai,
-                        lebarDepan: kpltItem.lebarDepan,
-                        panjang: kpltItem.panjang,
-                        luas: kpltItem.luas,
-                        hargaSewa: kpltItem.hargaSewa,
-                        namaPemilik: kpltItem.namaPemilik,
-                        kontakPemilik: kpltItem.kontakPemilik,
-                        formUlok: kpltItem.formUlok,
-                        approvalIntip: kpltItem.approvalIntip,
-                        tanggalApprovalIntip: kpltItem.tanggalApprovalIntip,
-                        fileIntip: kpltItem.fileIntip,
-                      );
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => KpltFormPage(ulok: ulokDataForForm)));
-                    } else {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => KpltDetailScreen(kpltId: kpltItem.id)));
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: KpltCard(kplt: kpltItem),
-                ),
+                child: (needInput)
+                    ? KpltNeedInputCard(kplt: kpltItem)
+                    : InkWell(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => KpltDetailScreen(kpltId: kpltItem.id)));
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: KpltCard(kplt: kpltItem),
+                      ),
               );
             },
           );
