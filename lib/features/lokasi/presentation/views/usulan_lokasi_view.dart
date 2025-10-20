@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/lokasi/domain/entities/ulok_filter.dart';
 import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
@@ -12,7 +13,6 @@ import 'package:midi_location/features/lokasi/presentation/widgets/ulok_filter_d
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_list_skeleton.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_draft_card.dart';
 
-// Provider untuk tab Usulan Lokasi (Recent, History, Draft)
 final usulanLokasiSubTabProvider = StateProvider<int>((ref) => 0);
 
 class UsulanLokasiView extends ConsumerStatefulWidget {
@@ -84,113 +84,135 @@ class _UsulanLokasiViewState extends ConsumerState<UsulanLokasiView>
     final currentSubTab = ref.watch(usulanLokasiSubTabProvider);
     final isDraftTab = currentSubTab == 2;
 
-    return Column(
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: _buildSubTabBar(currentSubTab),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  cursorColor: AppColors.black,
-                  decoration: InputDecoration(
-                    hintText: isDraftTab ? 'Search Draft' : 'Search Ulok',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: AppColors.cardColor,
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Colors.grey),
-                    ),
-                    enabledBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Colors.grey),
-                    ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(
-                        color: AppColors.primaryColor,
-                        width: 2.0,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              GestureDetector(
-                onTap: () async {
-                  final current = ref.read(ulokFilterProvider);
-                  final newFilter = await showModalBottomSheet<UlokFilter>(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => UlokFilterDialog(initialFilter: current),
-                  );
-
-                  if (newFilter != null) {
-                    ref.read(ulokFilterProvider.notifier).state = newFilter;
-                    ref.invalidate(ulokListProvider);
-                  }
-                },
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      height: 50,
-                      width: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.filter_list_alt, color: AppColors.primaryColor),
-                      ),
-                    ),
-                    if (badgeCount > 0)
-                      Positioned(
-                        right: -4,
-                        top: -8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          constraints: const BoxConstraints(minWidth: 20, minHeight: 18),
-                          decoration: BoxDecoration(
+        Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: _buildSubTabBar(currentSubTab),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      cursorColor: AppColors.black,
+                      decoration: InputDecoration(
+                        hintText: isDraftTab ? 'Search Draft' : 'Search Ulok',
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: AppColors.cardColor,
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(
                             color: AppColors.primaryColor,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.white, width: 1.5),
+                            width: 2.0,
                           ),
-                          child: Center(
-                            child: Text(
-                              badgeCount > 99 ? '99+' : badgeCount.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () async {
+                      final current = ref.read(ulokFilterProvider);
+                      final newFilter = await showModalBottomSheet<UlokFilter>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => UlokFilterDialog(initialFilter: current),
+                      );
+
+                      if (newFilter != null) {
+                        ref.read(ulokFilterProvider.notifier).state = newFilter;
+                        ref.invalidate(ulokListProvider);
+                      }
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          height: 50,
+                          width: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.filter_list_alt, color: AppColors.primaryColor),
+                          ),
+                        ),
+                        if (badgeCount > 0)
+                          Positioned(
+                            right: -4,
+                            top: -8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              constraints: const BoxConstraints(minWidth: 20, minHeight: 18),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryColor,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  badgeCount > 99 ? '99+' : badgeCount.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
+
+            // Content
+            Expanded(
+              child: _buildContent(currentSubTab),
+            ),
+          ],
+        ),
+        Positioned(
+          bottom: 16, 
+          right: 16,  
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const UlokFormPage(),
+              ));
+            },
+            backgroundColor: AppColors.primaryColor,
+            foregroundColor: Colors.white,
+            child: SvgPicture.asset(
+              'assets/icons/addulok.svg',
+              width: 32,
+              height: 32,
+              ),
           ),
         ),
-
-        // Content
-        Expanded(
-          child: _buildContent(currentSubTab),
-        ),
-      ],
+      ]
     );
   }
 
