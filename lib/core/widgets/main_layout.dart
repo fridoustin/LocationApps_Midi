@@ -5,9 +5,9 @@ import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/lokasi_mainscreen.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
 import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -27,14 +27,14 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   final List<Widget> _pages = const [
     HomePage(),
-    ULOKPage(),
+    LokasiMainPage(),
     FormKPLTPage(),
     ProfilePage(),
   ];
 
   final List<String> _pageTitles = [
     'Home',
-    'Usulan Lokasi',
+    'Lokasi',
     'Form KPLT',
     'Profile',
   ];
