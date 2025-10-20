@@ -14,6 +14,11 @@ import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
 
 final kpltDraftManagerProvider = Provider((_) => KpltDraftManager());
 
+final kpltDraftsProvider = FutureProvider.autoDispose<List<KpltFormState>>((ref) {
+  final draftManager = ref.watch(kpltDraftManagerProvider);
+  return draftManager.getAllDrafts(); 
+});
+
 class KpltFormNotifier extends StateNotifier<KpltFormState> {
   final KpltRepository _repository;
   final KpltDraftManager _draftManager; 
@@ -112,15 +117,15 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
 
   Future<bool> saveDraft() async {
     try {
+      state = state.copyWith(lastEdited: DateTime.now());
       await _draftManager.saveDraft(state);
-      return true; // Kembalikan true jika sukses
+      _ref.invalidate(kpltDraftsProvider);
+      return true; 
     } catch (e) {
-      // Handle error jika perlu
-      return false; // Kembalikan false jika gagal
+      return false; 
     }
   }
 
-  // --- Method utama untuk submit form ---
   Future<bool> submitForm() async {
     debugPrint("--- CHECKING STATE ON SUBMIT ---");
     debugPrint(state.toJson().toString());
@@ -205,6 +210,8 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
 
       await _repository.submitKplt(formData);
       await _draftManager.deleteDraft(_ulokId);
+
+      _ref.invalidate(kpltDraftsProvider);
 
       final _ = await _ref.refresh(kpltNeedInputProvider.future);
       final _ = await _ref.refresh(kpltInProgressProvider.future);

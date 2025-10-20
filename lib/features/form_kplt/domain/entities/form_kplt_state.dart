@@ -59,6 +59,8 @@ class KpltFormState extends Equatable {
   final String? existingVideo360SiangPath;
   final String? existingVideo360MalamPath;
   final String? existingPetaCoveragePath;
+  // --- TAMBAHAN 1 ---
+  final DateTime? lastEdited;
 
   const KpltFormState({
     required this.status,
@@ -114,10 +116,17 @@ class KpltFormState extends Equatable {
     this.existingVideo360SiangPath,
     this.existingVideo360MalamPath,
     this.existingPetaCoveragePath,
+    // --- TAMBAHAN 2 ---
+    this.lastEdited,
   });
 
   factory KpltFormState.initial({required String ulokId}) {
-    return KpltFormState(status: KpltFormStatus.initial, ulokId: ulokId);
+    return KpltFormState(
+      status: KpltFormStatus.initial, 
+      ulokId: ulokId,
+      // --- TAMBAHAN 3 ---
+      lastEdited: null,
+    );
   }
 
   KpltFormState copyWith({
@@ -173,6 +182,8 @@ class KpltFormState extends Equatable {
     String? existingVideo360SiangPath,
     String? existingVideo360MalamPath,
     String? existingPetaCoveragePath,
+    // --- TAMBAHAN 4 ---
+    DateTime? lastEdited,
   }) {
     return KpltFormState(
       status: status ?? this.status,
@@ -228,6 +239,8 @@ class KpltFormState extends Equatable {
       existingVideo360SiangPath: existingVideo360SiangPath ?? this.existingVideo360SiangPath,
       existingVideo360MalamPath: existingVideo360MalamPath ?? this.existingVideo360MalamPath,
       existingPetaCoveragePath: existingPetaCoveragePath ?? this.existingPetaCoveragePath,
+      // --- TAMBAHAN 5 ---
+      lastEdited: lastEdited ?? this.lastEdited,
     );
   }
 
@@ -275,6 +288,8 @@ class KpltFormState extends Equatable {
       existingVideo360SiangPath: kplt.video360Siang,
       existingVideo360MalamPath: kplt.video360Malam,
       existingPetaCoveragePath: kplt.petaCoverage,
+      // --- TAMBAHAN 6 ---
+      lastEdited: null, // Data dari form KPLT (bukan draft) tidak punya 'lastEdited'
     );
   }
 
@@ -291,6 +306,8 @@ class KpltFormState extends Equatable {
         existingExcelFplPath, existingExcelPePath, existingPdfFormUkurPath,
         existingVideoTrafficSiangPath, existingVideoTrafficMalamPath,
         existingVideo360SiangPath, existingVideo360MalamPath, existingPetaCoveragePath,
+        // --- TAMBAHAN 7 ---
+        lastEdited,
       ];
 
   Map<String, dynamic> toJson() {
@@ -347,6 +364,8 @@ class KpltFormState extends Equatable {
       'existingVideo360SiangPath': existingVideo360SiangPath,
       'existingVideo360MalamPath': existingVideo360MalamPath,
       'existingPetaCoveragePath': existingPetaCoveragePath,
+      // --- TAMBAHAN 8 ---
+      'lastEdited': lastEdited?.toIso8601String(),
     };
   }
   
@@ -406,6 +425,8 @@ class KpltFormState extends Equatable {
       existingVideo360SiangPath: json['existingVideo360SiangPath'],
       existingVideo360MalamPath: json['existingVideo360MalamPath'],
       existingPetaCoveragePath: json['existingPetaCoveragePath'],
+      // --- TAMBAHAN 9 ---
+      lastEdited: json['lastEdited'] != null ? DateTime.parse(json['lastEdited']) : null,
     );
   }
 }
