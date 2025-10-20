@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
@@ -14,7 +12,7 @@ import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
 import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
-import 'package:midi_location/features/error_screens/no_connection_screen.dart'; 
+import 'package:midi_location/features/error_screens/no_connection_screen.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final int currentIndex;
@@ -56,38 +54,61 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     final userProfileAsync = ref.watch(userProfileProvider);
     final hasUnread = ref.watch(hasUnreadNotificationProvider);
 
-    switch (index) {
-      case 0:
-        return userProfileAsync.when(
-          data: (profile) => CustomTopBar.home(
-            branchName: profile?.branch ?? 'Branch',
-            hasUnreadNotification: hasUnread,
-          ),
-          loading: () => CustomTopBar.home(branchName: 'Memuat...'),
-          error: (err, stack) => CustomTopBar.general(title: 'Gagal Memuat'),
-        );
-      case 3:
-        return userProfileAsync.when(
-          data: (profile) {
+    return userProfileAsync.when(
+      data: (profile) {
+        switch (index) {
+          case 0:
             if (profile == null) {
-              return CustomTopBar.general(title: 'Profil Tidak Ditemukan');
+              return CustomTopBar.home(
+                profileData: profile,
+                hasUnreadNotification: hasUnread,
+              );
+            }
+            return CustomTopBar.home(
+              profileData: profile,
+              hasUnreadNotification: hasUnread,
+            );
+          case 3:
+            if (profile == null) {
+              return CustomTopBar.general(
+                title: _pageTitles[index],
+                hasUnreadNotification: hasUnread,
+              );
             }
             return CustomTopBar.profile(
               profileData: profile,
               title: _pageTitles[index],
               hasUnreadNotification: hasUnread,
             );
-          },
-          loading: () => CustomTopBar.general(title: 'Memuat Profil...'),
-          error: (err, stack) =>
-              CustomTopBar.general(title: 'Gagal Memuat Profil'),
-        );
-      default:
-        return CustomTopBar.general(
-          title: _pageTitles[index],
-          hasUnreadNotification: hasUnread
-        );
-    }
+          default:
+            return CustomTopBar.general(
+              title: _pageTitles[index],
+              profileData: profile,
+              hasUnreadNotification: hasUnread,
+            );
+        }
+      },
+      loading: () {
+        switch (index) {
+          case 0:
+            return CustomTopBar.home();
+          case 3:
+            return CustomTopBar.general(title: '');
+          default:
+            return CustomTopBar.general(title: '');
+        }
+      },
+      error: (err, stack) {
+        switch (index) {
+          case 0:
+            return CustomTopBar.home();
+          case 3:
+            return CustomTopBar.general(title: 'Gagal Memuat Profil');
+          default:
+            return CustomTopBar.general(title: _pageTitles[index]);
+        }
+      },
+    );
   }
 
   @override
@@ -96,7 +117,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     return connectivityStatus.when(
       data: (result) {
         if (result == ConnectivityResult.none) {
-          return Scaffold( 
+          return Scaffold(
             body: NoConnectionScreen(
               onRefresh: () {
                 ref.invalidate(connectivityProvider);
@@ -135,7 +156,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             backgroundColor: AppColors.backgroundColor,
           ),
         );
-      },      loading: () => const Scaffold(
+      },
+      loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (err, stack) => Scaffold(
