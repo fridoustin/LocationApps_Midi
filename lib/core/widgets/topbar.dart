@@ -5,7 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/profile/domain/entities/profile.dart';
 
-enum TopBarType { home, general , profile}
+enum TopBarType { home, general , profile }
 
 class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   final TopBarType type;
@@ -71,88 +71,97 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        if (type == TopBarType.home)
-          _buildHomeTopBar(context)
-        else if (type == TopBarType.general)
-          _buildGeneralTopBar(context)
-        else if (type == TopBarType.profile)
-          _buildProfileTopBar(context),
-        
-        if (showNotificationButton)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 32,
-            right: 24,
-            child: GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/notification'),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/notifikasi.svg',
-                    width: 32,
-                  ),
-                  if (hasUnreadNotification)
-                    Positioned(
-                      right: 3,
-                      top: 2,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
+    if (type == TopBarType.home) {
+      return _buildHomeTopBar(context);
+    } else if (type == TopBarType.general) {
+      return _buildGeneralTopBar(context);
+    } else {
+      return _buildProfileTopBar(context);
+    }
   }
 
   Widget _buildHomeTopBar(BuildContext context) {
+    const double sideControlWidth = 56; 
+    const double notificationIconSize = 32;
+
     return AppBar(
       backgroundColor: AppColors.primaryColor,
       automaticallyImplyLeading: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-      ),
+      elevation: 0,
+      toolbarHeight: preferredSize.height,
       flexibleSpace: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.asset(
-                'assets/pic/alfamidilogohd.png',
-                width: 200,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/location.svg',
-                    width: 20,
-                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    branchName ?? 'Memuat...',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+              SizedBox(
+                height: 56,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: sideControlWidth,
+                      child: Center(
+                        child: leadingWidget ??
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(context, '/profile');
+                              },
+                              child: CircleAvatar(
+                                radius: 25,
+                                backgroundColor: Colors.white.withOpacity(0.15),
+                                child: const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                      ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: Center(
+                        child: Image.asset(
+                          'assets/pic/logosamping.png',
+                          height: 45,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: sideControlWidth,
+                      child: Center(
+                        child: showNotificationButton
+                            ? GestureDetector(
+                                onTap: () => Navigator.pushNamed(context, '/notification'),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/icons/notifikasi.svg',
+                                      width: notificationIconSize,
+                                    ),
+                                    if (hasUnreadNotification)
+                                      Positioned(
+                                        right: 3,
+                                        top: -2,
+                                        child: Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -235,7 +244,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SvgPicture.asset(
-                  'assets/icons/location.svg', 
+                  'assets/icons/location.svg',
                   // ignore: deprecated_member_use
                   color: AppColors.cardColor,
                   width: 15,
@@ -256,11 +265,11 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize {
     if (type == TopBarType.home) {
-      return const Size.fromHeight(160);
+      return const Size.fromHeight(75);
     } if (type == TopBarType.profile) {
       return const Size.fromHeight(330);
     } else {
-      return const Size.fromHeight(100);
+      return const Size.fromHeight(75);
     }
   }
 }
