@@ -13,7 +13,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leadingWidget;
   final bool showNotificationButton;
   final Profile? profileData;
-  final bool hasUnreadNotification;
+  final int unreadNotificationCount;
 
   const CustomTopBar({
     super.key,
@@ -22,17 +22,17 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.leadingWidget,
     this.showNotificationButton = true,
     this.profileData,
-    this.hasUnreadNotification = false,
+    this.unreadNotificationCount = 0,
   });
 
   factory CustomTopBar.home({
-    bool hasUnreadNotification = false,
+    int unreadNotificationCount = 0,
     Profile? profileData,
   }) {
     return CustomTopBar(
       type: TopBarType.home,
       profileData: profileData,
-      hasUnreadNotification: hasUnreadNotification,
+      unreadNotificationCount: unreadNotificationCount,
     );
   }
 
@@ -40,7 +40,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     required String title,
     Widget? leadingWidget,
     bool showNotificationButton = true,
-    bool hasUnreadNotification = false,
+    int unreadNotificationCount = 0,
     Profile? profileData,
   }) {
     return CustomTopBar(
@@ -48,7 +48,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
       title: title,
       leadingWidget: leadingWidget,
       showNotificationButton: showNotificationButton,
-      hasUnreadNotification: hasUnreadNotification,
+      unreadNotificationCount: unreadNotificationCount,
       profileData: profileData,
     );
   }
@@ -56,13 +56,13 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   factory CustomTopBar.profile({
     required String title,
     required Profile profileData,
-    bool hasUnreadNotification = false,
+    int unreadNotificationCount = 0,
   }) {
     return CustomTopBar(
       type: TopBarType.profile,
       title: title,
       profileData: profileData,
-      hasUnreadNotification: hasUnreadNotification,
+      unreadNotificationCount: unreadNotificationCount,
     );
   }
 
@@ -75,6 +75,35 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
     } else {
       return _buildProfileTopBar(context);
     }
+  }
+
+  Widget _buildNotificationBadge(int count) {
+    return Positioned(
+      right: -4,
+      top: -4,
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        constraints: const BoxConstraints(
+          minWidth: 16, // Sedikit lebih besar untuk menampung teks
+          minHeight: 16,
+        ),
+        child: Center(
+          child: Text(
+            count.toString(),
+            style: const TextStyle(
+              color: AppColors.primaryColor, // Warna merah (sesuai tema)
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildHomeTopBar(BuildContext context) {
@@ -144,19 +173,8 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                                   'assets/icons/notifikasi.svg',
                                   width: notificationIconSize,
                                 ),
-                                if (hasUnreadNotification)
-                                  Positioned(
-                                    right: -2,
-                                    top: -2,
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
+                                if (unreadNotificationCount > 0)
+                                  _buildNotificationBadge(unreadNotificationCount),
                               ],
                             ),
                           )
@@ -243,19 +261,8 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                                   'assets/icons/notifikasi.svg',
                                   width: notificationIconSize,
                                 ),
-                                if (hasUnreadNotification)
-                                  Positioned(
-                                    right: -2,
-                                    top: -2,
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
+                                if (unreadNotificationCount > 0)
+                                  _buildNotificationBadge(unreadNotificationCount),
                               ],
                             ),
                           )

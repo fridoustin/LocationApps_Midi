@@ -52,7 +52,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   PreferredSizeWidget _buildAppBar(int index, WidgetRef ref) {
     final userProfileAsync = ref.watch(userProfileProvider);
-    final hasUnread = ref.watch(hasUnreadNotificationProvider);
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
 
     return userProfileAsync.when(
       data: (profile) {
@@ -61,30 +61,30 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             if (profile == null) {
               return CustomTopBar.home(
                 profileData: profile,
-                hasUnreadNotification: hasUnread,
+                unreadNotificationCount: unreadCount,
               );
             }
             return CustomTopBar.home(
               profileData: profile,
-              hasUnreadNotification: hasUnread,
+              unreadNotificationCount: unreadCount,
             );
           case 3:
             if (profile == null) {
               return CustomTopBar.general(
                 title: _pageTitles[index],
-                hasUnreadNotification: hasUnread,
+                unreadNotificationCount: unreadCount,
               );
             }
             return CustomTopBar.profile(
               profileData: profile,
               title: _pageTitles[index],
-              hasUnreadNotification: hasUnread,
+              unreadNotificationCount: unreadCount,
             );
           default:
             return CustomTopBar.general(
               title: _pageTitles[index],
               profileData: profile,
-              hasUnreadNotification: hasUnread,
+              unreadNotificationCount: unreadCount,
             );
         }
       },
