@@ -46,7 +46,7 @@ class UlokDraftCardNew extends StatelessWidget {
     final alamatDraft = draft.alamat ?? '';
     final lastEditedText = _formatLastEdited();
     
-    const double outerRadius = 12.0;
+    const double outerRadius = 14.0;
     const double innerRadius = 12.0; 
     const double highlightWidth = 5.0;
     return Container(
