@@ -1,5 +1,6 @@
-import 'dart:io';
+// ignore_for_file: unused_result
 
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,60 +58,69 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
       : _ulokIdToEdit = initialState?.ulokId,
         super(initialState ?? UlokFormState(localId: const Uuid().v4(), status: UlokFormStatus.initial));
 
+  void _updateWithTimestamp(UlokFormState Function() updateFn) {
+    state = updateFn().copyWith(lastEdited: DateTime.now());
+  }
+
   // Methods untuk meng-update setiap field dari UI
-  void onNamaUlokChanged(String value) => state = state.copyWith(namaUlok: value);
-  void onAlamatChanged(String value) => state = state.copyWith(alamat: value);
-  void onLatLngChanged(LatLng value) => state = state.copyWith(latLng: value);
+  void onNamaUlokChanged(String value) => _updateWithTimestamp(() => state.copyWith(namaUlok: value));
+  void onAlamatChanged(String value) => _updateWithTimestamp(() => state.copyWith(alamat: value));
+  void onLatLngChanged(LatLng value) => _updateWithTimestamp(() => state.copyWith(latLng: value));
+  
   void onProvinceSelected(WilayahEntity? province) {
-    state = state.copyWith(
+    _updateWithTimestamp(() => state.copyWith(
       provinsi: province?.name,
       kabupaten: null,
       kecamatan: null,
       desa: null,
-    );
+    ));
     // Update provider wilayah
     _ref.read(selectedProvinceProvider.notifier).state = province;
     _ref.invalidate(regenciesProvider);
   }
 
   void onRegencySelected(WilayahEntity? regency) {
-    state = state.copyWith(
+    _updateWithTimestamp(() => state.copyWith(
       kabupaten: regency?.name,
       kecamatan: null,
       desa: null,
-    );
+    ));
     _ref.read(selectedRegencyProvider.notifier).state = regency;
     _ref.invalidate(districtsProvider);
   }
 
   void onDistrictSelected(WilayahEntity? district) {
-    state = state.copyWith(
+    _updateWithTimestamp(() => state.copyWith(
       kecamatan: district?.name,
       desa: null,
-    );
+    ));
     _ref.read(selectedDistrictProvider.notifier).state = district;
     _ref.invalidate(villagesProvider);
   }
 
   void onVillageSelected(WilayahEntity? village) {
-    state = state.copyWith(desa: village?.name);
+    _updateWithTimestamp(() => state.copyWith(desa: village?.name));
     _ref.read(selectedVillageProvider.notifier).state = village;
   }
-  void onFormatStoreChanged(String value) => state = state.copyWith(formatStore: value);
-  void onBentukObjekChanged(String value) => state = state.copyWith(bentukObjek: value);
-  void onAlasHakChanged(String value) => state = state.copyWith(alasHak: value);
-  void onNamaPemilikChanged(String value) => state = state.copyWith(namaPemilik: value);
-  void onKontakPemilikChanged(String value) => state = state.copyWith(kontakPemilik: value);
-  void onJumlahLantaiChanged(String value) => state = state.copyWith(jumlahLantai: int.tryParse(value));
-  void onLebarDepanChanged(String value) => state = state.copyWith(lebarDepan: double.tryParse(value));
-  void onPanjangChanged(String value) => state = state.copyWith(panjang: double.tryParse(value));
-  void onLuasChanged(String value) => state = state.copyWith(luas: double.tryParse(value));
-  void onHargaSewaChanged(String value) => state = state.copyWith(hargaSewa: double.tryParse(value));
-  void onFilePicked(File? file) => state = state.copyWith(formUlokPdf: file);
+  
+  void onFormatStoreChanged(String value) => _updateWithTimestamp(() => state.copyWith(formatStore: value));
+  void onBentukObjekChanged(String value) => _updateWithTimestamp(() => state.copyWith(bentukObjek: value));
+  void onAlasHakChanged(String value) => _updateWithTimestamp(() => state.copyWith(alasHak: value));
+  void onNamaPemilikChanged(String value) => _updateWithTimestamp(() => state.copyWith(namaPemilik: value));
+  void onKontakPemilikChanged(String value) => _updateWithTimestamp(() => state.copyWith(kontakPemilik: value));
+  void onJumlahLantaiChanged(String value) => _updateWithTimestamp(() => state.copyWith(jumlahLantai: int.tryParse(value)));
+  void onLebarDepanChanged(String value) => _updateWithTimestamp(() => state.copyWith(lebarDepan: double.tryParse(value)));
+  void onPanjangChanged(String value) => _updateWithTimestamp(() => state.copyWith(panjang: double.tryParse(value)));
+  void onLuasChanged(String value) => _updateWithTimestamp(() => state.copyWith(luas: double.tryParse(value)));
+  void onHargaSewaChanged(String value) => _updateWithTimestamp(() => state.copyWith(hargaSewa: double.tryParse(value)));
+  void onFilePicked(File? file) => _updateWithTimestamp(() => state.copyWith(formUlokPdf: file));
 
   Future<bool> saveDraft() async {
     try {
-      await _repository.saveDraft(state);
+      final draftToSave = state.copyWith(lastEdited: DateTime.now());
+      state = draftToSave;
+      
+      await _repository.saveDraft(draftToSave);
       _ref.invalidate(ulokDraftsProvider);
       return true;
     } catch (e) {
@@ -185,8 +195,8 @@ class UlokFormNotifier extends StateNotifier<UlokFormState> {
         await _repository.updateUlok(_ulokIdToEdit, formData);
       }
 
-      final _ = await _ref.refresh(ulokDraftsProvider.future);
-      final _ = await _ref.refresh(ulokListProvider.future);
+      await _ref.refresh(ulokDraftsProvider.future);
+      await _ref.refresh(ulokListProvider.future);
       
       state = state.copyWith(status: UlokFormStatus.success);
 
@@ -208,4 +218,3 @@ final ulokDraftsProvider = FutureProvider.autoDispose<List<UlokFormState>>((ref)
   final repository = ref.watch(ulokFormRepositoryProvider);
   return repository.getDrafts();
 });
-

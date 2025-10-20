@@ -31,6 +31,7 @@ class UlokFormState extends Equatable{
   final String? kontakPemilik;
   final File? formUlokPdf;
   final String? existingFormUlokUrl;
+  final DateTime? lastEdited; // ✨ TAMBAHAN BARU
 
   const UlokFormState({
     this.ulokId,
@@ -56,6 +57,7 @@ class UlokFormState extends Equatable{
     this.kontakPemilik,
     this.formUlokPdf,
     this.existingFormUlokUrl,
+    this.lastEdited, // ✨ TAMBAHAN BARU
   });
 
   UlokFormState copyWith({
@@ -82,6 +84,7 @@ class UlokFormState extends Equatable{
     String? kontakPemilik,
     File? formUlokPdf,
     String? existingFormUlokUrl,
+    DateTime? lastEdited, // ✨ TAMBAHAN BARU
   }) {
     return UlokFormState(
       ulokId: ulokId ?? this.ulokId,
@@ -107,11 +110,12 @@ class UlokFormState extends Equatable{
       kontakPemilik: kontakPemilik ?? this.kontakPemilik,
       formUlokPdf: formUlokPdf ?? this.formUlokPdf,
       existingFormUlokUrl: existingFormUlokUrl ?? this.existingFormUlokUrl,
+      lastEdited: lastEdited ?? this.lastEdited, // ✨ TAMBAHAN BARU
     );
   }
 
 
-Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       'ulokId': ulokId,
       'localId': localId,
@@ -134,6 +138,7 @@ Map<String, dynamic> toJson() {
       'namaPemilik': namaPemilik,
       'kontakPemilik': kontakPemilik,
       'formUlokPdfPath': formUlokPdf?.path,
+      'lastEdited': lastEdited?.toIso8601String(), // ✨ TAMBAHAN BARU
     };
   }
 
@@ -161,19 +166,30 @@ Map<String, dynamic> toJson() {
       namaPemilik: json['namaPemilik'],
       kontakPemilik: json['kontakPemilik'],
       formUlokPdf: json['formUlokPdfPath'] != null ? File(json['formUlokPdfPath']) : null,
+      lastEdited: json['lastEdited'] != null ? DateTime.parse(json['lastEdited']) : null, // ✨ TAMBAHAN BARU
     );
   }
 
   @override
-  List<Object?> get props => [ulokId, localId, status, namaUlok, latLng,provinsi, kabupaten, kecamatan, desa, alamat, formatStore, bentukObjek, alasHak, jumlahLantai, lebarDepan, panjang, luas, hargaSewa, namaPemilik, kontakPemilik, formUlokPdf];
+  List<Object?> get props => [
+    ulokId, localId, status, namaUlok, latLng, provinsi, kabupaten, 
+    kecamatan, desa, alamat, formatStore, bentukObjek, alasHak, 
+    jumlahLantai, lebarDepan, panjang, luas, hargaSewa, namaPemilik, 
+    kontakPemilik, formUlokPdf, lastEdited // ✨ TAMBAHAN BARU
+  ];
 
   factory UlokFormState.fromUsulanLokasi(UsulanLokasi ulok) {
     return UlokFormState(
       ulokId: ulok.id, 
-      localId: Uuid().v4(), 
+      localId: const Uuid().v4(), 
       namaUlok: ulok.namaLokasi,
       alamat: ulok.alamat,
-      latLng: ulok.latLong != null ? LatLng(double.parse(ulok.latLong!.split(',')[0]), double.parse(ulok.latLong!.split(',')[1])) : null,
+      latLng: ulok.latLong != null 
+        ? LatLng(
+            double.parse(ulok.latLong!.split(',')[0]), 
+            double.parse(ulok.latLong!.split(',')[1])
+          ) 
+        : null,
       provinsi: ulok.provinsi,
       kabupaten: ulok.kabupaten,
       kecamatan: ulok.kecamatan,
@@ -189,6 +205,7 @@ Map<String, dynamic> toJson() {
       namaPemilik: ulok.namaPemilik,
       kontakPemilik: ulok.kontakPemilik,
       existingFormUlokUrl: ulok.formUlok,
+      lastEdited: DateTime.now(), // ✨ TAMBAHAN BARU - set ke waktu sekarang saat create dari UsulanLokasi
     );
   }
 }
