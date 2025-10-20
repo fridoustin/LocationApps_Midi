@@ -186,7 +186,7 @@ class _KpltEditPageState extends ConsumerState<KpltEditPage> {
                       FloatingActionButton.small(
                         heroTag: 'zoomIn',
                         backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.textColor,
+                        foregroundColor: AppColors.white,
                         onPressed: () {
                           _mapController.move(
                             _mapController.camera.center,
@@ -199,7 +199,7 @@ class _KpltEditPageState extends ConsumerState<KpltEditPage> {
                       FloatingActionButton.small(
                         heroTag: 'zoomOut',
                         backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.textColor,
+                        foregroundColor: AppColors.white,
                         onPressed: () {
                           _mapController.move(
                             _mapController.camera.center,
