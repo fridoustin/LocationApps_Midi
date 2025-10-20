@@ -64,6 +64,7 @@ dependencies:
   month_picker_dialog: ^6.5.0
   uuid: ^4.4.0
   open_filex: ^4.7.0
+  collection: ^1.19.1
 
 dev_dependencies:
   flutter_test:
