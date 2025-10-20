@@ -11,8 +11,8 @@ import 'package:midi_location/features/form_kplt/presentation/pages/kplt_notific
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 
 class AuthGate extends ConsumerWidget {

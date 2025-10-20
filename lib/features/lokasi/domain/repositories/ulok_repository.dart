@@ -1,5 +1,5 @@
-import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
-import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_filter.dart';
+import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 
 abstract class UlokRepository {
   Future<List<UsulanLokasi>> getRecentUlok({required String query, required UlokFilter filter});

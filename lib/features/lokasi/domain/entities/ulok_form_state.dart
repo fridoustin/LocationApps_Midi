@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 import 'package:uuid/uuid.dart';
 
 enum UlokFormStatus { initial, loading, success, error }

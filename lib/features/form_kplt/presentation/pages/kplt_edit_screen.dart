@@ -15,10 +15,10 @@ import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart'
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_state.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_form_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/dropdown.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/form_card.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/map_picker.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/text_field.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/dropdown.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/form_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/map_picker.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/text_field.dart';
 import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
 import 'package:midi_location/features/wilayah/presentation/providers/wilayah_provider.dart';
 import 'package:midi_location/features/wilayah/presentation/widgets/wilayah_dropdown.dart';

@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/ulok_card.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/ulok_filter_dialog.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/ulok_list_skeleton.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_filter.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/ulok_card.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/ulok_filter_dialog.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/ulok_list_skeleton.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_draft_card.dart';
 
 // Provider untuk tab Usulan Lokasi (Recent, History, Draft)

@@ -10,7 +10,7 @@ import 'package:midi_location/features/auth/presentation/providers/user_profile_
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/profile/presentation/widgets/InfoCard/info_card.dart';
 import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});

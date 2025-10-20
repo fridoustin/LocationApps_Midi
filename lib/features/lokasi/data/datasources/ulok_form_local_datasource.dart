@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UlokFormLocalDataSource {

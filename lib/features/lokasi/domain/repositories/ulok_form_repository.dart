@@ -1,5 +1,5 @@
-import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
 
 abstract class UlokFormRepository {
   Future<void> submitUlok(UlokFormData data, String branchId);

@@ -9,9 +9,9 @@ import 'package:midi_location/features/lokasi/presentation/pages/lokasi_mainscre
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/error_screens/no_connection_screen.dart';
 
 class MainLayout extends ConsumerStatefulWidget {

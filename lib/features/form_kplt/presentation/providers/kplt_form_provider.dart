@@ -9,7 +9,7 @@ import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_state.dart';
 import 'package:midi_location/features/form_kplt/domain/repositories/kplt_repository.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
 
 final kpltDraftManagerProvider = Provider((_) => KpltDraftManager());

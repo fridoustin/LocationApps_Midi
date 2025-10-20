@@ -1,8 +1,8 @@
-import 'package:midi_location/features/ulok/data/datasources/ulok_form_local_datasource.dart';
-import 'package:midi_location/features/ulok/data/datasources/ulok_form_remote_datasource.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
-import 'package:midi_location/features/ulok/domain/repositories/ulok_form_repository.dart';
+import 'package:midi_location/features/lokasi/data/datasources/ulok_form_local_datasource.dart';
+import 'package:midi_location/features/lokasi/data/datasources/ulok_form_remote_datasource.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
+import 'package:midi_location/features/lokasi/domain/repositories/ulok_form_repository.dart';
 
 class UlokFormRepositoryImpl implements UlokFormRepository {
   final UlokFormRemoteDataSource _remoteDataSource;

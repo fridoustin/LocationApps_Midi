@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
-import 'package:midi_location/features/ulok/data/datasources/ulok_remote_datasource.dart';
-import 'package:midi_location/features/ulok/data/repositories/ulok_repository_impl.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
-import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
-import 'package:midi_location/features/ulok/domain/repositories/ulok_repository.dart';
+import 'package:midi_location/features/lokasi/data/datasources/ulok_remote_datasource.dart';
+import 'package:midi_location/features/lokasi/data/repositories/ulok_repository_impl.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_filter.dart';
+import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/domain/repositories/ulok_repository.dart';
 
 // Instance dari DataSource dan Repository
 final ulokRemoteDataSourceProvider = Provider<UlokRemoteDataSource>((ref) {

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
-import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_detail_screen.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
+import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_detail_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
 
 class UlokCard extends StatelessWidget {
   final UsulanLokasi ulok;

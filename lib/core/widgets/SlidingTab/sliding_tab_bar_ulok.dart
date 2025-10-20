@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 
 class SlidingTabBar extends StatelessWidget {
   final UlokTab activeTab;

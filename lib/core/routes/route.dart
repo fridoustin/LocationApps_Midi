@@ -10,8 +10,8 @@ import 'package:midi_location/features/error_screens/error_404_screen.dart';
 import 'package:midi_location/features/error_screens/access_denied_screen.dart';
 import 'package:midi_location/features/error_screens/under_maintenance_screen.dart';
 import 'package:midi_location/features/auth/presentation/pages/login_screen.dart';
-import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_detail_screen.dart';
+import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_detail_screen.dart';
 
 Route<dynamic> routeGenerators(RouteSettings settings) {
   switch (settings.name) {

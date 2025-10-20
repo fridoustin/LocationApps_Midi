@@ -1,7 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps
 
 import 'package:flutter/cupertino.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form.dart';
 import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

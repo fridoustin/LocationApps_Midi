@@ -1,4 +1,4 @@
-import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_filter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UlokRemoteDataSource {

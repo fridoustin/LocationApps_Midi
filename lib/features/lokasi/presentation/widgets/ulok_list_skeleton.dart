@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:midi_location/features/ulok/presentation/widgets/ulok_card_skeleton.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/ulok_card_skeleton.dart';
 import 'package:shimmer/shimmer.dart';
 
 class UlokListSkeleton extends StatelessWidget {

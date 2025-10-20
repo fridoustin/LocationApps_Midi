@@ -8,7 +8,7 @@ import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_list_skeleton.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/section_header.dart';
-import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 
 class RecentKpltView extends ConsumerWidget {
   const RecentKpltView({super.key});

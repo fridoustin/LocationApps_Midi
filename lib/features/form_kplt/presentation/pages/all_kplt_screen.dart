@@ -8,7 +8,7 @@ import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_sc
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_list_skeleton.dart';
-import 'package:midi_location/features/ulok/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 
 class AllKpltListPage extends ConsumerWidget {
   static const String route = '/all-kplt-list';

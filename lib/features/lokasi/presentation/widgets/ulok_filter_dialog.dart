@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/month_picker.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_filter.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_filter.dart';
 
 class UlokFilterDialog extends StatefulWidget {
   final UlokFilter initialFilter;

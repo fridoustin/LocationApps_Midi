@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/ulok/domain/entities/ulok_form_state.dart';
+import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
 
 class UlokDraftCardNew extends StatelessWidget {
   final UlokFormState draft;
