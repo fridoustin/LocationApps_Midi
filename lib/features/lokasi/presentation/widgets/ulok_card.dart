@@ -31,6 +31,18 @@ class UlokCard extends StatelessWidget {
 
     final formattedDate = DateFormat('dd MMMM yyyy').format(ulok.tanggal);
 
+    String dateLabel;
+    switch (ulok.status) {
+      case 'OK':
+        dateLabel = 'Approved on';
+        break;
+      case 'NOK':
+        dateLabel = 'Rejected on';
+        break;
+      default:
+        dateLabel = 'Created on';
+    }
+
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () {
@@ -42,8 +54,11 @@ class UlokCard extends StatelessWidget {
       child: Card(
         margin: const EdgeInsets.only(bottom: 16),
         color: AppColors.cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey[300]!, width: 1),
+        ),
+      elevation: 0,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
           child: Column(
@@ -57,8 +72,9 @@ class UlokCard extends StatelessWidget {
                     child: Text(
                       ulok.namaLokasi,
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -90,13 +106,48 @@ class UlokCard extends StatelessWidget {
                   ),
                 ],
               ),
-
-              Text(
-                fullAddress,
-                style: TextStyle(color: Colors.grey[700], height: 1.4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 18,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      fullAddress,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    '$dateLabel : $formattedDate',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -117,13 +168,6 @@ class UlokCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ),
-                  Text(
-                    formattedDate,
-                    style: const TextStyle(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
