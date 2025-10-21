@@ -70,9 +70,7 @@ class UlokRemoteDataSource {
           approval_status, created_at,
           format_store, bentuk_objek, alas_hak, jumlah_lantai,
           lebar_depan, panjang, luas, harga_sewa,
-          nama_pemilik, kontak_pemilik, form_ulok,
-          approval_intip, tanggal_approval_intip,
-          file_intip
+          nama_pemilik, kontak_pemilik, form_ulok
         ''')
         .eq('users_id', userId)
         .inFilter('approval_status', ['OK', 'NOK']);
