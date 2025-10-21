@@ -1,3 +1,5 @@
+import 'package:midi_location/features/lokasi/domain/entities/progress_step.dart';
+
 class FormKPLT {
   final String id;
   final String ulokId;
@@ -44,6 +46,8 @@ class FormKPLT {
   final String? video360Siang;
   final String? video360Malam;
   final String? petaCoverage;
+  final double? progressPercentage;
+  final List<ProgressStep>? progressSteps;
 
   FormKPLT({
     required this.id,
@@ -91,6 +95,8 @@ class FormKPLT {
     this.video360Siang,
     this.video360Malam,
     this.petaCoverage,
+    this.progressPercentage,
+    this.progressSteps,
   });
 
   static double? _parseDouble(dynamic value) {
@@ -166,6 +172,8 @@ class FormKPLT {
       video360Siang: map['video_360_siang'],
       video360Malam: map['video_360_malam'],
       petaCoverage: map['peta_coverage'],
+      progressPercentage: _parseDouble(map['progress_percentage']),
+      progressSteps: null,
     );
   }
 
@@ -225,6 +233,8 @@ class FormKPLT {
       video360Siang: null,
       video360Malam: null,
       petaCoverage: null,
+      progressPercentage: 0.0,
+      progressSteps: null,
     );
   }
 
@@ -282,7 +292,9 @@ class FormKPLT {
       videoTrafficMalam: map['video_traffic_malam'],
       video360Siang: map['video_360_siang'],
       video360Malam: map['video_360_malam'],
-      petaCoverage: map['peta_coverage']
+      petaCoverage: map['peta_coverage'],
+      progressPercentage: _parseDouble(map['progress_percentage']),
+      progressSteps: null,
     );
   }
 }
