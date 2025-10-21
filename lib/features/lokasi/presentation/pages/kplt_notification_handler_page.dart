@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/kplt_form_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart'; 
 
 class KpltNotificationHandlerPage extends ConsumerWidget {

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/month_picker.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
+import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 
 class KpltFilterDialog extends StatefulWidget {
   final KpltFilter initialFilter;

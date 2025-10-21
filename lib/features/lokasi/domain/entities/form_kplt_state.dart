@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
 
 enum KpltFormStatus { initial, loading, success, error }
 

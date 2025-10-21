@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
-import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_filter_dialog.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/views/history_kplt_view.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/views/recent_kplt_view.dart';
+import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/kplt_filter_dialog.dart';
+import 'package:midi_location/features/lokasi/presentation/views/history_kplt_view.dart';
+import 'package:midi_location/features/lokasi/presentation/views/recent_kplt_view.dart';
 
 // Provider untuk tab KPLT (Recent, History)
 final kpltSubTabProvider = StateProvider<int>((ref) => 0);

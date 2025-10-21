@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
-import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_detail_screen.dart';
-import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_input_card.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_list_skeleton.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/kplt_form_detail_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/kplt_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/kplt_input_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/kplt_list_skeleton.dart';
 
 class AllKpltListPage extends ConsumerWidget {
   static const String route = '/all-kplt-list';

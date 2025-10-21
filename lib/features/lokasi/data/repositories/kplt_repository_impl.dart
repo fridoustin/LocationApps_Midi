@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:midi_location/features/form_kplt/data/datasources/kplt_remote_datasource.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
-import 'package:midi_location/features/form_kplt/domain/repositories/kplt_repository.dart';
+import 'package:midi_location/features/lokasi/data/datasources/kplt_remote_datasource.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt_data.dart';
+import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
+import 'package:midi_location/features/lokasi/domain/repositories/kplt_repository.dart';
 import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

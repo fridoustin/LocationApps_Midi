@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_card_skeleton.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/kplt_card_skeleton.dart';
 import 'package:shimmer/shimmer.dart';
 
 class KpltListSkeleton extends StatelessWidget {

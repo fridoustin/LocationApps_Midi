@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
-import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/lokasi_mainscreen.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';

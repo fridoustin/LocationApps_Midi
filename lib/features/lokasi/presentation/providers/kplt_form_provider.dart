@@ -3,12 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
-import 'package:midi_location/features/form_kplt/data/datasources/kplt_draft_manager.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_state.dart';
-import 'package:midi_location/features/form_kplt/domain/repositories/kplt_repository.dart';
-import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/lokasi/data/datasources/kplt_draft_manager.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt_data.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt_state.dart';
+import 'package:midi_location/features/lokasi/domain/repositories/kplt_repository.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
 

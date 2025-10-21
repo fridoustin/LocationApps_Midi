@@ -7,9 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
-import 'package:midi_location/features/form_kplt/presentation/pages/kplt_form_screen.dart';
-import 'package:midi_location/features/form_kplt/presentation/providers/kplt_form_provider.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/kplt_form_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/kplt_form_provider.dart';
 import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 
 class KpltNeedInputCard extends ConsumerWidget {

@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
-import 'package:midi_location/features/form_kplt/presentation/pages/kplt_notification_handler_page.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/kplt_notification_handler_page.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/ulok_detail_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';

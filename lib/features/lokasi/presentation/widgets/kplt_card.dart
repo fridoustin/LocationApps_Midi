@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
 
 class KpltCard extends StatefulWidget {
   final FormKPLT kplt;

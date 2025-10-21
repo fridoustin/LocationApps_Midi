@@ -1,6 +1,6 @@
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
-import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/form_kplt_data.dart';
+import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 
 abstract class KpltRepository {
   Future<List<FormKPLT>> getRecentKplt(String query, {KpltFilter? filter});
