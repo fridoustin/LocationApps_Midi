@@ -198,6 +198,7 @@ class _UsulanLokasiViewState extends ConsumerState<UsulanLokasiView>
           bottom: 16, 
           right: 16,  
           child: FloatingActionButton(
+            heroTag: 'addUlok',
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => const UlokFormPage(),

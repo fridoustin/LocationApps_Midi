@@ -83,6 +83,7 @@ class _TrackingViewState extends ConsumerState<TrackingView>
           top: 16,
           right: 16,
           child: FloatingActionButton(
+            heroTag: 'refreshLocation',
             mini: true,
             backgroundColor: Colors.white,
             onPressed: _getCurrentLocation,
