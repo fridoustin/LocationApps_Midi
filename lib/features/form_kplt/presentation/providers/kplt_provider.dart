@@ -4,6 +4,7 @@ import 'package:midi_location/features/auth/presentation/providers/auth_provider
 import 'package:midi_location/features/form_kplt/data/datasources/kplt_remote_datasource.dart';
 import 'package:midi_location/features/form_kplt/data/repositories/kplt_repository_impl.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
+import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/form_kplt/domain/repositories/kplt_repository.dart';
 
 final kpltRemoteDataSourceProvider = Provider<KpltRemoteDatasource>((ref) {
@@ -15,28 +16,32 @@ final kpltRepositoryProvider = Provider<KpltRepository>((ref) {
 });
 
 final kpltSearchQueryProvider = StateProvider<String>((ref) => '');
+final kpltFilterProvider = StateProvider<KpltFilter>((ref) => KpltFilter.empty);
 
 final kpltNeedInputProvider = FutureProvider.autoDispose<List<FormKPLT>>((ref) async {
   final repository = ref.watch(kpltRepositoryProvider);
   final searchQuery = ref.watch(kpltSearchQueryProvider);
-  // Memanggil metode yang sesuai dari repository
-  return repository.getKpltNeedInput(searchQuery);
+  final filter = ref.watch(kpltFilterProvider);
+  // Memanggil metode yang sesuai dari repository dengan filter
+  return repository.getKpltNeedInput(searchQuery, filter: filter);
 });
 
 // Provider untuk seksi "Sedang Proses" di tab Recent
 final kpltInProgressProvider = FutureProvider.autoDispose<List<FormKPLT>>((ref) async {
   final repository = ref.watch(kpltRepositoryProvider);
   final searchQuery = ref.watch(kpltSearchQueryProvider);
-  // Memanggil metode yang sesuai dari repository
-  return repository.getRecentKplt(searchQuery);
+  final filter = ref.watch(kpltFilterProvider);
+  // Memanggil metode yang sesuai dari repository dengan filter
+  return repository.getRecentKplt(searchQuery, filter: filter);
 });
 
 // Provider untuk data di tab History
 final kpltHistoryProvider = FutureProvider.autoDispose<List<FormKPLT>>((ref) async {
   final repository = ref.watch(kpltRepositoryProvider);
   final searchQuery = ref.watch(kpltSearchQueryProvider);
-  // Memanggil metode yang sesuai dari repository
-  return repository.getHistoryKplt(searchQuery);
+  final filter = ref.watch(kpltFilterProvider);
+  // Memanggil metode yang sesuai dari repository dengan filter
+  return repository.getHistoryKplt(searchQuery, filter: filter);
 });
 
 final dropdownOptionsProvider = FutureProvider.family<List<String>, String>((ref, enumName) async {

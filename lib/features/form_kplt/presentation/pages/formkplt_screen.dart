@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/SlidingTab/sliding_tab_bar_kplt.dart';
+import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/form_kplt/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/form_kplt/presentation/widgets/kplt_filter_dialog.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/views/history_kplt_view.dart';
 import 'package:midi_location/features/form_kplt/presentation/widgets/views/recent_kplt_view.dart';
 
@@ -53,6 +55,15 @@ class _KPLTPageState extends ConsumerState<FormKPLTPage> with SingleTickerProvid
   
   @override
   Widget build(BuildContext context) {
+    final currentFilter = ref.watch(kpltFilterProvider);
+    // ignore: no_leading_underscores_for_local_identifiers
+    int _computeFilterBadgeCount(KpltFilter filter) {
+      int c = 0;
+      if (filter.status != null) c++;
+      if (filter.year != null) c++;
+      return c;
+    }
+    final badgeCount = _computeFilterBadgeCount(currentFilter);
     return Column(
         children: [
           Padding(
@@ -92,9 +103,67 @@ class _KPLTPageState extends ConsumerState<FormKPLTPage> with SingleTickerProvid
                 ),
               ),
               const SizedBox(width: 16),
-              IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.filter_list_alt)),
+
+              GestureDetector(
+                onTap: () async {
+                  final current = ref.read(kpltFilterProvider);
+                  final newFilter = await showModalBottomSheet<KpltFilter>(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => KpltFilterDialog(initialFilter: current),
+                  );
+
+                  if (newFilter != null) {
+                    ref.read(kpltFilterProvider.notifier).state = newFilter;
+                    // invalidate providers to refresh lists
+                    ref.invalidate(kpltNeedInputProvider);
+                    ref.invalidate(kpltInProgressProvider);
+                  }
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      height: 50,
+                      width: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardColor,               
+                        borderRadius: BorderRadius.circular(12),  
+                        border: Border.all(color: Colors.grey),   
+                      ),
+                      child: Center(
+                        child: Icon(Icons.filter_list_alt, color: AppColors.primaryColor),
+                      ),
+                    ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        right: -4,
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          constraints: const BoxConstraints(minWidth: 20, minHeight: 18),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              badgeCount > 99 ? '99+' : badgeCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

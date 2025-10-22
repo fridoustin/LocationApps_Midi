@@ -40,16 +40,13 @@ class AuthGate extends ConsumerWidget {
     });
 
     ref.listen(authStateProvider, (previous, next) {
-      final isLoggedIn = next.valueOrNull != null;
-      final wasLoggedOut = previous?.valueOrNull == null;
+      final user = next.valueOrNull;
 
-      if (isLoggedIn && wasLoggedOut) {
+      if (user != null) {
         ref.invalidate(userProfileProvider);
         ref.invalidate(dashboardStatsProvider);
         ref.invalidate(ulokListProvider);
         ref.invalidate(notificationListProvider);
-        // DIUBAH: Baris ini dihapus karena timeRangeProvider sudah tidak ada
-        // ref.invalidate(timeRangeProvider);
         ref.invalidate(ulokTabProvider);
         ref.invalidate(kpltNeedInputProvider);
         ref.invalidate(kpltInProgressProvider);
@@ -63,14 +60,18 @@ class AuthGate extends ConsumerWidget {
     if (connectivityStatus.isLoading || authState.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (connectivityStatus.hasError || authState.hasError) {
+    if (connectivityStatus.hasError) {
       return Scaffold(
         body: Center(
-          child: Text(
-            'Terjadi error: ${connectivityStatus.error ?? authState.error}',
-          ),
+          child: Text('Terjadi error koneksi: ${connectivityStatus.error}'),
         ),
       );
+    }
+    if (authState.hasError) {
+      try {
+        ref.read(supabaseClientProvider).auth.signOut();
+      } catch (_) {}
+      return const LoginPage();
     }
 
     final hasConnection = connectivityStatus.value != ConnectivityResult.none;

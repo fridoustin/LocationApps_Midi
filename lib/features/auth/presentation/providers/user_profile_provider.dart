@@ -16,7 +16,13 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 });
 
 // 2. Provider utama sekarang menjadi bersih dan sederhana
-final userProfileProvider = FutureProvider<Profile?>((ref) {
-  // Cukup panggil repository!
+final userProfileProvider = FutureProvider<Profile?>((ref) async {
+  final client = ref.watch(supabaseClientProvider);
+  final session = client.auth.currentSession;
+  if (session == null) {
+    print('⚠️ Supabase session is null, user not authenticated');
+    throw Exception('User not authenticated');
+  }
+
   return ref.watch(profileRepositoryProvider).getProfileData();
 });

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:midi_location/features/form_kplt/data/datasources/kplt_remote_datasource.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt.dart';
 import 'package:midi_location/features/form_kplt/domain/entities/form_kplt_data.dart';
+import 'package:midi_location/features/form_kplt/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/form_kplt/domain/repositories/kplt_repository.dart';
 import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,20 +14,20 @@ class KpltRepositoryImpl implements KpltRepository {
   KpltRepositoryImpl(this.dataSource);
 
   @override
-  Future<List<FormKPLT>> getRecentKplt(String query) async {
-    final data = await dataSource.getRecentKplt(query: query);
+  Future<List<FormKPLT>> getRecentKplt(String query, {KpltFilter? filter}) async {
+    final data = await dataSource.getRecentKplt(query: query, filter: filter);
     return data.map((map) => FormKPLT.fromJoinedKpltMap(map)).toList();
   }
 
   @override
-  Future<List<FormKPLT>> getKpltNeedInput(String query) async {
-    final data = await dataSource.getKpltNeedInput(query: query);
+  Future<List<FormKPLT>> getKpltNeedInput(String query, {KpltFilter? filter}) async {
+    final data = await dataSource.getKpltNeedInput(query: query, filter: filter);
     return data.map((map) => FormKPLT.fromUlokMap(map)).toList();
   }
 
   @override
-  Future<List<FormKPLT>> getHistoryKplt(String query) async {
-    final data = await dataSource.getHistoryKplt(query: query);
+  Future<List<FormKPLT>> getHistoryKplt(String query, {KpltFilter? filter}) async {
+    final data = await dataSource.getHistoryKplt(query: query, filter: filter);
     return data.map((map) => FormKPLT.fromJoinedKpltMap(map)).toList();
   }
 

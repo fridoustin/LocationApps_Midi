@@ -24,28 +24,37 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(dataSource);
 });
 
-// Provider untuk status autentikasi
-// Provider ini akan memberitahu aplikasi kita secara real-time
-// apakah ada user yang sedang login atau tidak.
 final authStateProvider = StreamProvider<User?>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
+  final supabaseClient = ref.watch(supabaseClientProvider);
 
-  // Perhatikan, kita tidak perlu `supabaseClientProvider` lagi di sini!
   return authRepository.onAuthStateChange.asyncMap((appUser) async {
-    if (appUser == null) {
+    try {
+      if (appUser == null) {
+        return null;
+      }
+
+      final isAllowed = await authRepository.isUserAuthorized(appUser.id);
+      if (isAllowed) {
+        return appUser;
+      } else {
+        final session = supabaseClient.auth.currentSession;
+        if (session != null) {
+          try {
+            await authRepository.signOut();
+          } catch (_) {}
+        }
+        return null;
+      }
+    } catch (e) {
+      final session = supabaseClient.auth.currentSession;
+      if (session != null) {
+        try {
+          await authRepository.signOut();
+        } catch (_) {}
+      }
       return null;
     }
-
-    // Cukup panggil method dari repository
-    final isAllowed = await authRepository.isUserAuthorized(appUser.id);
-
-    if (isAllowed) {
-      return appUser;
-    } else {
-      // Jika tidak diizinkan, pastikan sesi dibersihkan
-      // Kita bisa panggil signOut dari repository juga
-      await authRepository.signOut();
-      return null;
-    }
+  }).handleError((_) {
   });
 });

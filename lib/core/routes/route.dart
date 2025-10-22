@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:midi_location/features/auth/presentation/pages/update_password_screen.dart';
+import 'package:midi_location/features/auth/presentation/pages/update_password_screen.dart';
+import 'package:midi_location/features/form_kplt/presentation/pages/all_kplt_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
 import 'package:midi_location/features/notification/presentation/pages/notification_screen.dart';
@@ -34,6 +36,10 @@ Route<dynamic> routeGenerators(RouteSettings settings) {
       return _buildPageRoute(const UnderMaintenanceScreen());
     case NotificationScreen.route:
       return _buildPageRoute(const NotificationScreen());
+    case AllKpltListPage.route:
+      final args = settings.arguments as Map<String, dynamic>?;
+      final needInput = args?['needInput'] as bool? ?? true;
+      return _buildPageRoute(AllKpltListPage(needInput: needInput));
     case UlokDetailPage.route:
       return _buildPageRoute(
         UlokDetailPage(ulok: settings.arguments as UsulanLokasi),
