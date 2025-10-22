@@ -8,7 +8,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthRepositoryImpl(this._dataSource);
 
-  // Mengubah Supabase User menjadi User Entity kita
   app.User? _convertSupabaseUser(supabase.User? user) {
     if (user == null) return null;
     return app.User(id: user.id, email: user.email ?? '');
@@ -47,12 +46,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<bool> isUserAuthorized(String userId) async {
     try {
       const allowedPositionId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-      final response = await _dataSource.client
-          .from('users')
-          .select('position_id')
-          .eq('id', userId)
-          .single();
-      
+      final response =
+          await _dataSource.client
+              .from('users')
+              .select('position_id')
+              .eq('id', userId)
+              .single();
+
       final userPositionId = response['position_id'];
       final isAllowed = userPositionId == allowedPositionId;
       return isAllowed;
@@ -64,6 +64,11 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> sendPasswordResetEmail(String email) {
     return _dataSource.sendPasswordResetEmail(email);
+  }
+
+  @override
+  Future<void> verifyOtp(String email, String token) {
+    return _dataSource.verifyOtp(email, token);
   }
 
   @override
