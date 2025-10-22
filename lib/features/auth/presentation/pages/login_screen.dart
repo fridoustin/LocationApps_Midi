@@ -20,10 +20,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _isLoading = false;
 
   Future<void> _login() async {
-
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email dan Password tidak boleh kosong')),
+      showErrorDialog(
+        context,
+        'Email dan Password tidak boleh kosong',
+        title: 'Input Tidak Lengkap',
       );
       return;
     }
@@ -39,19 +40,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             _emailController.text.trim(),
             _passwordController.text.trim(),
           );
-      ref.invalidate(authStateProvider);
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => const MainLayout(currentIndex: 0),
-          ),
-          (route) => false,
-        );
-      }
     } catch (e) {
       if (mounted) {
         final errorMessage = e.toString().replaceAll("Exception: ", "");
-        showErrorDialog(context, errorMessage);
+        showErrorDialog(context, errorMessage, title: 'Login Gagal');
       }
     } finally {
       if (mounted) {
@@ -67,11 +59,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage("assets/pic/bg_2.png"),
-          fit: BoxFit.cover,
+          image: DecorationImage(
+            image: AssetImage("assets/pic/bg_2.png"),
+            fit: BoxFit.cover,
+          ),
         ),
-      ),
         child: SafeArea(
           child: Column(
             children: [
@@ -82,12 +74,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     child: Column(
                       children: [
                         const SizedBox(height: 60),
-
                         Image.asset('assets/pic/alfamididown.png', width: 120),
-
                         const SizedBox(height: 30),
-
-                        // Description text
                         const Text(
                           'Platform digital terpusat untuk proses\npengembangan lokasi',
                           textAlign: TextAlign.center,
@@ -101,7 +89,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                         const SizedBox(height: 40),
 
-                        // Login Form Container
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
@@ -111,7 +98,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Log In title
                               const Center(
                                 child: Text(
                                   'Log In',
@@ -125,7 +111,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                               const SizedBox(height: 30),
 
-                              // Email field
                               const Text(
                                 'Email',
                                 style: TextStyle(
@@ -137,6 +122,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               const SizedBox(height: 8),
                               TextField(
                                 controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
                                 decoration: InputDecoration(
                                   hintText: 'Enter your email',
                                   hintStyle: TextStyle(color: Colors.grey[400]),
@@ -167,7 +153,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                               const SizedBox(height: 20),
 
-                              // Password field
                               const Text(
                                 'Password',
                                 style: TextStyle(
@@ -225,12 +210,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
-                                      );
-                                    },
+                                    onPressed:
+                                        _isLoading
+                                            ? null
+                                            : () {
+                                              Navigator.pushNamed(
+                                                context,
+                                                ForgotPasswordPage.route,
+                                              );
+                                            },
                                     child: const Text(
                                       'Lupa Password?',
                                       style: TextStyle(
@@ -244,7 +232,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                               const SizedBox(height: 10),
 
-                              // Log In button
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -289,7 +276,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
 
-              // Footer tetap di bawah
               const Padding(
                 padding: EdgeInsets.only(bottom: 8, top: 8),
                 child: Text(
@@ -300,7 +286,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ],
           ),
         ),
-        )
+      ),
     );
   }
 
