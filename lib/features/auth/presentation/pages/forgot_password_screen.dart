@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/utils/show_error_dialog.dart';
+import 'package:midi_location/core/utils/show_success_dialog.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:pinput/pinput.dart';
 
 enum ForgotPasswordStep { enterEmail, enterCode, enterNewPassword }
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
+  static const String route = '/forgot-password';
   const ForgotPasswordPage({super.key});
 
   @override
@@ -54,7 +56,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Future<void> _sendRecoveryEmail() async {
     if (_emailController.text.isEmpty) {
-      showErrorDialog(context, 'Email cannot be empty.');
+      showErrorDialog(context, 'Email cannot be empty.', title: 'Input Error');
       return;
     }
     setState(() => _isLoading = true);
@@ -68,7 +70,11 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       });
     } catch (e) {
       if (mounted)
-        showErrorDialog(context, 'Email is not registered in our database.');
+        showErrorDialog(
+          context,
+          'Email is not registered in our database.',
+          title: 'Email Not Found',
+        );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -91,7 +97,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         );
       }
     } catch (e) {
-      if (mounted) showErrorDialog(context, 'Failed to resend code.');
+      if (mounted)
+        showErrorDialog(
+          context,
+          'Failed to resend code.',
+          title: 'Resend Failed',
+        );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -99,7 +110,11 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Future<void> _verifyCode() async {
     if (_pinController.text.length < 6) {
-      showErrorDialog(context, 'Please enter the complete 6-digit code.');
+      showErrorDialog(
+        context,
+        'Please enter the complete 6-digit code.',
+        title: 'Invalid Code',
+      );
       return;
     }
     setState(() => _isLoading = true);
@@ -113,6 +128,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         showErrorDialog(
           context,
           'The code you entered is incorrect. Please check the code in your email.',
+          title: 'Verification Failed',
         );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -121,35 +137,49 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Future<void> _updatePassword() async {
     if (_passwordController.text != _confirmPasswordController.text) {
-      showErrorDialog(context, 'Passwords do not match.');
+      showErrorDialog(
+        context,
+        'Passwords do not match.',
+        title: 'Password Error',
+      );
       return;
     }
     if (_passwordController.text.length < 6) {
-      showErrorDialog(context, 'Password must be at least 6 characters long.');
+      showErrorDialog(
+        context,
+        'Password must be at least 6 characters long.',
+        title: 'Password Too Short',
+      );
       return;
     }
 
     setState(() => _isLoading = true);
+
     try {
       await ref
           .read(authRepositoryProvider)
           .updateUserPassword(_passwordController.text);
-      await ref.read(authRepositoryProvider).signOut();
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password changed successfully!'),
-            backgroundColor: Colors.green,
-          ),
+        await showSuccessDialog(
+          context,
+          'Password changed successfully!',
+          title: 'Password Updated',
         );
-        Navigator.pop(context);
+      }
+      if (mounted) {
+        await ref.read(authRepositoryProvider).signOut();
       }
     } catch (e) {
       if (mounted)
-        showErrorDialog(context, e.toString().replaceAll("Exception: ", ""));
+        showErrorDialog(
+          context,
+          e.toString().replaceAll("Exception: ", ""),
+          title: 'Update Failed',
+        );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -218,7 +248,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         ),
         Center(
           child: TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: _isLoading ? null : () => Navigator.pop(context),
             child: const Text(
               'Back to Login',
               style: TextStyle(color: AppColors.primaryColor),
@@ -264,6 +294,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               border: Border.all(color: AppColors.primaryColor),
             ),
           ),
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 24),
         _countdown > 0
@@ -299,7 +330,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         ),
         Center(
           child: TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: _isLoading ? null : () => Navigator.pop(context),
             child: const Text(
               'Back to Login',
               style: TextStyle(color: AppColors.primaryColor),
@@ -412,7 +443,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         ),
         Center(
           child: TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: _isLoading ? null : () => Navigator.pop(context),
             child: const Text(
               'Back to Login',
               style: TextStyle(color: AppColors.primaryColor),
@@ -461,8 +492,11 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   child:
                       _isLoading
                           ? const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 50.0),
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryColor,
+                              ),
                             ),
                           )
                           : AnimatedSwitcher(
