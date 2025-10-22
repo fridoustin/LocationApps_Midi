@@ -1,4 +1,3 @@
-// ignore_for_file: use_super_parameters, sized_box_for_whitespace
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -22,36 +21,37 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
   );
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.light
-  ));
-  
   await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-  
 
   final container = ProviderContainer();
   await container.read(notificationServiceProvider).initialize(container);
 
-  // ignore: deprecated_member_use
-  runApp(ProviderScope(parent: container,child: const MyApp()));
+  runApp(ProviderScope(parent: container, child: const MyApp()));
 }
 
 final supabase = Supabase.instance.client;
 
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      navigatorKey: navigatorKey,
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 class _MyAppState extends ConsumerState<MyApp> {
@@ -144,7 +144,7 @@ class _MyAppState extends ConsumerState<MyApp> {
       theme: ThemeData(
         primarySwatch: Colors.red,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        textTheme: GoogleFonts.poppinsTextTheme()
+        textTheme: GoogleFonts.poppinsTextTheme(),
       ),
       home: const AuthGate(),
       debugShowCheckedModeBanner: false,

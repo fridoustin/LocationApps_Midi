@@ -6,14 +6,17 @@ class AuthRemoteDataSource {
   SupabaseClient get client => _client;
   AuthRemoteDataSource(this._client);
 
-  /// User yang sedang login
+  /// User who is currently logged in
   User? get currentUser => _client.auth.currentUser;
 
-  /// Stream untuk memantau perubahan status autentikasi
+  /// Stream to monitor authentication state changes
   Stream<AuthState> get onAuthStateChange => _client.auth.onAuthStateChange;
 
-  /// Sign in dengan email & password
-  Future<AuthResponse> signInWithEmailPassword(String email, String password) async {
+  /// Sign in with email & password
+  Future<AuthResponse> signInWithEmailPassword(
+    String email,
+    String password,
+  ) async {
     try {
       final response = await _client.auth.signInWithPassword(
         email: email,
@@ -21,14 +24,17 @@ class AuthRemoteDataSource {
       );
       return response;
     } on AuthException catch (e) {
-      throw Exception('Login gagal: ${e.message}');
+      throw Exception('Login failed: ${e.message}');
     } catch (e) {
       throw Exception('Unexpected error: $e');
     }
   }
 
-  /// Sign up dengan email & password
-  Future<AuthResponse> signUpWithEmailPassword(String email, String password) async {
+  /// Sign up with email & password
+  Future<AuthResponse> signUpWithEmailPassword(
+    String email,
+    String password,
+  ) async {
     try {
       final response = await _client.auth.signUp(
         email: email,
@@ -36,7 +42,7 @@ class AuthRemoteDataSource {
       );
       return response;
     } on AuthException catch (e) {
-      throw Exception('Signup gagal: ${e.message}');
+      throw Exception('Signup failed: ${e.message}');
     } catch (e) {
       throw Exception('Unexpected error: $e');
     }
@@ -47,30 +53,42 @@ class AuthRemoteDataSource {
     try {
       await _client.auth.signOut();
     } on AuthException catch (e) {
-      throw Exception('Logout gagal: ${e.message}');
+      throw Exception('Logout failed: ${e.message}');
     }
   }
 
+  /// Send a password reset OTP. The `redirectTo` is removed.
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await _client.auth.resetPasswordForEmail(
-        email,
-        redirectTo: 'io.supabase.midilocation://login-callback'
-      );
+      await _client.auth.resetPasswordForEmail(email);
     } on AuthException catch (e) {
-      throw Exception('Gagal mengirim email reset: ${e.message}');
+      throw Exception('Failed to send reset email: ${e.message}');
     } catch (e) {
       throw Exception('Unexpected error: $e');
     }
   }
 
-  Future<void> updateUserPassword(String newPassword) async {
+  /// Verify the OTP for password recovery.
+  Future<void> verifyOtp(String email, String token) async {
     try {
-      await _client.auth.updateUser(
-        UserAttributes(password: newPassword),
+      await _client.auth.verifyOTP(
+        token: token,
+        type: OtpType.recovery,
+        email: email,
       );
     } on AuthException catch (e) {
-      throw Exception('Gagal memperbarui password: ${e.message}');
+      throw Exception('Invalid code: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  /// Update the user's password.
+  Future<void> updateUserPassword(String newPassword) async {
+    try {
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
+    } on AuthException catch (e) {
+      throw Exception('Failed to update password: ${e.message}');
     } catch (e) {
       throw Exception('Unexpected error: $e');
     }

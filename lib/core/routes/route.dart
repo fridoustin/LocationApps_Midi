@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:midi_location/features/auth/presentation/pages/update_password_screen.dart';
 import 'package:midi_location/features/auth/presentation/pages/update_password_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/all_kplt_screen.dart';
 import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
@@ -25,8 +26,8 @@ Route<dynamic> routeGenerators(RouteSettings settings) {
       return _buildPageRoute(const ProfilePage());
     case LoginPage.route:
       return _buildPageRoute(const LoginPage());
-    case UpdatePasswordPage.route:
-      return _buildPageRoute(const UpdatePasswordPage());
+    // case UpdatePasswordPage.route:
+    //   return _buildPageRoute(const UpdatePasswordPage());
     case Error404Screen.route:
       return _buildPageRoute(const Error404Screen());
     case AccessDeniedScreen.route:
