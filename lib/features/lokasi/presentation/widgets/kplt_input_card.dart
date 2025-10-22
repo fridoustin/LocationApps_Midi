@@ -20,7 +20,6 @@ class KpltNeedInputCard extends ConsumerWidget {
     required this.kplt,
   });
 
-  // --- TAMBAHAN: HELPER UNTUK FORMAT TANGGAL ---
   String _formatLastEdited(DateTime? lastEdited) {
     if (lastEdited == null) return 'Draft tersimpan';
     
@@ -68,7 +67,7 @@ class KpltNeedInputCard extends ConsumerWidget {
         final draft = drafts.firstWhereOrNull((d) => d.ulokId == kplt.ulokId);
         final bool hasDraft = draft != null;
 
-        final highlightColor = hasDraft ? AppColors.blue : AppColors.orange;
+        final highlightColor = hasDraft ? AppColors.orange : Colors.grey[400]!;
         final buttonText = hasDraft ? 'Lanjutkan Pengisian' : 'Isi Form KPLT';
 
         return Container(

@@ -46,7 +46,7 @@ class RecentKpltView extends ConsumerWidget {
                         title: 'Perlu Input Anda',
                         count: list.length,
                         icon: Icons.edit_note,
-                        iconColor: Colors.orange.shade700,
+                        iconColor: AppColors.orange,
                         onShowAll: list.isEmpty
                             ? null
                             : () {
@@ -108,7 +108,7 @@ class RecentKpltView extends ConsumerWidget {
                         title: 'Sedang Proses',
                         count: list.length,
                         icon: Icons.hourglass_top_rounded,
-                        iconColor: Colors.blue.shade700,
+                        iconColor: AppColors.secondaryColor,
                         onShowAll: list.isEmpty
                             ? null
                             : () {
