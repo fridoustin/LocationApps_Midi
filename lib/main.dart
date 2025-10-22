@@ -15,6 +15,7 @@ import 'package:midi_location/features/form_kplt/presentation/providers/kplt_pro
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:midi_location/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -45,15 +46,13 @@ Future<void> main() async {
 
 final supabase = Supabase.instance.client;
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
   ConsumerState<MyApp> createState() => _MyAppState();
 }
+
 class _MyAppState extends ConsumerState<MyApp> {
   late final StreamSubscription<AuthState> _authSubscription;
 
@@ -72,15 +71,11 @@ class _MyAppState extends ConsumerState<MyApp> {
         if (_isHandlingAuthChange) return;
         _isHandlingAuthChange = true;
         try {
-          if (event == AuthChangeEvent.passwordRecovery) {
-            navigatorKey.currentState?.pushNamedAndRemoveUntil(
-              UpdatePasswordPage.route,
-              (route) => false,
-            );
-            return;
-          }
           if (event == AuthChangeEvent.signedIn) {
-            final container = ProviderScope.containerOf(navigatorKey.currentContext!, listen: false);
+            final container = ProviderScope.containerOf(
+              navigatorKey.currentContext!,
+              listen: false,
+            );
             container.invalidate(userProfileProvider);
             container.invalidate(dashboardStatsProvider);
             container.invalidate(ulokListProvider);
@@ -139,7 +134,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey, 
+      navigatorKey: navigatorKey,
       title: 'Midi Location App',
       theme: ThemeData(
         primarySwatch: Colors.red,

@@ -1,13 +1,13 @@
-// lib/core/utils/show_error_dialog.dart
+// lib/core/utils/show_success_dialog.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 
-Future<void> showErrorDialog(
+Future<void> showSuccessDialog(
   BuildContext context,
   String message, {
-  String title = 'Error',
+  String title = 'Success',
 }) async {
   return showDialog<void>(
     context: context,
@@ -24,14 +24,16 @@ Future<void> showErrorDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset('assets/icons/error.svg', width: 70, height: 70),
+            SvgPicture.asset('assets/icons/success.svg', width: 70, height: 70),
             const SizedBox(height: 20),
+
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
+
             Text(
               message,
               textAlign: TextAlign.center,
