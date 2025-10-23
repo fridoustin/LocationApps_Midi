@@ -7,6 +7,8 @@ import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/presentation/pages/assignment_detail_page.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io' show Platform;
 
 class TrackingView extends ConsumerStatefulWidget {
   const TrackingView({super.key});
@@ -330,10 +332,12 @@ class _TrackingViewState extends ConsumerState<TrackingView>
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // TODO: Open in maps app
-                    },
+                    onPressed: assignment.location != null
+                        ? () {
+                            Navigator.pop(context);
+                            _openDirections(assignment.location!);
+                          }
+                        : null,
                     icon: const Icon(Icons.directions),
                     label: const Text('Directions'),
                     style: OutlinedButton.styleFrom(
@@ -375,12 +379,63 @@ class _TrackingViewState extends ConsumerState<TrackingView>
   Future<double> _calculateDistance(LatLng destination) async {
     if (_currentLocation == null) return double.infinity;
     
-    const Distance distance = Distance();
-    return distance.as(
-      LengthUnit.Meter,
-      _currentLocation!,
-      destination,
-    );
+    final distance = Distance();
+    return distance.as(LengthUnit.Meter, _currentLocation!, destination);
+  }
+
+  Future<void> _openDirections(LatLng destination) async {
+    final lat = destination.latitude;
+    final lng = destination.longitude;
+
+    try {
+      if (Platform.isIOS) {
+        // Prefer native Apple Maps scheme, fallback ke apple web
+        final appleMapsScheme = Uri.parse('maps://?daddr=$lat,$lng');
+        final appleMapsWeb = Uri.parse('https://maps.apple.com/?daddr=$lat,$lng');
+
+        if (await canLaunchUrl(appleMapsScheme)) {
+          await launchUrl(appleMapsScheme, mode: LaunchMode.externalApplication);
+          return;
+        }
+        if (await canLaunchUrl(appleMapsWeb)) {
+          await launchUrl(appleMapsWeb, mode: LaunchMode.externalApplication);
+          return;
+        }
+      } else if (Platform.isAndroid) {
+        // Prefer native Google Maps navigation intent, fallback ke google maps web
+        final googleMapsScheme = Uri.parse('google.navigation:q=$lat,$lng');
+        final googleMapsWeb = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+
+        if (await canLaunchUrl(googleMapsScheme)) {
+          await launchUrl(googleMapsScheme, mode: LaunchMode.externalApplication);
+          return;
+        }
+        if (await canLaunchUrl(googleMapsWeb)) {
+          await launchUrl(googleMapsWeb, mode: LaunchMode.externalApplication);
+          return;
+        }
+      } else {
+        // Other platforms (web, desktop) -> open google maps web
+        final web = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+        if (await canLaunchUrl(web)) {
+          await launchUrl(web, mode: LaunchMode.externalApplication);
+          return;
+        }
+      }
+
+      // Jika sampai sini berarti semua canLaunchUrl false
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka aplikasi peta di perangkat ini')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal membuka peta: $e')),
+        );
+      }
+    }
   }
 
   String _getStatusText(AssignmentStatus status) {
