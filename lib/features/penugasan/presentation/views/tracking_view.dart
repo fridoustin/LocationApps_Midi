@@ -1,14 +1,17 @@
+// ignore_for_file: deprecated_member_use
+
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/presentation/pages/assignment_detail_page.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:io' show Platform;
 
 class TrackingView extends ConsumerStatefulWidget {
   const TrackingView({super.key});
@@ -25,6 +28,7 @@ class _TrackingViewState extends ConsumerState<TrackingView>
   LatLng? _currentLocation;
   bool _isLoadingLocation = true;
   final MapController _mapController = MapController();
+  String _selectedFilter = 'active';
 
   @override
   void initState() {
@@ -76,28 +80,131 @@ class _TrackingViewState extends ConsumerState<TrackingView>
 
     return Stack(
       children: [
-        // Map
         _buildMap(assignmentsAsync),
-
-        // Refresh button
         Positioned(
           top: 16,
+          left: 16,
           right: 16,
-          child: FloatingActionButton(
-            heroTag: 'refreshLocation',
-            mini: true,
-            backgroundColor: Colors.white,
-            onPressed: _getCurrentLocation,
-            child: const Icon(Icons.my_location, color: AppColors.primaryColor),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _weekRangeBadge(height: 40),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFilterButton(),
+                  const SizedBox(width: 8),
+                  FloatingActionButton(
+                    heroTag: 'refreshLocation',
+                    mini: true,
+                    backgroundColor: Colors.white,
+                    onPressed: _getCurrentLocation,
+                    child: const Icon(Icons.my_location, color: AppColors.primaryColor),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
 
         // Loading indicator
         if (_isLoadingLocation)
           const Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(
+              color: AppColors.primaryColor,
+            ),
           ),
       ],
+    );
+  }
+
+  Widget _buildFilterButton() {
+    return Material(
+      color: Colors.transparent,
+      child: PopupMenuButton<String>(
+        tooltip: 'Filter assignments',
+        initialValue: _selectedFilter,
+        onSelected: (v) {
+          setState(() {
+            _selectedFilter = v;
+          });
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'active', 
+            child: Text(
+              'Active (default)'
+            )
+          ),
+          const PopupMenuItem(
+            value: 'all', 
+            child: Text(
+              'All assignments'
+            )
+          ),
+          const PopupMenuItem(
+            value: 'past', 
+            child: Text(
+              'Past only'
+            )
+          ),
+        ],
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: kElevationToShadow[2],
+          ),
+          child: Icon(Icons.filter_list, size: 20, color: AppColors.primaryColor),
+        ),
+      ),
+    );
+  }
+
+  Widget _weekRangeBadge({double height = 40}) {
+    final now = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+    final fmt = DateFormat('dd MMM yyyy');
+    final label = '${fmt.format(monday)} - ${fmt.format(sunday)}';
+
+    return Container(
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: kElevationToShadow[2],
+      ),
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.calendar_today, size: 18, color: AppColors.primaryColor),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.primaryColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -105,6 +212,14 @@ class _TrackingViewState extends ConsumerState<TrackingView>
     return assignmentsAsync.when(
       data: (assignments) {
         final center = _currentLocation ?? const LatLng(-6.2088, 106.8456);
+        final now = DateTime.now();
+        final filtered = assignments.where((a) {
+          if (a.location == null) return false;
+          final end = a.endDate;
+          if (_selectedFilter == 'all') return true;
+          if (_selectedFilter == 'past') return end.isBefore(now);
+          return !end.isBefore(now);
+        }).toList();
 
         return FlutterMap(
           mapController: _mapController,
@@ -120,10 +235,8 @@ class _TrackingViewState extends ConsumerState<TrackingView>
               userAgentPackageName: 'com.midi.location',
             ),
 
-            // Markers untuk assignments
             MarkerLayer(
               markers: [
-                // Current location marker
                 if (_currentLocation != null)
                   Marker(
                     point: _currentLocation!,
@@ -135,9 +248,7 @@ class _TrackingViewState extends ConsumerState<TrackingView>
                       size: 40,
                     ),
                   ),
-
-                // Assignment markers
-                ...assignments.where((a) => a.location != null).map((assignment) {
+                ...filtered.map((assignment) {
                   return Marker(
                     point: assignment.location!,
                     width: 120,
@@ -186,7 +297,7 @@ class _TrackingViewState extends ConsumerState<TrackingView>
                       ),
                     ),
                   );
-                }).toList(),
+                })
               ],
             ),
           ],
@@ -423,7 +534,6 @@ class _TrackingViewState extends ConsumerState<TrackingView>
         }
       }
 
-      // Jika sampai sini berarti semua canLaunchUrl false
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tidak dapat membuka aplikasi peta di perangkat ini')),
