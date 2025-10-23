@@ -2,10 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment_activity.dart';
@@ -45,7 +47,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       final currentLocation = LatLng(position.latitude, position.longitude);
 
       // Calculate distance
-      final Distance distance = const Distance();
+      final Distance distance = Distance();
       final meters = distance.as(
         LengthUnit.Meter,
         currentLocation,
@@ -99,7 +101,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       }
 
       // Refresh data
-      ref.invalidate(trackingHistoryProvider);
+      ref.invalidate(trackingHistoryProvider(widget.assignment.id));
       ref.invalidate(allAssignmentsProvider);
       ref.invalidate(pendingAssignmentsProvider);
       ref.invalidate(inProgressAssignmentsProvider);
@@ -149,6 +151,83 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
+  Future<void> _cancelAssignment() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Batalkan Penugasan?'),
+        content: const Text(
+          'Penugasan yang dibatalkan tidak dapat dikembalikan lagi.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Tidak'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Ya, Batalkan'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final userProfile = await ref.read(userProfileProvider.future);
+      if (userProfile == null) throw Exception('User not found');
+
+      final repository = ref.read(assignmentRepositoryProvider);
+      
+      // Add tracking point for cancellation
+      final trackingPoint = TrackingPoint(
+        id: '',
+        assignmentId: widget.assignment.id,
+        userId: userProfile.id,
+        location: widget.assignment.location ?? const LatLng(0, 0),
+        status: TrackingStatus.cancelled,
+        notes: 'Penugasan dibatalkan oleh user',
+        photoUrl: null,
+        createdAt: DateTime.now(),
+      );
+      
+      await repository.addTrackingPoint(trackingPoint);
+      
+      // Update assignment status to cancelled
+      await repository.updateAssignmentStatus(
+        widget.assignment.id,
+        AssignmentStatus.cancelled,
+      );
+
+      // Refresh all providers
+      ref.invalidate(allAssignmentsProvider);
+      ref.invalidate(pendingAssignmentsProvider);
+      ref.invalidate(inProgressAssignmentsProvider);
+      ref.invalidate(completedAssignmentsProvider);
+      ref.invalidate(trackingHistoryProvider(widget.assignment.id));
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Penugasan berhasil dibatalkan'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _completeAssignment() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -185,6 +264,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
       ref.invalidate(completedAssignmentsProvider);
       ref.invalidate(inProgressAssignmentsProvider);
+      ref.invalidate(allAssignmentsProvider);
+      ref.invalidate(trackingHistoryProvider(widget.assignment.id));
 
       if (mounted) {
         Navigator.pop(context);
@@ -206,33 +287,54 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch assignment updates
+    final allAssignmentsAsync = ref.watch(allAssignmentsProvider);
+    
+    // Find updated assignment from provider
+    final Assignment currentAssignment = allAssignmentsAsync.maybeWhen(
+      data: (assignments) {
+        return assignments.firstWhere(
+          (a) => a.id == widget.assignment.id,
+          orElse: () => widget.assignment,
+        );
+      },
+      orElse: () => widget.assignment,
+    );
+    
     final activitiesAsync =
-        ref.watch(assignmentActivitiesProvider(widget.assignment.id));
+        ref.watch(assignmentActivitiesProvider(currentAssignment.id));
     final trackingHistoryAsync =
-        ref.watch(trackingHistoryProvider(widget.assignment.id));
+        ref.watch(trackingHistoryProvider(currentAssignment.id));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Penugasan'),
-        backgroundColor: AppColors.primaryColor,
-        foregroundColor: Colors.white,
+      appBar: CustomTopBar.general(
+        title: 'Detail Penugasan',
+        showNotificationButton: false,
+        leadingWidget: IconButton(
+          icon: SvgPicture.asset(
+            "assets/icons/left_arrow.svg",
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
+      backgroundColor: AppColors.backgroundColor,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Title & Description
           Text(
-            widget.assignment.title,
+            currentAssignment.title,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
 
-          if (widget.assignment.description != null) ...[
+          if (currentAssignment.description != null) ...[
             const SizedBox(height: 8),
             Text(
-              widget.assignment.description!,
+              currentAssignment.description!,
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.grey[700],
@@ -248,16 +350,16 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             icon: Icons.calendar_today,
             label: 'Periode',
             value:
-                '${DateFormat('dd MMM yyyy').format(widget.assignment.startDate)} - '
-                '${DateFormat('dd MMM yyyy').format(widget.assignment.endDate)}',
+                '${DateFormat('dd MMM yyyy').format(currentAssignment.startDate)} - '
+                '${DateFormat('dd MMM yyyy').format(currentAssignment.endDate)}',
           ),
 
-          if (widget.assignment.locationName != null) ...[
+          if (currentAssignment.locationName != null) ...[
             const SizedBox(height: 12),
             _buildInfoCard(
               icon: Icons.location_on_outlined,
               label: 'Lokasi',
-              value: widget.assignment.locationName!,
+              value: currentAssignment.locationName!,
             ),
           ],
 
@@ -265,19 +367,19 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           _buildInfoCard(
             icon: Icons.info_outline,
             label: 'Status',
-            value: _getStatusText(widget.assignment.status),
-            valueColor: _getStatusColor(widget.assignment.status),
+            value: _getStatusText(currentAssignment.status),
+            valueColor: _getStatusColor(currentAssignment.status),
           ),
 
           // Map
-          if (widget.assignment.location != null) ...[
+          if (currentAssignment.location != null) ...[
             const SizedBox(height: 24),
             const Text(
               'Lokasi di Map',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            InteractiveMapWidget(position: widget.assignment.location!),
+            InteractiveMapWidget(position: currentAssignment.location!),
           ],
 
           // Activities
@@ -310,9 +412,10 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
           const SizedBox(height: 24),
 
-          // Action Buttons
-          if (widget.assignment.status != AssignmentStatus.completed)
-            _buildActionButtons(),
+          // Action Buttons (only show if not completed or cancelled)
+          if (currentAssignment.status != AssignmentStatus.completed &&
+              currentAssignment.status != AssignmentStatus.cancelled)
+            _buildActionButtons(currentAssignment),
         ],
       ),
     );
@@ -429,10 +532,10 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(Assignment currentAssignment) {
     return Column(
       children: [
-        if (widget.assignment.status == AssignmentStatus.pending) ...[
+        if (currentAssignment.status == AssignmentStatus.pending) ...[
           ElevatedButton.icon(
             onPressed: _isCheckingIn ? null : () => _checkIn(TrackingStatus.arrived),
             icon: const Icon(Icons.location_on),
@@ -447,7 +550,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           const SizedBox(height: 12),
         ],
 
-        if (widget.assignment.status == AssignmentStatus.inProgress) ...[
+        if (currentAssignment.status == AssignmentStatus.inProgress) ...[
           ElevatedButton.icon(
             onPressed: _completeAssignment,
             icon: const Icon(Icons.check_circle),
@@ -463,7 +566,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         ],
 
         OutlinedButton.icon(
-          onPressed: _isCheckingIn ? null : () => _checkIn(TrackingStatus.cancelled),
+          onPressed: _cancelAssignment,
           icon: const Icon(Icons.cancel),
           label: const Text('Batalkan Penugasan'),
           style: OutlinedButton.styleFrom(
