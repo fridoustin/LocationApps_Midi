@@ -1,3 +1,6 @@
+// lib/features/penugasan/data/repositories/assignment_repository_impl.dart
+
+import 'package:latlong2/latlong.dart';
 import 'package:midi_location/features/penugasan/data/datasources/assignment_remote_datasource.dart';
 import 'package:midi_location/features/penugasan/domain/entities/activity_template.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
@@ -64,6 +67,29 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     bool isCompleted,
   ) async {
     await _remoteDataSource.toggleActivityCompletion(activityId, isCompleted);
+  }
+
+  @override
+  Future<void> checkInActivity(
+    String activityId,
+    LatLng checkedInLocation,
+  ) async {
+    await _remoteDataSource.checkInActivity(activityId, checkedInLocation);
+  }
+
+  @override
+  Future<void> updateActivityLocation(
+    String activityId,
+    String? locationName,
+    LatLng? location,
+    bool requiresCheckin,
+  ) async {
+    await _remoteDataSource.updateActivityLocation(
+      activityId,
+      locationName,
+      location,
+      requiresCheckin,
+    );
   }
 
   @override

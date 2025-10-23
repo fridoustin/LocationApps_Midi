@@ -1,3 +1,4 @@
+import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:midi_location/features/penugasan/domain/entities/activity_template.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
@@ -82,7 +83,7 @@ class AssignmentRemoteDataSource {
   ) async {
     // Insert assignment
     final assignmentData = assignment.toMap();
-    assignmentData.remove('id');
+    assignmentData.remove('id'); // Let database generate ID
     
     final assignmentResponse = await _supabase
         .from('assignments')
@@ -155,6 +156,37 @@ class AssignmentRemoteDataSource {
         .update({
           'is_completed': isCompleted,
           'completed_at': isCompleted ? DateTime.now().toIso8601String() : null,
+        })
+        .eq('id', activityId);
+  }
+
+  Future<void> checkInActivity(
+    String activityId,
+    LatLng checkedInLocation,
+  ) async {
+    await _supabase
+        .from('assignment_activities')
+        .update({
+          'checked_in_at': DateTime.now().toIso8601String(),
+          'checked_in_latitude': checkedInLocation.latitude,
+          'checked_in_longitude': checkedInLocation.longitude,
+        })
+        .eq('id', activityId);
+  }
+
+  Future<void> updateActivityLocation(
+    String activityId,
+    String? locationName,
+    LatLng? location,
+    bool requiresCheckin,
+  ) async {
+    await _supabase
+        .from('assignment_activities')
+        .update({
+          'location_name': locationName,
+          'latitude': location?.latitude,
+          'longitude': location?.longitude,
+          'requires_checkin': requiresCheckin,
         })
         .eq('id', activityId);
   }

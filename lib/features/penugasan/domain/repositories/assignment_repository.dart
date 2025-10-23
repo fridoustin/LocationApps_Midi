@@ -1,3 +1,4 @@
+import 'package:latlong2/latlong.dart';
 import 'package:midi_location/features/penugasan/domain/entities/activity_template.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment_activity.dart';
@@ -21,6 +22,18 @@ abstract class AssignmentRepository {
   // Assignment Activities
   Future<List<AssignmentActivity>> getAssignmentActivities(String assignmentId);
   Future<void> toggleActivityCompletion(String activityId, bool isCompleted);
+  
+  // Check-in related
+  Future<void> checkInActivity(
+    String activityId,
+    LatLng checkedInLocation,
+  );
+  Future<void> updateActivityLocation(
+    String activityId,
+    String? locationName,
+    LatLng? location,
+    bool requiresCheckin,
+  );
   
   // Tracking
   Future<List<TrackingPoint>> getTrackingHistory(String assignmentId);
