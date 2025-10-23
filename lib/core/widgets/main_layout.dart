@@ -1,20 +1,18 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
-import 'package:midi_location/features/form_kplt/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/lokasi_mainscreen.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
+import 'package:midi_location/features/penugasan/presentation/pages/penugasan_main_page.dart';
 import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_screen.dart';
 import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
-import 'package:midi_location/features/ulok/presentation/pages/ulok_form_page.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:midi_location/features/ulok/presentation/providers/ulok_form_provider.dart';
-import 'package:midi_location/features/error_screens/no_connection_screen.dart'; 
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
+import 'package:midi_location/features/error_screens/no_connection_screen.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final int currentIndex;
@@ -29,15 +27,15 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   final List<Widget> _pages = const [
     HomePage(),
-    ULOKPage(),
-    FormKPLTPage(),
+    LokasiMainPage(),
+    PenugasanMainPage(),
     ProfilePage(),
   ];
 
   final List<String> _pageTitles = [
     'Home',
-    'Usulan Lokasi',
-    'Form KPLT',
+    'Lokasi',
+    'Tugas',
     'Profile',
   ];
 
@@ -54,40 +52,63 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   PreferredSizeWidget _buildAppBar(int index, WidgetRef ref) {
     final userProfileAsync = ref.watch(userProfileProvider);
-    final hasUnread = ref.watch(hasUnreadNotificationProvider);
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
 
-    switch (index) {
-      case 0:
-        return userProfileAsync.when(
-          data: (profile) => CustomTopBar.home(
-            branchName: profile?.branch ?? 'Branch',
-            hasUnreadNotification: hasUnread,
-          ),
-          loading: () => CustomTopBar.home(branchName: 'Memuat...'),
-          error: (err, stack) => CustomTopBar.general(title: 'Gagal Memuat'),
-        );
-      case 3:
-        return userProfileAsync.when(
-          data: (profile) {
+    return userProfileAsync.when(
+      data: (profile) {
+        switch (index) {
+          case 0:
             if (profile == null) {
-              return CustomTopBar.general(title: 'Profil Tidak Ditemukan');
+              return CustomTopBar.home(
+                profileData: profile,
+                unreadNotificationCount: unreadCount,
+              );
+            }
+            return CustomTopBar.home(
+              profileData: profile,
+              unreadNotificationCount: unreadCount,
+            );
+          case 3:
+            if (profile == null) {
+              return CustomTopBar.general(
+                title: _pageTitles[index],
+                unreadNotificationCount: unreadCount,
+              );
             }
             return CustomTopBar.profile(
               profileData: profile,
               title: _pageTitles[index],
-              hasUnreadNotification: hasUnread,
+              unreadNotificationCount: unreadCount,
             );
-          },
-          loading: () => CustomTopBar.general(title: 'Memuat Profil...'),
-          error: (err, stack) =>
-              CustomTopBar.general(title: 'Gagal Memuat Profil'),
-        );
-      default:
-        return CustomTopBar.general(
-          title: _pageTitles[index],
-          hasUnreadNotification: hasUnread
-        );
-    }
+          default:
+            return CustomTopBar.general(
+              title: _pageTitles[index],
+              profileData: profile,
+              unreadNotificationCount: unreadCount,
+            );
+        }
+      },
+      loading: () {
+        switch (index) {
+          case 0:
+            return CustomTopBar.home();
+          case 3:
+            return CustomTopBar.general(title: '');
+          default:
+            return CustomTopBar.general(title: '');
+        }
+      },
+      error: (err, stack) {
+        switch (index) {
+          case 0:
+            return CustomTopBar.home();
+          case 3:
+            return CustomTopBar.general(title: 'Gagal Memuat Profil');
+          default:
+            return CustomTopBar.general(title: _pageTitles[index]);
+        }
+      },
+    );
   }
 
   @override
@@ -96,7 +117,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     return connectivityStatus.when(
       data: (result) {
         if (result == ConnectivityResult.none) {
-          return Scaffold( 
+          return Scaffold(
             body: NoConnectionScreen(
               onRefresh: () {
                 ref.invalidate(connectivityProvider);
@@ -135,7 +156,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             backgroundColor: AppColors.backgroundColor,
           ),
         );
-      },      loading: () => const Scaffold(
+      },
+      loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (err, stack) => Scaffold(

@@ -16,15 +16,20 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 
 // Provider utama untuk daftar notifikasi
 final notificationListProvider = FutureProvider<List<NotificationEntity>>((ref) {
+  ref.watch(autoRefreshProvider(const Duration(minutes: 5))); 
   return ref.watch(notificationRepositoryProvider).getNotifications();
 });
 
-final hasUnreadNotificationProvider = Provider<bool>((ref) {
+final unreadNotificationCountProvider = Provider<int>((ref) {
   final notificationsAsync = ref.watch(notificationListProvider);
 
   return notificationsAsync.when(
-    data: (notifications) => notifications.any((notif) => !notif.isRead),
-    loading: () => false,
-    error: (e, st) => false,
+    data: (notifications) => notifications.where((notif) => !notif.isRead).length,
+    loading: () => 0,
+    error: (e, st) => 0,
   );
+});
+
+final autoRefreshProvider = StreamProvider.family<void, Duration>((ref, duration) {
+  return Stream.periodic(duration);
 });
