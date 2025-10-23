@@ -89,7 +89,7 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
         padding: const EdgeInsets.all(4.0),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final tabWidth = constraints.maxWidth / 3;
+            final tabWidth = constraints.maxWidth / 2;
             final currentIndex = _getFilterIndex(_selectedFilter);
 
             return Stack(
@@ -111,7 +111,6 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
                   children: [
                     _buildFilterTab('Belum', AssignmentStatus.pending, 0, tabWidth),
                     _buildFilterTab('Sedang', AssignmentStatus.inProgress, 1, tabWidth),
-                    _buildFilterTab('Selesai', AssignmentStatus.completed, 2, tabWidth),
                   ],
                 ),
               ],
@@ -150,8 +149,6 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
         return 0;
       case AssignmentStatus.inProgress:
         return 1;
-      case AssignmentStatus.completed:
-        return 2;
       default:
         return 0;
     }
@@ -166,9 +163,6 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
         break;
       case AssignmentStatus.inProgress:
         assignmentsAsync = ref.watch(inProgressAssignmentsProvider);
-        break;
-      case AssignmentStatus.completed:
-        assignmentsAsync = ref.watch(completedAssignmentsProvider);
         break;
       default:
         assignmentsAsync = ref.watch(pendingAssignmentsProvider);
