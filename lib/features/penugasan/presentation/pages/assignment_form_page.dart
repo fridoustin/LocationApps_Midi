@@ -1,4 +1,4 @@
-// lib/features/penugasan/presentation/pages/assignment_form_page.dart
+// ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +12,7 @@ import 'package:midi_location/features/lokasi/presentation/widgets/map_picker.da
 import 'package:midi_location/features/penugasan/domain/entities/activity_template.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
+import 'package:midi_location/features/penugasan/presentation/widgets/activity_location_dialog.dart';
 
 class AssignmentFormPage extends ConsumerStatefulWidget {
   final Assignment? initialAssignment;
@@ -31,7 +32,8 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
   DateTime? _startDate;
   DateTime? _endDate;
   LatLng? _selectedLocation;
-  Set<String> _selectedActivityIds = {};
+  final Set<String> _selectedActivityIds = {};
+  final Map<String, ActivityLocationData> _activityLocations = {};
   bool _isSubmitting = false;
 
   @override
@@ -113,7 +115,7 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
       return;
     }
 
-    if (_selectedActivityIds.isEmpty) {
+    if (_selectedActivityIds.isEmpty && widget.initialAssignment == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pilih minimal 1 aktivitas')),
       );
@@ -145,13 +147,38 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
         updatedAt: DateTime.now(),
       );
 
+      // Create assignment
       final repository = ref.read(assignmentRepositoryProvider);
 
       if (widget.initialAssignment == null) {
-        await repository.createAssignment(
+        // Create new assignment
+        final newAssignment = await repository.createAssignment(
           assignment,
           _selectedActivityIds.toList(),
         );
+
+        // Update activity locations if set
+        for (final activityId in _selectedActivityIds) {
+          final locationData = _activityLocations[activityId];
+          if (locationData != null &&
+              (locationData.location != null || locationData.requiresCheckin)) {
+            // Get the created activity
+            final activities =
+                await repository.getAssignmentActivities(newAssignment.id);
+            final activity = activities.firstWhere(
+              (a) => a.activityTemplateId == activityId,
+            );
+
+            // Update location
+            await repository.updateActivityLocation(
+              activity.id,
+              locationData.locationName,
+              locationData.location,
+              locationData.requiresCheckin,
+            );
+          }
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Penugasan berhasil dibuat!')),
@@ -188,7 +215,9 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
 
     return Scaffold(
       appBar: CustomTopBar.general(
-        title: widget.initialAssignment == null ? 'Buat Penugasan' : 'Edit Penugasan',
+        title: widget.initialAssignment == null
+            ? 'Buat Penugasan'
+            : 'Edit Penugasan',
         showNotificationButton: false,
         leadingWidget: IconButton(
           icon: SvgPicture.asset(
@@ -209,19 +238,79 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
     );
   }
 
+  Widget _buildLabel(String text, {bool isRequired = false}) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          color: AppColors.black,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        children: [
+          TextSpan(text: text),
+          if (isRequired)
+            const TextSpan(
+              text: " *",
+              style: TextStyle(
+                  color: AppColors.primaryColor, fontWeight: FontWeight.bold),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildForm(List<ActivityTemplate> activities) {
+    final Color hintColor = AppColors.black.withOpacity(0.5);
+    final hintStyle = TextStyle(
+      color: hintColor,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+    );
+
+    final OutlineInputBorder defaultBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: hintColor,
+        width: 0.5,
+      ),
+    );
+
+    final OutlineInputBorder focusedBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(
+        color: AppColors.primaryColor,
+        width: 1.0,
+      ),
+    );
+
+    final OutlineInputBorder errorBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(
+        color: Colors.red,
+        width: 1.0,
+      ),
+    );
+
     return Form(
       key: _formKey,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Title
+          _buildLabel('Judul Penugasan', isRequired: true),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Judul Penugasan *',
-              hintText: 'Contoh: Survey Lokasi Tangerang',
-              border: OutlineInputBorder(),
+            cursorColor: AppColors.primaryColor,
+            decoration: InputDecoration(
+              hintText: 'Masukkan Judul Penugasan',
+              hintStyle: hintStyle,
+              filled: true,
+              fillColor: Colors.grey[100],
+              prefixIcon: const Icon(Icons.title_outlined),
+              enabledBorder: defaultBorder,
+              focusedBorder: focusedBorder,
+              errorBorder: errorBorder,
+              focusedErrorBorder: errorBorder,
             ),
             validator: (value) =>
                 value?.isEmpty ?? true ? 'Judul wajib diisi' : null,
@@ -229,34 +318,45 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
 
           const SizedBox(height: 16),
 
-          // Description
+          _buildLabel('Deskripsi'),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _descriptionController,
-            decoration: const InputDecoration(
-              labelText: 'Deskripsi',
-              hintText: 'Deskripsi penugasan',
-              border: OutlineInputBorder(),
+            cursorColor: AppColors.primaryColor,
+            decoration: InputDecoration(
+              hintText: 'Masukkan Deskripsi Penugasan',
+              hintStyle: hintStyle,
+              filled: true,
+              fillColor: Colors.grey[100],
+              prefixIcon: const Icon(Icons.description_outlined),
+              enabledBorder: defaultBorder,
+              focusedBorder: focusedBorder,
+              errorBorder: errorBorder,
+              focusedErrorBorder: errorBorder,
             ),
-            maxLines: 3,
           ),
 
           const SizedBox(height: 16),
-
-          // Date Range
+          _buildLabel('Periode Penugasan', isRequired: true),
+          const SizedBox(height: 8),
           InkWell(
             onTap: _selectDateRange,
             child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Periode Penugasan *',
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.calendar_month),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[100],
+                enabledBorder: defaultBorder,
+                focusedBorder: focusedBorder,
+                prefixIcon: const Icon(Icons.calendar_month),
               ),
               child: Text(
                 _startDate != null && _endDate != null
                     ? '${DateFormat('dd MMM yyyy').format(_startDate!)} - ${DateFormat('dd MMM yyyy').format(_endDate!)}'
                     : 'Pilih tanggal',
                 style: TextStyle(
-                  color: _startDate != null ? Colors.black87 : Colors.grey[600],
+                  color: _startDate != null ? Colors.black87 : hintColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -264,15 +364,26 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
 
           const SizedBox(height: 16),
 
+          _buildLabel('Nama Lokasi', isRequired: true),
+          const SizedBox(height: 8),
+
           // Location Name
           TextFormField(
+            cursorColor: AppColors.primaryColor,
             controller: _locationNameController,
-            decoration: const InputDecoration(
-              labelText: 'Nama Lokasi',
-              hintText: 'Contoh: Tangerang City',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.location_on_outlined),
+            decoration: InputDecoration(
+              hintText: 'Masukkan Nama Lokasi',
+              hintStyle: hintStyle,
+              filled: true,
+              fillColor: Colors.grey[100],
+              prefixIcon: const Icon(Icons.location_on_outlined),
+              enabledBorder: defaultBorder,
+              focusedBorder: focusedBorder,
+              errorBorder: errorBorder,
+              focusedErrorBorder: errorBorder,
             ),
+            validator: (value) =>
+                value?.isEmpty ?? true ? 'Nama lokasi wajib diisi' : null,
           ),
 
           const SizedBox(height: 16),
@@ -285,9 +396,12 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
                 ? 'Ubah Lokasi di Map'
                 : 'Pilih Lokasi di Map'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.blue,
+              backgroundColor: AppColors.primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
 
@@ -302,8 +416,6 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
           ],
 
           const SizedBox(height: 24),
-
-          // Activities Section
           const Text(
             'Pilih Aktivitas *',
             style: TextStyle(
@@ -318,29 +430,153 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
           ),
 
           const SizedBox(height: 12),
-
-          // Activity List
           ...activities.map((activity) {
             final isSelected = _selectedActivityIds.contains(activity.id);
-            return CheckboxListTile(
-              title: Text(activity.name),
-              subtitle: activity.description != null
-                  ? Text(activity.description!)
-                  : null,
-              value: isSelected,
-              activeColor: AppColors.primaryColor,
-              onChanged: (value) {
-                setState(() {
-                  if (value == true) {
-                    _selectedActivityIds.add(activity.id);
-                  } else {
-                    _selectedActivityIds.remove(activity.id);
-                  }
-                });
-              },
-              controlAffinity: ListTileControlAffinity.leading,
+            final hasLocation = _activityLocations[activity.id]?.location != null;
+            final requiresCheckin =
+                _activityLocations[activity.id]?.requiresCheckin ?? false;
+
+            return Card(
+              color: AppColors.white, 
+              elevation: 0,
+              margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12), 
+                side: BorderSide( 
+                  color: hintColor, 
+                  width: 0.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  CheckboxListTile(
+                    title: Text(activity.name),
+                    subtitle: activity.description != null
+                        ? Text(activity.description!)
+                        : null,
+                    value: isSelected,
+                    activeColor: AppColors.primaryColor,
+                    onChanged: (value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedActivityIds.add(activity.id);
+                        } else {
+                          _selectedActivityIds.remove(activity.id);
+                          _activityLocations.remove(activity.id);
+                        }
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+
+                  // Show location info or set button
+                  if (isSelected && widget.initialAssignment == null) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final data =
+                                    await showDialog<ActivityLocationData>(
+                                  context: context,
+                                  builder: (context) => ActivityLocationDialog(
+                                    activityName: activity.name,
+                                    initialData:
+                                        _activityLocations[activity.id],
+                                  ),
+                                );
+
+                                if (data != null) {
+                                  setState(() {
+                                    _activityLocations[activity.id] = data;
+                                  });
+                                }
+                              },
+                              icon: Icon(
+                                hasLocation
+                                    ? Icons.edit_location
+                                    : Icons.add_location,
+                                size: 18,
+                              ),
+                              label: Text(
+                                hasLocation
+                                    ? 'Ubah Lokasi${requiresCheckin ? ' (Wajib Check-in)' : ''}'
+                                    : 'Set Lokasi',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: hasLocation
+                                    ? AppColors.successColor
+                                    : AppColors.primaryColor,
+                                side: BorderSide(
+                                  color: hasLocation
+                                      ? AppColors.successColor
+                                      : AppColors.primaryColor,
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                              ),
+                            ),
+                          ),
+                          if (hasLocation) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _activityLocations.remove(activity.id);
+                                });
+                              },
+                              icon:
+                                  const Icon(Icons.delete_outline, size: 20),
+                              color: Colors.red,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // Location info
+                    if (hasLocation &&
+                        _activityLocations[activity.id]?.locationName != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.successColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.place,
+                                size: 16,
+                                color: AppColors.successColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _activityLocations[activity.id]!
+                                      .locationName!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.successColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
             );
-          }).toList(),
+          }),
 
           const SizedBox(height: 24),
 
@@ -374,6 +610,7 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
                     ),
                   ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
