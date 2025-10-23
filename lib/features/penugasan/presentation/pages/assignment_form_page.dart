@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_picker.dart';
 import 'package:midi_location/features/penugasan/domain/entities/activity_template.dart';
@@ -185,16 +187,23 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
     final activitiesAsync = ref.watch(activityTemplatesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.initialAssignment == null
-            ? 'Buat Penugasan'
-            : 'Edit Penugasan'),
-        backgroundColor: AppColors.primaryColor,
-        foregroundColor: Colors.white,
+      appBar: CustomTopBar.general(
+        title: widget.initialAssignment == null ? 'Buat Penugasan' : 'Edit Penugasan',
+        showNotificationButton: false,
+        leadingWidget: IconButton(
+          icon: SvgPicture.asset(
+            "assets/icons/left_arrow.svg",
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
+      backgroundColor: AppColors.backgroundColor,
       body: activitiesAsync.when(
         data: (activities) => _buildForm(activities),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(
+          color: AppColors.primaryColor,
+        )),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
