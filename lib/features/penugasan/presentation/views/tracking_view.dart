@@ -1,5 +1,3 @@
-// lib/features/penugasan/presentation/views/tracking_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
+import 'package:midi_location/features/penugasan/presentation/pages/assignment_detail_page.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
 
 class TrackingView extends ConsumerStatefulWidget {
@@ -245,6 +244,25 @@ class _TrackingViewState extends ConsumerState<TrackingView>
             ),
             const SizedBox(height: 8),
 
+            // Status badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getStatusColor(assignment.status).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _getStatusText(assignment.status),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: _getStatusColor(assignment.status),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
             // Location
             if (assignment.locationName != null) ...[
               Row(
@@ -258,6 +276,51 @@ class _TrackingViewState extends ConsumerState<TrackingView>
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Distance info
+            if (_currentLocation != null && assignment.location != null) ...[
+              FutureBuilder<double>(
+                future: _calculateDistance(assignment.location!),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final distance = snapshot.data!;
+                    final isInRadius = distance <= assignment.checkInRadius;
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isInRadius 
+                            ? AppColors.successColor.withOpacity(0.1)
+                            : AppColors.warningColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isInRadius ? Icons.check_circle : Icons.info_outline,
+                            color: isInRadius ? AppColors.successColor : AppColors.warningColor,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              isInRadius
+                                  ? 'Anda berada di lokasi (${distance.toStringAsFixed(0)}m)'
+                                  : 'Jarak: ${distance.toStringAsFixed(0)}m (Maks: ${assignment.checkInRadius}m)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isInRadius ? AppColors.successColor : AppColors.warningColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
               const SizedBox(height: 16),
             ],
@@ -285,8 +348,12 @@ class _TrackingViewState extends ConsumerState<TrackingView>
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      ref.read(selectedAssignmentProvider.notifier).state = assignment;
-                      // TODO: Navigate to detail
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AssignmentDetailPage(assignment: assignment),
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.info_outline),
                     label: const Text('Detail'),
@@ -303,5 +370,29 @@ class _TrackingViewState extends ConsumerState<TrackingView>
         ),
       ),
     );
+  }
+
+  Future<double> _calculateDistance(LatLng destination) async {
+    if (_currentLocation == null) return double.infinity;
+    
+    const Distance distance = Distance();
+    return distance.as(
+      LengthUnit.Meter,
+      _currentLocation!,
+      destination,
+    );
+  }
+
+  String _getStatusText(AssignmentStatus status) {
+    switch (status) {
+      case AssignmentStatus.pending:
+        return 'Belum Dikerjakan';
+      case AssignmentStatus.inProgress:
+        return 'Sedang Dikerjakan';
+      case AssignmentStatus.completed:
+        return 'Selesai';
+      case AssignmentStatus.cancelled:
+        return 'Dibatalkan';
+    }
   }
 }
