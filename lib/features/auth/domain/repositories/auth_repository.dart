@@ -1,26 +1,29 @@
 import '../entities/user.dart';
 
 abstract class AuthRepository {
-  // Stream untuk memantau perubahan status otentikasi
+  // Stream to monitor authentication state changes
   Stream<User?> get onAuthStateChange;
 
-  // Mendapatkan user yang sedang login
+  // Get the currently logged-in user
   User? get currentUser;
 
-  // Fungsi untuk Sign In
+  // Function to Sign In
   Future<void> signInWithEmailPassword(String email, String password);
 
-  // Fungsi untuk Sign Up
+  // Function to Sign Up
   Future<void> signUpWithEmailPassword(String email, String password);
 
-  // Fungsi untuk Sign Out
+  // Function to Sign Out
   Future<void> signOut();
 
   Future<bool> isUserAuthorized(String userId);
 
-  // Fungsi untuk mengirim email reset password
+  // Function to send a password reset email
   Future<void> sendPasswordResetEmail(String email);
 
-  // Fungsi untuk memperbarui password user
+  // NEW: Function to verify the password reset OTP
+  Future<void> verifyOtp(String email, String token);
+
+  // Function to update the user's password
   Future<void> updateUserPassword(String newPassword);
 }

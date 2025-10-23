@@ -1,4 +1,3 @@
-// ignore_for_file: use_super_parameters, sized_box_for_whitespace
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +14,8 @@ import 'package:midi_location/features/auth/presentation/providers/user_profile_
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/home/presentation/provider/dashboard_provider.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
+import 'package:midi_location/features/ulok/presentation/providers/ulok_provider.dart';
+import 'package:midi_location/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,28 +23,26 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
   );
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.light
-  ));
-  
   await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-  
 
   final container = ProviderContainer();
   await container.read(notificationServiceProvider).initialize(container);
 
-  // ignore: deprecated_member_use
-  runApp(ProviderScope(parent: container,child: const MyApp()));
+  runApp(ProviderScope(parent: container, child: const MyApp()));
 }
 
 final supabase = Supabase.instance.client;
@@ -54,6 +53,7 @@ class MyApp extends ConsumerStatefulWidget {
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
 }
+
 class _MyAppState extends ConsumerState<MyApp> {
   late final StreamSubscription<AuthState> _authSubscription;
 
@@ -72,15 +72,11 @@ class _MyAppState extends ConsumerState<MyApp> {
         if (_isHandlingAuthChange) return;
         _isHandlingAuthChange = true;
         try {
-          if (event == AuthChangeEvent.passwordRecovery) {
-            navigatorKey.currentState?.pushNamedAndRemoveUntil(
-              UpdatePasswordPage.route,
-              (route) => false,
-            );
-            return;
-          }
           if (event == AuthChangeEvent.signedIn) {
-            final container = ProviderScope.containerOf(navigatorKey.currentContext!, listen: false);
+            final container = ProviderScope.containerOf(
+              navigatorKey.currentContext!,
+              listen: false,
+            );
             container.invalidate(userProfileProvider);
             container.invalidate(dashboardStatsProvider);
             container.invalidate(ulokListProvider);
@@ -139,12 +135,12 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey, 
+      navigatorKey: navigatorKey,
       title: 'Midi Location App',
       theme: ThemeData(
         primarySwatch: Colors.red,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        textTheme: GoogleFonts.poppinsTextTheme()
+        textTheme: GoogleFonts.poppinsTextTheme(),
       ),
       home: const AuthGate(),
       debugShowCheckedModeBanner: false,
