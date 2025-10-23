@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/utils/show_error_dialog.dart';
-import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:midi_location/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 
