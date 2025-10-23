@@ -1,9 +1,9 @@
-// lib/features/penugasan/presentation/views/assignment_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
+import 'package:midi_location/features/penugasan/presentation/pages/assignment_detail_page.dart';
+import 'package:midi_location/features/penugasan/presentation/pages/assignment_form_page.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
 import 'package:midi_location/features/penugasan/presentation/widgets/assignment_card.dart';
 
@@ -25,16 +25,47 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return Column(
+    return Stack(
       children: [
-        // Filter Tabs
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: _buildFilterTabs(),
+        Column(
+          children: [
+            // Filter Tabs
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: _buildFilterTabs(),
+            ),
+
+            // Assignment List
+            Expanded(child: _buildAssignmentList()),
+          ],
         ),
 
-        // Assignment List
-        Expanded(child: _buildAssignmentList()),
+        // FAB untuk create assignment
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'addAssignment',
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AssignmentFormPage(),
+                ),
+              );
+
+              if (result == true) {
+                // Refresh list
+                ref.invalidate(pendingAssignmentsProvider);
+                ref.invalidate(inProgressAssignmentsProvider);
+                ref.invalidate(completedAssignmentsProvider);
+              }
+            },
+            backgroundColor: AppColors.primaryColor,
+            foregroundColor: AppColors.white,
+            child: const Icon(Icons.add),
+          ),
+        ),
       ],
     );
   }
@@ -181,10 +212,11 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
               return AssignmentCard(
                 assignment: assignment,
                 onTap: () {
-                  // TODO: Navigate to detail page
-                  ref.read(selectedAssignmentProvider.notifier).state = assignment;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Detail: ${assignment.title}')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AssignmentDetailPage(assignment: assignment),
+                    ),
                   );
                 },
               );
