@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/features/auth/presentation/pages/forgot_password_screen.dart';
-import 'package:midi_location/features/auth/presentation/pages/update_password_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/all_kplt_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/formkplt_screen.dart';
 import 'package:midi_location/features/home/presentation/pages/home_screen.dart';
