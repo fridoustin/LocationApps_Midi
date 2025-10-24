@@ -12,7 +12,7 @@ class ActivityLocationData {
   ActivityLocationData({
     this.locationName,
     this.location,
-    this.requiresCheckin = false,
+    this.requiresCheckin = true, 
     this.checkInRadius = 100,
   });
 }
@@ -33,7 +33,6 @@ class ActivityLocationDialog extends StatefulWidget {
 
 class _ActivityLocationDialogState extends State<ActivityLocationDialog> {
   late TextEditingController _locationNameController;
-  late bool _requiresCheckin;
   late int _checkInRadius;
   LatLng? _selectedLocation;
 
@@ -43,7 +42,6 @@ class _ActivityLocationDialogState extends State<ActivityLocationDialog> {
     _locationNameController = TextEditingController(
       text: widget.initialData?.locationName ?? '',
     );
-    _requiresCheckin = widget.initialData?.requiresCheckin ?? false;
     _checkInRadius = widget.initialData?.checkInRadius ?? 100;
     _selectedLocation = widget.initialData?.location;
   }
@@ -71,7 +69,7 @@ class _ActivityLocationDialogState extends State<ActivityLocationDialog> {
           ? null
           : _locationNameController.text,
       location: _selectedLocation,
-      requiresCheckin: _requiresCheckin,
+      requiresCheckin: true, // Always true
       checkInRadius: _checkInRadius,
     );
 
@@ -199,20 +197,23 @@ class _ActivityLocationDialogState extends State<ActivityLocationDialog> {
 
               const SizedBox(height: 24),
 
-              // Requires Check-in Switch
+              // Info: Wajib Check-in (tidak bisa diubah)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AppColors.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.primaryColor.withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.location_searching,
-                      color: _requiresCheckin
-                          ? AppColors.primaryColor
-                          : Colors.grey[600],
+                      color: AppColors.primaryColor,
+                      size: 20,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -220,63 +221,62 @@ class _ActivityLocationDialogState extends State<ActivityLocationDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Wajib Check-in',
+                            'Check-in Wajib',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
+                              color: AppColors.primaryColor,
                             ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
-                            'User harus check-in di lokasi ini',
+                            'Semua aktivitas memerlukan check-in di lokasi',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Colors.grey[700],
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Switch(
-                      value: _requiresCheckin,
-                      activeColor: AppColors.primaryColor,
-                      onChanged: (value) {
-                        setState(() => _requiresCheckin = value);
-                      },
+                    const Icon(
+                      Icons.check_circle,
+                      color: AppColors.primaryColor,
+                      size: 20,
                     ),
                   ],
                 ),
               ),
 
+              const SizedBox(height: 16),
+
               // Check-in Radius
-              if (_requiresCheckin) ...[
-                const SizedBox(height: 16),
-                Text(
-                  'Radius Check-in: ${_checkInRadius}m',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(
+                'Radius Check-in: ${_checkInRadius}m',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 8),
-                Slider(
-                  value: _checkInRadius.toDouble(),
-                  min: 50,
-                  max: 500,
-                  divisions: 9,
-                  activeColor: AppColors.primaryColor,
-                  label: '${_checkInRadius}m',
-                  onChanged: (value) {
-                    setState(() => _checkInRadius = value.toInt());
-                  },
+              ),
+              const SizedBox(height: 8),
+              Slider(
+                value: _checkInRadius.toDouble(),
+                min: 50,
+                max: 500,
+                divisions: 9,
+                activeColor: AppColors.primaryColor,
+                label: '${_checkInRadius}m',
+                onChanged: (value) {
+                  setState(() => _checkInRadius = value.toInt());
+                },
+              ),
+              Text(
+                'User harus berada dalam radius $_checkInRadius meter dari lokasi',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
                 ),
-                Text(
-                  'User harus berada dalam radius $_checkInRadius meter dari lokasi',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+              ),
 
               const SizedBox(height: 24),
 

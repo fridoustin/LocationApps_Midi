@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/map_picker.dart';
 import 'package:midi_location/features/penugasan/domain/entities/activity_template.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
@@ -27,11 +25,9 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _locationNameController = TextEditingController();
 
   DateTime? _startDate;
   DateTime? _endDate;
-  LatLng? _selectedLocation;
   final Set<String> _selectedActivityIds = {};
   final Map<String, ActivityLocationData> _activityLocations = {};
   bool _isSubmitting = false;
@@ -42,9 +38,10 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
     if (widget.initialAssignment != null) {
       _loadInitialData();
     } else {
-      // Default dates
-      _startDate = DateTime.now();
-      _endDate = DateTime.now().add(const Duration(days: 7));
+      // Default dates - hari ini sampai hari ini
+      final today = DateTime.now();
+      _startDate = DateTime(today.year, today.month, today.day);
+      _endDate = DateTime(today.year, today.month, today.day);
     }
   }
 
@@ -52,17 +49,14 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
     final assignment = widget.initialAssignment!;
     _titleController.text = assignment.title;
     _descriptionController.text = assignment.description ?? '';
-    _locationNameController.text = assignment.locationName ?? '';
     _startDate = assignment.startDate;
     _endDate = assignment.endDate;
-    _selectedLocation = assignment.location;
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _locationNameController.dispose();
     super.dispose();
   }
 
@@ -94,17 +88,6 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
     }
   }
 
-  Future<void> _pickLocation() async {
-    final picked = await showDialog<LatLng>(
-      context: context,
-      builder: (context) => MapPickerDialog(initialPoint: _selectedLocation),
-    );
-
-    if (picked != null) {
-      setState(() => _selectedLocation = picked);
-    }
-  }
-
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -120,6 +103,23 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
         const SnackBar(content: Text('Pilih minimal 1 aktivitas')),
       );
       return;
+    }
+
+    // Validasi: semua aktivitas yang dipilih harus punya lokasi
+    for (final activityId in _selectedActivityIds) {
+      final locationData = _activityLocations[activityId];
+      if (locationData == null || 
+          locationData.location == null || 
+          locationData.locationName == null ||
+          locationData.locationName!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Semua aktivitas yang dipilih wajib memiliki lokasi'),
+            backgroundColor: AppColors.warningColor,
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isSubmitting = true);
@@ -138,8 +138,8 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
         status: widget.initialAssignment?.status ?? AssignmentStatus.pending,
         startDate: _startDate!,
         endDate: _endDate!,
-        locationName: _locationNameController.text,
-        location: _selectedLocation,
+        locationName: null, // Tidak lagi digunakan
+        location: null, // Tidak lagi digunakan
         checkInRadius: 100,
         notes: null,
         completedAt: null,
@@ -157,26 +157,25 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
           _selectedActivityIds.toList(),
         );
 
-        // Update activity locations if set
+        // Update activity locations - SEMUA aktivitas sudah pasti punya lokasi
         for (final activityId in _selectedActivityIds) {
-          final locationData = _activityLocations[activityId];
-          if (locationData != null &&
-              (locationData.location != null || locationData.requiresCheckin)) {
-            // Get the created activity
-            final activities =
-                await repository.getAssignmentActivities(newAssignment.id);
-            final activity = activities.firstWhere(
-              (a) => a.activityTemplateId == activityId,
-            );
+          final locationData = _activityLocations[activityId]!;
+          
+          // Get the created activity
+          final activities =
+              await repository.getAssignmentActivities(newAssignment.id);
+          final activity = activities.firstWhere(
+            (a) => a.activityTemplateId == activityId,
+          );
 
-            // Update location
-            await repository.updateActivityLocation(
-              activity.id,
-              locationData.locationName,
-              locationData.location,
-              locationData.requiresCheckin,
-            );
-          }
+          // Update location
+          await repository.updateActivityLocation(
+            activity.id,
+            locationData.locationName!,
+            locationData.location!,
+            locationData.requiresCheckin,
+            locationData.checkInRadius,
+          );
         }
 
         if (mounted) {
@@ -362,59 +361,6 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
             ),
           ),
 
-          const SizedBox(height: 16),
-
-          _buildLabel('Nama Lokasi', isRequired: true),
-          const SizedBox(height: 8),
-
-          // Location Name
-          TextFormField(
-            cursorColor: AppColors.primaryColor,
-            controller: _locationNameController,
-            decoration: InputDecoration(
-              hintText: 'Masukkan Nama Lokasi',
-              hintStyle: hintStyle,
-              filled: true,
-              fillColor: Colors.grey[100],
-              prefixIcon: const Icon(Icons.location_on_outlined),
-              enabledBorder: defaultBorder,
-              focusedBorder: focusedBorder,
-              errorBorder: errorBorder,
-              focusedErrorBorder: errorBorder,
-            ),
-            validator: (value) =>
-                value?.isEmpty ?? true ? 'Nama lokasi wajib diisi' : null,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Pick Location
-          ElevatedButton.icon(
-            onPressed: _pickLocation,
-            icon: const Icon(Icons.map),
-            label: Text(_selectedLocation != null
-                ? 'Ubah Lokasi di Map'
-                : 'Pilih Lokasi di Map'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-
-          if (_selectedLocation != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Lat: ${_selectedLocation!.latitude.toStringAsFixed(6)}, '
-              'Lng: ${_selectedLocation!.longitude.toStringAsFixed(6)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
           const SizedBox(height: 24),
           const Text(
             'Pilih Aktivitas *',
@@ -425,16 +371,15 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Pilih aktivitas yang akan dikerjakan dalam penugasan ini',
+            'Pilih aktivitas dan tentukan lokasi untuk setiap aktivitas',
             style: TextStyle(fontSize: 13, color: Colors.grey),
           ),
 
           const SizedBox(height: 12),
           ...activities.map((activity) {
             final isSelected = _selectedActivityIds.contains(activity.id);
-            final hasLocation = _activityLocations[activity.id]?.location != null;
-            final requiresCheckin =
-                _activityLocations[activity.id]?.requiresCheckin ?? false;
+            final locationData = _activityLocations[activity.id];
+            final hasLocation = locationData?.location != null;
 
             return Card(
               color: AppColors.white, 
@@ -443,8 +388,10 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12), 
                 side: BorderSide( 
-                  color: hintColor, 
-                  width: 0.5,
+                  color: isSelected && !hasLocation 
+                      ? Colors.red.shade300 
+                      : hintColor, 
+                  width: isSelected && !hasLocation ? 1.0 : 0.5,
                 ),
               ),
               child: Column(
@@ -469,7 +416,7 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
                     controlAffinity: ListTileControlAffinity.leading,
                   ),
 
-                  // Show location info or set button
+                  // Show location button when selected
                   if (isSelected && widget.initialAssignment == null) ...[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -483,8 +430,7 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
                                   context: context,
                                   builder: (context) => ActivityLocationDialog(
                                     activityName: activity.name,
-                                    initialData:
-                                        _activityLocations[activity.id],
+                                    initialData: locationData,
                                   ),
                                 );
 
@@ -497,23 +443,23 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
                               icon: Icon(
                                 hasLocation
                                     ? Icons.edit_location
-                                    : Icons.add_location,
+                                    : Icons.add_location_alt,
                                 size: 18,
                               ),
                               label: Text(
                                 hasLocation
-                                    ? 'Ubah Lokasi${requiresCheckin ? ' (Wajib Check-in)' : ''}'
-                                    : 'Set Lokasi',
+                                    ? 'Ubah Lokasi (Wajib Check-in)'
+                                    : 'Set Lokasi (Wajib)',
                                 style: const TextStyle(fontSize: 13),
                               ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: hasLocation
                                     ? AppColors.successColor
-                                    : AppColors.primaryColor,
+                                    : Colors.red,
                                 side: BorderSide(
                                   color: hasLocation
                                       ? AppColors.successColor
-                                      : AppColors.primaryColor,
+                                      : Colors.red,
                                 ),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 8),
@@ -540,8 +486,7 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
                     ),
 
                     // Location info
-                    if (hasLocation &&
-                        _activityLocations[activity.id]?.locationName != null)
+                    if (hasLocation && locationData?.locationName != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                         child: Container(
@@ -560,11 +505,43 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  _activityLocations[activity.id]!
-                                      .locationName!,
+                                  locationData!.locationName!,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.successColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    
+                    // Warning jika belum set lokasi
+                    if (!hasLocation)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                size: 16,
+                                color: Colors.red.shade700,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Lokasi belum diatur (wajib)',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
