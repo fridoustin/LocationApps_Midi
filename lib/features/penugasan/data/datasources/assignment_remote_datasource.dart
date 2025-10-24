@@ -179,6 +179,7 @@ class AssignmentRemoteDataSource {
     String? locationName,
     LatLng? location,
     bool requiresCheckin,
+    int checkInRadius,
   ) async {
     await _supabase
         .from('assignment_activities')
@@ -187,6 +188,7 @@ class AssignmentRemoteDataSource {
           'latitude': location?.latitude,
           'longitude': location?.longitude,
           'requires_checkin': requiresCheckin,
+          'check_in_radius': checkInRadius,
         })
         .eq('id', activityId);
   }

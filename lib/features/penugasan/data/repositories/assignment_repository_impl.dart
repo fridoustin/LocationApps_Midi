@@ -83,12 +83,14 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
     String? locationName,
     LatLng? location,
     bool requiresCheckin,
+    int checkInRadius,
   ) async {
     await _remoteDataSource.updateActivityLocation(
       activityId,
       locationName,
       location,
       requiresCheckin,
+      checkInRadius
     );
   }
 

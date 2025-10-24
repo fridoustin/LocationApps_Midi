@@ -33,6 +33,7 @@ abstract class AssignmentRepository {
     String? locationName,
     LatLng? location,
     bool requiresCheckin,
+    int checkInRadius,
   );
   
   // Tracking
