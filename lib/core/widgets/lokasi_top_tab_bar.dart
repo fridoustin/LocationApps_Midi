@@ -17,7 +17,7 @@ class LokasiTopTabBar extends StatelessWidget {
       color: Colors.white,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final tabWidth = constraints.maxWidth / 3;
+          final tabWidth = constraints.maxWidth / 2; // Ubah sesuai jumlah tab
           
           return Stack(
             children: [
@@ -39,7 +39,8 @@ class LokasiTopTabBar extends StatelessWidget {
                 children: [
                   _buildTab('Usulan Lokasi', 0, tabWidth),
                   _buildTab('KPLT', 1, tabWidth),
-                  _buildTab('Perpanjangan', 2, tabWidth),
+                  // Kalau akan dibuat tab perpanjangan, uncomment baris berikut
+                  // _buildTab('Perpanjangan', 2, tabWidth),
                 ],
               ),
             ],
