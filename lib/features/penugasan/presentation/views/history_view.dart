@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
+import 'package:midi_location/features/penugasan/presentation/pages/assignment_detail_page.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
 
 class HistoryView extends ConsumerStatefulWidget {
@@ -22,11 +23,23 @@ class _HistoryViewState extends ConsumerState<HistoryView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final completedAssignmentsAsync = ref.watch(completedAssignmentsProvider);
+    final allAssignmentsAsync = ref.watch(allAssignmentsProvider);
 
-    return completedAssignmentsAsync.when(
-      data: (assignments) {
-        if (assignments.isEmpty) {
+    return allAssignmentsAsync.when(
+      data: (allAssignments) {
+        // Filter: completed + cancelled only, sorted by date (newest first)
+        final historyAssignments = allAssignments
+            .where((a) =>
+                a.status == AssignmentStatus.completed ||
+                a.status == AssignmentStatus.cancelled)
+            .toList()
+          ..sort((a, b) {
+            final dateA = a.completedAt ?? a.updatedAt;
+            final dateB = b.completedAt ?? b.updatedAt;
+            return dateB.compareTo(dateA);
+          });
+
+        if (historyAssignments.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -48,16 +61,19 @@ class _HistoryViewState extends ConsumerState<HistoryView>
 
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(completedAssignmentsProvider);
+            ref.invalidate(allAssignmentsProvider);
           },
           color: AppColors.primaryColor,
           backgroundColor: AppColors.cardColor,
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: assignments.length,
+            itemCount: historyAssignments.length,
             itemBuilder: (context, index) {
-              final assignment = assignments[index];
-              return _buildHistoryItem(assignment, index == assignments.length - 1);
+              final assignment = historyAssignments[index];
+              return _buildHistoryItem(
+                assignment,
+                index == historyAssignments.length - 1,
+              );
             },
           ),
         );
@@ -68,9 +84,9 @@ class _HistoryViewState extends ConsumerState<HistoryView>
   }
 
   Widget _buildHistoryItem(Assignment assignment, bool isLast) {
-    final formattedDate = assignment.completedAt != null
-        ? DateFormat('dd MMM yyyy, HH:mm').format(assignment.completedAt!)
-        : '-';
+    final isCompleted = assignment.status == AssignmentStatus.completed;
+    final displayDate = assignment.completedAt ?? assignment.updatedAt;
+    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(displayDate);
 
     return IntrinsicHeight(
       child: Row(
@@ -87,14 +103,18 @@ class _HistoryViewState extends ConsumerState<HistoryView>
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.successColor,
+                    color: isCompleted
+                        ? AppColors.successColor
+                        : Colors.grey[400],
                     border: Border.all(
-                      color: AppColors.successColor,
+                      color: isCompleted
+                          ? AppColors.successColor
+                          : Colors.grey[400]!,
                       width: 2,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.check,
+                  child: Icon(
+                    isCompleted ? Icons.check : Icons.close,
                     size: 14,
                     color: Colors.white,
                   ),
@@ -121,10 +141,13 @@ class _HistoryViewState extends ConsumerState<HistoryView>
               padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
               child: InkWell(
                 onTap: () {
-                  ref.read(selectedAssignmentProvider.notifier).state = assignment;
-                  // TODO: Navigate to detail
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Detail: ${assignment.title}')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AssignmentDetailPage(
+                        assignment: assignment,
+                      ),
+                    ),
                   );
                 },
                 borderRadius: BorderRadius.circular(12),
@@ -150,43 +173,43 @@ class _HistoryViewState extends ConsumerState<HistoryView>
 
                       const SizedBox(height: 8),
 
-                      // Location
-                      if (assignment.locationName != null) ...[
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                assignment.locationName!,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-
-                      // Completed date
+                      // Date info
                       Row(
                         children: [
                           Icon(
-                            Icons.check_circle_outline,
+                            isCompleted
+                                ? Icons.check_circle_outline
+                                : Icons.cancel_outlined,
                             size: 16,
-                            color: AppColors.successColor,
+                            color: isCompleted
+                                ? AppColors.successColor
+                                : Colors.grey[600],
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Selesai: $formattedDate',
+                            isCompleted
+                                ? 'Selesai: $formattedDate'
+                                : 'Dibatalkan: $formattedDate',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Period
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Periode: ${DateFormat('dd MMM').format(assignment.startDate)} - ${DateFormat('dd MMM yyyy').format(assignment.endDate)}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -213,8 +236,9 @@ class _HistoryViewState extends ConsumerState<HistoryView>
 
                       const SizedBox(height: 12),
 
-                      // Status badge
+                      // Status badge & Activities count
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -222,18 +246,23 @@ class _HistoryViewState extends ConsumerState<HistoryView>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.successColor.withOpacity(0.1),
+                              color: isCompleted
+                                  ? AppColors.successColor.withOpacity(0.1)
+                                  : Colors.grey[200],
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'Selesai',
+                            child: Text(
+                              isCompleted ? 'Selesai' : 'Dibatalkan',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.successColor,
+                                color: isCompleted
+                                    ? AppColors.successColor
+                                    : Colors.grey[700],
                               ),
                             ),
                           ),
+                          _buildActivityCount(assignment),
                         ],
                       ),
                     ],
@@ -244,6 +273,54 @@ class _HistoryViewState extends ConsumerState<HistoryView>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActivityCount(Assignment assignment) {
+    final activitiesAsync =
+        ref.watch(assignmentActivitiesProvider(assignment.id));
+
+    return activitiesAsync.when(
+      data: (activities) {
+        if (activities.isEmpty) return const SizedBox.shrink();
+
+        final completedCount =
+            activities.where((a) => a.isCompleted).length;
+        final totalCount = activities.length;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.checklist,
+                size: 14,
+                color: Colors.grey[700],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$completedCount/$totalCount',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }
