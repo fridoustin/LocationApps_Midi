@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment_activity.dart';
 import 'package:midi_location/features/penugasan/domain/entities/tracking_point.dart';
@@ -144,19 +143,30 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Selesaikan Aktivitas?'),
-        content: Text('Apakah Anda yakin ingin menyelesaikan aktivitas "${activity.activityName}"?'),
+        backgroundColor: AppColors.white,
+        title: const Text('Sudah Selesai?'),
+        content: Text('Apakah tugas anda "${activity.activityName}" sudah selesai?'),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: const BorderSide(color: AppColors.primaryColor)
+              ),
+              backgroundColor: AppColors.white,
+            ),
+            child: const Text('Batal', style: TextStyle(color: AppColors.primaryColor)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               backgroundColor: AppColors.successColor,
             ),
-            child: const Text('Ya, Selesaikan'),
+            child: const Text('Selesai', style: TextStyle(color: AppColors.white),),
           ),
         ],
       ),
@@ -239,12 +249,17 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
       final repository = ref.read(assignmentRepositoryProvider);
       
-      // Add tracking point for cancellation
+      // Add tracking point for cancellation - use first activity location or default
+      final activities = await repository.getAssignmentActivities(widget.assignment.id);
+      final firstActivityLocation = activities.isNotEmpty && activities.first.location != null
+          ? activities.first.location!
+          : const LatLng(0, 0);
+      
       final trackingPoint = TrackingPoint(
         id: '',
         assignmentId: widget.assignment.id,
         userId: userProfile.id,
-        location: widget.assignment.location ?? const LatLng(0, 0),
+        location: firstActivityLocation,
         status: TrackingStatus.cancelled,
         notes: 'Penugasan dibatalkan oleh user',
         photoUrl: null,
@@ -413,15 +428,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                 '${DateFormat('dd MMM yyyy').format(currentAssignment.endDate)}',
           ),
 
-          if (currentAssignment.locationName != null) ...[
-            const SizedBox(height: 12),
-            _buildInfoCard(
-              icon: Icons.location_on_outlined,
-              label: 'Lokasi',
-              value: currentAssignment.locationName!,
-            ),
-          ],
-
           const SizedBox(height: 12),
           _buildInfoCard(
             icon: Icons.info_outline,
@@ -429,17 +435,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
             value: _getStatusText(currentAssignment.status),
             valueColor: _getStatusColor(currentAssignment.status),
           ),
-
-          // Map
-          if (currentAssignment.location != null) ...[
-            const SizedBox(height: 24),
-            const Text(
-              'Lokasi di Map',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            InteractiveMapWidget(position: currentAssignment.location!),
-          ],
 
           // Activities
           const SizedBox(height: 24),
@@ -475,6 +470,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           if (currentAssignment.status != AssignmentStatus.completed &&
               currentAssignment.status != AssignmentStatus.cancelled)
             _buildActionButtons(currentAssignment, allActivitiesCompleted),
+
+          const SizedBox(height: 24)
         ],
       ),
     );
@@ -487,15 +484,23 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     Color? valueColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 1,
+            offset: const Offset(0, 1),
+          ),
+        ]
       ),
       child: Row(
         children: [
           Icon(icon, color: AppColors.primaryColor, size: 20),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,8 +551,9 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       return const Text('Belum ada tracking history');
     }
     
+    // Sort dari yang paling lama (ascending)
     final sortedHistory = history.toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     return Column(
       children: sortedHistory.map((point) {
