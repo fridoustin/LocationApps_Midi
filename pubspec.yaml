@@ -258,10 +258,15 @@ flutter:
     - assets/icons/ok.svg
     - assets/icons/in_progress.svg
     - assets/pic/splashscreen.png
-
     - assets/icons/penugasan.svg
     - assets/icons/stats.svg
     - assets/pic/logosamping.png
+    - assets/icons/loc.svg
+    - assets/icons/kplt.svg
+    - assets/icons/perpanjangan.svg
+    - assets/icons/form_kplt.svg
+    - assets/icons/statistik.svg
+    - assets/icons/quick_action.svg
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
