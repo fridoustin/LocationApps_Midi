@@ -14,8 +14,8 @@ import 'package:midi_location/features/lokasi/presentation/pages/ulok_detail_scr
 
 Route<dynamic> routeGenerators(RouteSettings settings) {
   switch (settings.name) {
-    case HomePage.route:
-      return _buildPageRoute(const HomePage());
+    case HomeScreen.route:
+      return _buildPageRoute(const HomeScreen());
     case FormKPLTPage.route:
       return _buildPageRoute(const FormKPLTPage());
     case ProfilePage.route:
