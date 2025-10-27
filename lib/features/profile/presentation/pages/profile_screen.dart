@@ -12,6 +12,10 @@ import 'package:midi_location/features/profile/presentation/widgets/InfoCard/inf
 import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 
+// --- TAMBAHKAN IMPORT INI ---
+import 'package:midi_location/core/widgets/topbar.dart';
+// ---
+
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
   static const String route = '/profile';
@@ -21,15 +25,41 @@ class ProfilePage extends ConsumerWidget {
     final profileAsync = ref.watch(userProfileProvider);
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
+
+      // --- TAMBAHKAN AppBar DI SINI ---
+      appBar: profileAsync.when(
+        data:
+            (profile) => CustomTopBar.profile(
+              title: 'Profile',
+              profileData: profile, // Kirim profile (bisa null)
+            ),
+        loading:
+            () => CustomTopBar.profile(title: 'Memuat...', profileData: null),
+        error:
+            (err, stack) =>
+                CustomTopBar.profile(title: 'Error', profileData: null),
+      ),
+
+      // --- AKHIR PERUBAHAN AppBar ---
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 4),
+              // const SizedBox(height: 4), // <-- Hapus SizedBox ini, sudah diatur AppBar
               profileAsync.when(
                 data: (profile) {
+                  // --- TAMBAHKAN NULL CHECK ---
+                  if (profile == null) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: Text('Gagal memuat data profile.'),
+                      ),
+                    );
+                  }
+                  // ---
                   return InfoCard(profileData: profile);
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -37,9 +67,9 @@ class ProfilePage extends ConsumerWidget {
                     (err, stack) =>
                         const Center(child: Text('Gagal memuat informasi.')),
               ),
-              const SizedBox(height: 23),
+              const SizedBox(height: 15),
               const SupportCard(),
-              const SizedBox(height: 27),
+              const SizedBox(height: 18),
               _buildLogoutButton(context, ref),
             ],
           ),
@@ -143,12 +173,15 @@ class ProfilePage extends ConsumerWidget {
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ).copyWith(
-                            overlayColor: MaterialStateProperty.resolveWith<Color?>((states) {
-                              if (states.contains(MaterialState.pressed)) {
-                                return Colors.black.withOpacity(0.12);
-                              }
-                              return null;
-                            }),
+                            overlayColor:
+                                MaterialStateProperty.resolveWith<Color?>((
+                                  states,
+                                ) {
+                                  if (states.contains(MaterialState.pressed)) {
+                                    return Colors.black.withOpacity(0.12);
+                                  }
+                                  return null;
+                                }),
                           ),
                           onPressed: () async {
                             Navigator.of(dialogContext).pop();
@@ -168,14 +201,18 @@ class ProfilePage extends ConsumerWidget {
                               if (!context.mounted) return;
 
                               Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(builder: (context) => const AuthGate()),
+                                MaterialPageRoute(
+                                  builder: (context) => const AuthGate(),
+                                ),
                                 (route) => false,
                               );
                             } catch (e) {
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text("Logout gagal: ${e.toString()}"),
+                                  content: Text(
+                                    "Logout gagal: ${e.toString()}",
+                                  ),
                                 ),
                               );
                             }
