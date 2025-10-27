@@ -1,97 +1,100 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:midi_location/core/constants/color.dart';
-
-enum SummaryCardStyle { solid, outlined }
 
 class SummaryCard extends StatelessWidget {
   final String title;
-  final String value;
-  final Widget icon;
-  final SummaryCardStyle style;
+  final String count;
+  final String iconPath;
+  final Color backgroundColor;
 
   const SummaryCard({
     super.key,
     required this.title,
-    required this.value,
-    required this.icon,
-    this.style = SummaryCardStyle.solid,
+    required this.count,
+    required this.iconPath,
+    required this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool isSolid = style == SummaryCardStyle.solid;
-    const Duration animationDuration = Duration(milliseconds: 300);
-    const Curve animationCurve = Curves.easeInOut;
+    const double outerRadius = 14.0;
+    const double innerRadius = 12.0;
+    const double highlightWidth = 5.0;
 
-    final Color backgroundColor =
-        isSolid ? AppColors.secondaryColor : AppColors.cardColor;
-    final Color textColor = isSolid ? Colors.white : AppColors.secondaryColor;
+    const double iconBackgroundSize = 40.0;
+    const double iconSize = 24.0;
 
-    final Color iconBackgroundColor =
-        isSolid ? Colors.white : AppColors.secondaryColor;
-    final Color iconColor = isSolid ? AppColors.secondaryColor : Colors.white;
-
-    final Border border =
-        isSolid
-            ? Border.all(color: Colors.transparent, width: 1.5)
-            : Border.all(color: AppColors.secondaryColor, width: 1.5);
-
-    return AnimatedContainer(
-      duration: animationDuration,
-      curve: animationCurve,
+    return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: border,
+        borderRadius: BorderRadius.circular(outerRadius),
       ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: AnimatedContainer(
-              duration: animationDuration,
-              curve: animationCurve,
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: iconBackgroundColor,
-                borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.hardEdge,
+      child: Padding(
+        padding: const EdgeInsets.only(left: highlightWidth),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(innerRadius),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
-              child: Center(
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                  child: icon,
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      count,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.black,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: AnimatedDefaultTextStyle(
-              duration: animationDuration,
-              curve: animationCurve,
-              style: TextStyle(color: textColor, fontFamily: 'Poppins'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 8),
+              Container(
+                width: iconBackgroundSize,
+                height: iconBackgroundSize,
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    iconPath,
+                    width: iconSize,
+                    height: iconSize,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
