@@ -7,12 +7,15 @@ import 'package:midi_location/features/home/presentation/pages/home_screen.dart'
 import 'package:midi_location/features/lokasi/presentation/pages/lokasi_mainscreen.dart';
 import 'package:midi_location/features/notification/presentation/provider/notification_provider.dart';
 import 'package:midi_location/features/penugasan/presentation/pages/penugasan_main_page.dart';
-import 'package:midi_location/features/profile/presentation/pages/profile_screen.dart';
 import 'package:midi_location/core/widgets/navigation/navigation_bar.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/error_screens/no_connection_screen.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
+import 'package:midi_location/features/statistik/presentation/pages/statistik_screen.dart';
+
+final mainNavigationProvider = StateProvider<int>((ref) => 0);
 
 class MainLayout extends ConsumerStatefulWidget {
   final int currentIndex;
@@ -23,31 +26,25 @@ class MainLayout extends ConsumerStatefulWidget {
 }
 
 class _MainLayoutState extends ConsumerState<MainLayout> {
-  late int _currentIndex;
-
   final List<Widget> _pages = const [
-    HomePage(),
+    HomeScreen(),
     LokasiMainPage(),
     PenugasanMainPage(),
-    ProfilePage(),
+    StatistikScreen(),
   ];
 
-  final List<String> _pageTitles = [
-    'Home',
-    'Lokasi',
-    'Tugas',
-    'Profile',
-  ];
+  final List<String> _pageTitles = ['Home', 'Lokasi', 'Tugas', 'Statistik'];
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.currentIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(mainNavigationProvider.notifier).state = widget.currentIndex;
+    });
   }
 
   void _onItemTapped(int index) {
-    if (_currentIndex == index) return;
-    setState(() => _currentIndex = index);
+    ref.read(mainNavigationProvider.notifier).state = index;
   }
 
   PreferredSizeWidget _buildAppBar(int index, WidgetRef ref) {
@@ -68,18 +65,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               profileData: profile,
               unreadNotificationCount: unreadCount,
             );
-          case 3:
-            if (profile == null) {
-              return CustomTopBar.general(
-                title: _pageTitles[index],
-                unreadNotificationCount: unreadCount,
-              );
-            }
-            return CustomTopBar.profile(
-              profileData: profile,
-              title: _pageTitles[index],
-              unreadNotificationCount: unreadCount,
-            );
           default:
             return CustomTopBar.general(
               title: _pageTitles[index],
@@ -92,8 +77,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         switch (index) {
           case 0:
             return CustomTopBar.home();
-          case 3:
-            return CustomTopBar.general(title: '');
           default:
             return CustomTopBar.general(title: '');
         }
@@ -102,8 +85,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         switch (index) {
           case 0:
             return CustomTopBar.home();
-          case 3:
-            return CustomTopBar.general(title: 'Gagal Memuat Profil');
           default:
             return CustomTopBar.general(title: _pageTitles[index]);
         }
@@ -113,6 +94,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(mainNavigationProvider);
+
     final connectivityStatus = ref.watch(connectivityProvider);
     return connectivityStatus.when(
       data: (result) {
@@ -134,17 +117,17 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
         return WillPopScope(
           onWillPop: () async {
-            if (_currentIndex != 0) {
-              setState(() => _currentIndex = 0);
+            if (currentIndex != 0) {
+              ref.read(mainNavigationProvider.notifier).state = 0;
               return false;
             }
             return true;
           },
           child: Scaffold(
-            appBar: _buildAppBar(_currentIndex, ref),
-            body: IndexedStack(index: _currentIndex, children: _pages),
+            appBar: _buildAppBar(currentIndex, ref),
+            body: IndexedStack(index: currentIndex, children: _pages),
             bottomNavigationBar: NavigationBarWidget(
-              currentIndex: _currentIndex,
+              currentIndex: currentIndex,
               onItemTapped: _onItemTapped,
               onCenterButtonTapped: () {
                 Navigator.push(
@@ -157,14 +140,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
           ),
         );
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (err, stack) => Scaffold(
-        body: Center(
-          child: Text('Gagal memuat status koneksi: $err'),
-        ),
-      ),
+      loading:
+          () =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error:
+          (err, stack) => Scaffold(
+            body: Center(child: Text('Gagal memuat status koneksi: $err')),
+          ),
     );
   }
 }
