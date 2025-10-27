@@ -55,7 +55,7 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   factory CustomTopBar.profile({
     required String title,
-    required Profile profileData,
+    Profile? profileData,
     int unreadNotificationCount = 0,
   }) {
     return CustomTopBar(
@@ -87,15 +87,12 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
           color: Colors.white,
           shape: BoxShape.circle,
         ),
-        constraints: const BoxConstraints(
-          minWidth: 16, // Sedikit lebih besar untuk menampung teks
-          minHeight: 16,
-        ),
+        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
         child: Center(
           child: Text(
             count.toString(),
             style: const TextStyle(
-              color: AppColors.primaryColor, // Warna merah (sesuai tema)
+              color: AppColors.primaryColor,
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
@@ -128,23 +125,29 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                 SizedBox(
                   width: sideControlWidth,
                   child: Center(
-                    child: leadingWidget ??
+                    child:
+                        leadingWidget ??
                         GestureDetector(
                           onTap: () => Navigator.pushNamed(context, '/profile'),
                           child: CircleAvatar(
                             radius: avatarRadius,
                             backgroundColor: Colors.white.withOpacity(0.15),
-                            backgroundImage: (profileData != null &&
-                                    profileData!.avatarUrl != null &&
-                                    profileData!.avatarUrl!.isNotEmpty)
-                                ? NetworkImage(profileData!.avatarUrl!)
-                                : null,
-                            child: (profileData == null ||
-                                    profileData!.avatarUrl == null ||
-                                    profileData!.avatarUrl!.isEmpty)
-                                ? const Icon(Icons.person,
-                                    color: Colors.white, size: 24)
-                                : null,
+                            backgroundImage:
+                                (profileData != null &&
+                                        profileData!.avatarUrl != null &&
+                                        profileData!.avatarUrl!.isNotEmpty)
+                                    ? NetworkImage(profileData!.avatarUrl!)
+                                    : null,
+                            child:
+                                (profileData == null ||
+                                        profileData!.avatarUrl == null ||
+                                        profileData!.avatarUrl!.isEmpty)
+                                    ? const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 24,
+                                    )
+                                    : null,
                           ),
                         ),
                   ),
@@ -158,27 +161,33 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(
                   width: sideControlWidth,
                   child: Center(
-                    child: showNotificationButton
-                        ? GestureDetector(
-                            onTap: () =>
-                                Navigator.pushNamed(context, '/notification'),
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/notifikasi.svg',
-                                  width: notificationIconSize,
-                                ),
-                                if (unreadNotificationCount > 0)
-                                  _buildNotificationBadge(unreadNotificationCount),
-                              ],
-                            ),
-                          )
-                        : const SizedBox.shrink(),
+                    child:
+                        showNotificationButton
+                            ? GestureDetector(
+                              onTap:
+                                  () => Navigator.pushNamed(
+                                    context,
+                                    '/notification',
+                                  ),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/notifikasi.svg',
+                                    width: notificationIconSize,
+                                  ),
+                                  if (unreadNotificationCount > 0)
+                                    _buildNotificationBadge(
+                                      unreadNotificationCount,
+                                    ),
+                                ],
+                              ),
+                            )
+                            : const SizedBox.shrink(),
                   ),
                 ),
               ],
@@ -211,23 +220,29 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                 SizedBox(
                   width: sideControlWidth,
                   child: Center(
-                    child: leadingWidget ??
+                    child:
+                        leadingWidget ??
                         GestureDetector(
                           onTap: () => Navigator.pushNamed(context, '/profile'),
                           child: CircleAvatar(
                             radius: avatarRadius,
                             backgroundColor: Colors.white.withOpacity(0.15),
-                            backgroundImage: (profileData != null &&
-                                    profileData!.avatarUrl != null &&
-                                    profileData!.avatarUrl!.isNotEmpty)
-                                ? NetworkImage(profileData!.avatarUrl!)
-                                : null,
-                            child: (profileData == null ||
-                                    profileData!.avatarUrl == null ||
-                                    profileData!.avatarUrl!.isEmpty)
-                                ? const Icon(Icons.person,
-                                    color: Colors.white, size: 24) 
-                                : null,
+                            backgroundImage:
+                                (profileData != null &&
+                                        profileData!.avatarUrl != null &&
+                                        profileData!.avatarUrl!.isNotEmpty)
+                                    ? NetworkImage(profileData!.avatarUrl!)
+                                    : null,
+                            child:
+                                (profileData == null ||
+                                        profileData!.avatarUrl == null ||
+                                        profileData!.avatarUrl!.isEmpty)
+                                    ? const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 24,
+                                    )
+                                    : null,
                           ),
                         ),
                   ),
@@ -250,23 +265,29 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                 SizedBox(
                   width: sideControlWidth,
                   child: Center(
-                    child: showNotificationButton
-                        ? GestureDetector(
-                            onTap: () =>
-                                Navigator.pushNamed(context, '/notification'),
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/notifikasi.svg',
-                                  width: notificationIconSize,
-                                ),
-                                if (unreadNotificationCount > 0)
-                                  _buildNotificationBadge(unreadNotificationCount),
-                              ],
-                            ),
-                          )
-                        : const SizedBox.shrink(),
+                    child:
+                        showNotificationButton
+                            ? GestureDetector(
+                              onTap:
+                                  () => Navigator.pushNamed(
+                                    context,
+                                    '/notification',
+                                  ),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/notifikasi.svg',
+                                    width: notificationIconSize,
+                                  ),
+                                  if (unreadNotificationCount > 0)
+                                    _buildNotificationBadge(
+                                      unreadNotificationCount,
+                                    ),
+                                ],
+                              ),
+                            )
+                            : const SizedBox.shrink(),
                   ),
                 ),
               ],
@@ -278,15 +299,26 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildProfileTopBar(BuildContext context) {
-    final bool hasAvatar = profileData?.avatarUrl != null &&
-        profileData!.avatarUrl!.isNotEmpty;
+    final bool hasAvatar =
+        profileData?.avatarUrl != null && profileData!.avatarUrl!.isNotEmpty;
     return AppBar(
       centerTitle: true,
       toolbarHeight: 100,
+      leading: IconButton(
+        icon: const Icon(
+          Icons.arrow_back_ios_new,
+          color: Colors.white,
+          size: 20,
+        ),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
       title: Text(
         title ?? '',
         style: const TextStyle(
-            color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       backgroundColor: AppColors.primaryColor,
       automaticallyImplyLeading: false,
@@ -305,25 +337,31 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
               backgroundColor: Colors.white,
               backgroundImage:
                   hasAvatar ? NetworkImage(profileData!.avatarUrl!) : null,
-              child: !hasAvatar
-                  ? const Icon(Icons.person,
-                      size: 60, color: AppColors.primaryColor)
-                  : null,
+              child:
+                  !hasAvatar
+                      ? const Icon(
+                        Icons.person,
+                        size: 60,
+                        color: AppColors.primaryColor,
+                      )
+                      : null,
             ),
             const SizedBox(height: 12),
             Text(
               profileData?.name ?? 'Memuat Nama...',
               style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             Text(
               profileData?.position ?? 'Memuat Posisi...',
               style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500),
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -341,9 +379,10 @@ class CustomTopBar extends StatelessWidget implements PreferredSizeWidget {
                 Text(
                   profileData?.branch ?? 'Memuat Cabang...',
                   style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold),
+                    fontSize: 14,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
