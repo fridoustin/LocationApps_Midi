@@ -90,7 +90,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         id: '', 
         assignmentId: widget.assignment.id,
         userId: userProfile.id,
-        location: currentLocation,
         status: TrackingStatus.arrived,
         notes: 'Check-in di aktivitas: ${activity.activityName}',
         photoUrl: null,
@@ -187,7 +186,6 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         id: '',
         assignmentId: widget.assignment.id,
         userId: userProfile.id,
-        location: activity.checkedInLocation ?? activity.location ?? const LatLng(0,0), 
         status: TrackingStatus.arrived, 
         notes: 'Selesai aktivitas: ${activity.activityName}', 
         photoUrl: null,
@@ -250,16 +248,12 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       final repository = ref.read(assignmentRepositoryProvider);
       
       // Add tracking point for cancellation - use first activity location or default
-      final activities = await repository.getAssignmentActivities(widget.assignment.id);
-      final firstActivityLocation = activities.isNotEmpty && activities.first.location != null
-          ? activities.first.location!
-          : const LatLng(0, 0);
+      await repository.getAssignmentActivities(widget.assignment.id);
       
       final trackingPoint = TrackingPoint(
         id: '',
         assignmentId: widget.assignment.id,
         userId: userProfile.id,
-        location: firstActivityLocation,
         status: TrackingStatus.cancelled,
         notes: 'Penugasan dibatalkan oleh user',
         photoUrl: null,

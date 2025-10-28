@@ -1,12 +1,9 @@
-import 'package:latlong2/latlong.dart';
-
 enum TrackingStatus { arrived, pending, cancelled, inTransit }
 
 class TrackingPoint {
   final String id;
   final String assignmentId;
   final String userId;
-  final LatLng location;
   final TrackingStatus status;
   final String? notes;
   final String? photoUrl;
@@ -16,7 +13,6 @@ class TrackingPoint {
     required this.id,
     required this.assignmentId,
     required this.userId,
-    required this.location,
     required this.status,
     this.notes,
     this.photoUrl,
@@ -28,10 +24,6 @@ class TrackingPoint {
       id: map['id'],
       assignmentId: map['assignment_id'],
       userId: map['user_id'],
-      location: LatLng(
-        (map['latitude'] as num).toDouble(),
-        (map['longitude'] as num).toDouble(),
-      ),
       status: _parseTrackingStatus(map['status']),
       notes: map['notes'],
       photoUrl: map['photo_url'],
@@ -44,8 +36,6 @@ class TrackingPoint {
       'id': id,
       'assignment_id': assignmentId,
       'user_id': userId,
-      'latitude': location.latitude,
-      'longitude': location.longitude,
       'status': _trackingStatusToString(status),
       'notes': notes,
       'photo_url': photoUrl,
