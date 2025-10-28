@@ -29,7 +29,6 @@ class _TrackingViewState extends ConsumerState<TrackingView>
   LatLng? _currentLocation;
   bool _isLoadingLocation = true;
   final MapController _mapController = MapController();
-  bool _isCardExpanded = true;
 
   @override
   void initState() {
@@ -99,8 +98,6 @@ class _TrackingViewState extends ConsumerState<TrackingView>
         return Stack(
           children: [
             _buildMap(activeAssignments),
-            
-            // Top bar
             Positioned(
               top: 16,
               left: 16,
@@ -127,14 +124,20 @@ class _TrackingViewState extends ConsumerState<TrackingView>
                 ],
               ),
             ),
-
-            // Bottom card for pending assignment
             if (mostRecentPending != null)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: _buildPendingCard(mostRecentPending),
+              Positioned.fill( 
+                child: DraggableScrollableSheet(
+                  initialChildSize: 0.2,
+                  minChildSize: 0.2,
+                  maxChildSize: 0.55,
+                  expand: false,
+                  builder: (context, scrollController) {
+                    return _buildPendingCard(
+                      assignment: mostRecentPending,
+                      scrollController: scrollController,
+                    );
+                  },
+                ),
               ),
 
             // Loading indicator
@@ -152,164 +155,128 @@ class _TrackingViewState extends ConsumerState<TrackingView>
     );
   }
 
-  Widget _buildPendingCard(Assignment assignment) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: GestureDetector(
-        onVerticalDragUpdate: (details) {
-          if (details.primaryDelta! > 10) {
-            setState(() => _isCardExpanded = false);
-          } else if (details.primaryDelta! < -10) {
-            setState(() => _isCardExpanded = true);
-          }
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
+  Widget _buildPendingCard({
+    required Assignment assignment,
+    required ScrollController scrollController,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              InkWell(
-                onTap: () {
-                  setState(() => _isCardExpanded = !_isCardExpanded);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      if (!_isCardExpanded) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          assignment.title,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        controller: scrollController,
+        // Beri padding di sini untuk mengatur jarak
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-
-              // Content
-              if (_isCardExpanded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.warningColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'Belum Dikerjakan',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.warningColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        assignment.title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (assignment.description != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          assignment.description!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today,
-                              size: 14, color: Colors.grey[600]),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${DateFormat('dd MMM').format(assignment.startDate)} - ${DateFormat('dd MMM yyyy').format(assignment.endDate)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Aktivitas:',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildActivityList(assignment),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AssignmentDetailPage(
-                                  assignment: assignment),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.info_outline, size: 18),
-                        label: const Text('Lihat Detail Penugasan'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 44),
-                        ),
-                      ),
-                    ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.warningColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Belum Dikerjakan',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.warningColor,
+                    ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              assignment.title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (assignment.description != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                assignment.description!,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
-          ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.calendar_today,
+                    size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 6),
+                Text(
+                  '${DateFormat('dd MMM').format(assignment.startDate)} - ${DateFormat('dd MMM yyyy').format(assignment.endDate)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Aktivitas:',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildActivityList(assignment),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AssignmentDetailPage(
+                        assignment: assignment),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.info_outline, size: 18),
+              label: const Text('Lihat Detail Penugasan'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 44),
+              ),
+            ),
+          ],
         ),
       ),
     );
