@@ -17,9 +17,7 @@ class TaskItem extends StatelessWidget {
         return AppColors.successColor;
       case AssignmentStatus.cancelled:
         return Colors.grey;
-      default:
-        return Colors.grey;
-    }
+      }
   }
 
   String _getStatusText(AssignmentStatus status) {
@@ -32,9 +30,7 @@ class TaskItem extends StatelessWidget {
         return 'Selesai';
       case AssignmentStatus.cancelled:
         return 'Dibatalkan';
-      default:
-        return 'N/A';
-    }
+      }
   }
 
   String _formatPeriod(DateTime start, DateTime end) {
