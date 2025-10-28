@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,10 +13,7 @@ import 'package:midi_location/features/notification/presentation/provider/notifi
 import 'package:midi_location/features/profile/presentation/widgets/InfoCard/info_card.dart';
 import 'package:midi_location/features/profile/presentation/widgets/supportCard/support_card.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
-
-// --- TAMBAHKAN IMPORT INI ---
 import 'package:midi_location/core/widgets/topbar.dart';
-// ---
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -25,13 +24,11 @@ class ProfilePage extends ConsumerWidget {
     final profileAsync = ref.watch(userProfileProvider);
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-
-      // --- TAMBAHKAN AppBar DI SINI ---
       appBar: profileAsync.when(
         data:
             (profile) => CustomTopBar.profile(
               title: 'Profile',
-              profileData: profile, // Kirim profile (bisa null)
+              profileData: profile, 
             ),
         loading:
             () => CustomTopBar.profile(title: 'Memuat...', profileData: null),
@@ -40,17 +37,14 @@ class ProfilePage extends ConsumerWidget {
                 CustomTopBar.profile(title: 'Error', profileData: null),
       ),
 
-      // --- AKHIR PERUBAHAN AppBar ---
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // const SizedBox(height: 4), // <-- Hapus SizedBox ini, sudah diatur AppBar
               profileAsync.when(
                 data: (profile) {
-                  // --- TAMBAHKAN NULL CHECK ---
                   if (profile == null) {
                     return const Center(
                       child: Padding(
@@ -174,10 +168,10 @@ class ProfilePage extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ).copyWith(
                             overlayColor:
-                                MaterialStateProperty.resolveWith<Color?>((
+                                WidgetStateProperty.resolveWith<Color?>((
                                   states,
                                 ) {
-                                  if (states.contains(MaterialState.pressed)) {
+                                  if (states.contains(WidgetState.pressed)) {
                                     return Colors.black.withOpacity(0.12);
                                   }
                                   return null;
