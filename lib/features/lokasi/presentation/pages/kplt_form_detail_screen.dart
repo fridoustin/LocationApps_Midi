@@ -9,7 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
-import 'package:midi_location/features/lokasi/presentation/pages/kplt_edit_screen.dart';
+// import 'package:midi_location/features/lokasi/presentation/pages/kplt_edit_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/two_column_row.dart';
@@ -52,12 +52,9 @@ class KpltDetailScreen extends ConsumerWidget {
   }
 }
 
-// Widget utama untuk view agar bisa menggunakan helper functions
 class _KpltDetailView extends StatelessWidget {
   final FormKPLT kplt;
   const _KpltDetailView({required this.kplt});
-
-  // --- Helper Functions (diambil dari referensi Anda) ---
 
   void _showLoadingDialog(BuildContext context) {
     showDialog(
@@ -108,15 +105,14 @@ class _KpltDetailView extends StatelessWidget {
   Color _getStatusColor(String status) {
     // Diambil dari kplt_card
     switch (status) {
-      case 'In Progress': return AppColors.warningColor;
+      case 'In Progress': return AppColors.secondaryColor;
       case 'OK': return AppColors.successColor;
       case 'NOK': return AppColors.primaryColor;
-      case 'Waiting for Forum': return AppColors.warningColor;
+      case 'Waiting for Forum': return AppColors.secondaryColor;
       default: return Colors.grey;
     }
   }
   
-  // Helper Widget untuk baris dokumen agar tidak duplikasi kode
   Widget _buildDocumentRow(BuildContext context, {required String label, required String? filePath}) {
     return InkWell(
       onTap: filePath != null && filePath.isNotEmpty ? () => _openOrDownloadFile(context, filePath) : null,
@@ -194,7 +190,6 @@ class _KpltDetailView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // --- BAGIAN DATA ULOK ---
           DetailSectionWidget(title: "Data Usulan Lokasi", iconPath: "assets/icons/location.svg", children: [
             InfoRowWidget(label: "Alamat", value: fullAddress),
             InfoRowWidget(label: "LatLong", value: kplt.latLong ?? "-"),
@@ -212,58 +207,6 @@ class _KpltDetailView extends StatelessWidget {
           DetailSectionWidget(title: "Data Pemilik", iconPath: "assets/icons/profile.svg", children: [
             TwoColumnRowWidget(label1: "Nama Pemilik", value1: kplt.namaPemilik ?? '-', label2: "Kontak Pemilik", value2: kplt.kontakPemilik ?? '-'),
           ]),
-          if (kplt.approvalIntip != null) ...[
-            const SizedBox(height: 16),
-            DetailSectionWidget(
-              title: "Data Intip",
-              iconPath: "assets/icons/analisis.svg",
-              children: [
-                TwoColumnRowWidget(
-                  label1: "Status Intip",
-                  value1: kplt.approvalIntip ?? '-',
-                  label2: "Tanggal Intip",
-                  value2: kplt.tanggalApprovalIntip != null
-                      ? DateFormat('dd MMMM yyyy').format(kplt.tanggalApprovalIntip!)
-                      : '-',
-                ),
-                
-                if (kplt.fileIntip != null && kplt.fileIntip!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    "File Intip:", 
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Colors.black54
-                    )
-                  ),
-                  const SizedBox(height: 8),
-                  // Logika untuk menampilkan file (sudah ada di helper Anda)
-                  // Anda mungkin perlu menambahkan _isImageFile dan _getPublicUrl jika belum ada
-                  InkWell(
-                    onTap: () => _openOrDownloadFile(context, kplt.fileIntip),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.description, color: AppColors.primaryColor),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              kplt.fileIntip!.split('/').last,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-                  ),
-                ]
-              ],
-            ),
-          ],
           if (kplt.formUlok != null && kplt.formUlok!.isNotEmpty) ...[
             const SizedBox(height: 16),
             DetailSectionWidget(
@@ -298,7 +241,6 @@ class _KpltDetailView extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          // --- BAGIAN DATA KPLT ---
           DetailSectionWidget(title: "Analisa & FPL", iconPath: "assets/icons/analisis.svg", children: [
             TwoColumnRowWidget(label1: "Karakter Lokasi", value1: kplt.karakterLokasi ?? '-', label2: "Sosial Ekonomi", value2: kplt.sosialEkonomi ?? '-'),
             TwoColumnRowWidget(label1: "Skor FPL", value1: kplt.skorFpl?.toString() ?? '-', label2: "STD", value2: kplt.std?.toString() ?? '-'),
@@ -316,38 +258,135 @@ class _KpltDetailView extends StatelessWidget {
             _buildDocumentRow(context, label: "PDF KKS", filePath: kplt.pdfKks),
             _buildDocumentRow(context, label: "Excel FPL", filePath: kplt.excelFpl),
             _buildDocumentRow(context, label: "Excel PE", filePath: kplt.excelPe),
-            _buildDocumentRow(context, label: "PDF Form Ukur", filePath: kplt.pdfFormUkur),
             _buildDocumentRow(context, label: "Video Traffic Siang", filePath: kplt.videoTrafficSiang),
             _buildDocumentRow(context, label: "Video Traffic Malam", filePath: kplt.videoTrafficMalam),
             _buildDocumentRow(context, label: "Video 360 Siang", filePath: kplt.video360Siang),
             _buildDocumentRow(context, label: "Video 360 Malam", filePath: kplt.video360Malam),
             _buildDocumentRow(context, label: "Peta Coverage", filePath: kplt.petaCoverage),
           ]),
+
+          if (kplt.approvalIntip != null) ...[
+            const SizedBox(height: 16),
+            DetailSectionWidget(
+              title: "Data Intip",
+              iconPath: "assets/icons/analisis.svg",
+              children: [
+                TwoColumnRowWidget(
+                  label1: "Status Intip",
+                  value1: kplt.approvalIntip ?? '-',
+                  label2: "Tanggal Intip",
+                  value2: kplt.tanggalApprovalIntip != null
+                      ? DateFormat('dd MMMM yyyy').format(kplt.tanggalApprovalIntip!)
+                      : '-',
+                ),
+                
+                if (kplt.fileIntip != null && kplt.fileIntip!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    "File Intip:", 
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.black54
+                    )
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () => _openOrDownloadFile(context, kplt.fileIntip),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.description, color: AppColors.primaryColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              kplt.fileIntip!.split('/').last,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                ]
+              ],
+            ),
+          ],
+
+          if (kplt.formUkur != null && kplt.formUkur!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            DetailSectionWidget(
+              title: "Data Ukur",
+              iconPath: "assets/icons/lampiran.svg",
+              children: [
+                InfoRowWidget(label: "Tanggal Ukur", value: kplt.tanggalUkur != null ? DateFormat('dd MMMM yyyy').format(kplt.tanggalUkur!) : '-'),
+                const SizedBox(height: 8),
+                const Text(
+                    "File Ukur:", 
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.black54
+                    )
+                  ),
+                InkWell(
+                  onTap: () => _openOrDownloadFile(context, kplt.formUkur),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            kplt.formUkur!.split('/').last.split('?').first,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           
           const SizedBox(height: 24),
-          if (kplt.status == 'In Progress' || kplt.status == 'Waiting for Forum') ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => KpltEditPage(kplt: kplt),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text("Edit Data KPLT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ]
+
+          //Bisa di uncomment kalau semisal nanti mau diterapkan fitur untuk edit KPLT
+
+          // if (kplt.status == 'In Progress' || kplt.status == 'Waiting for Forum') ...[
+          //   SizedBox(
+          //     width: double.infinity,
+          //     child: ElevatedButton(
+          //       onPressed: () {
+          //         Navigator.push(
+          //           context,
+          //           MaterialPageRoute(
+          //             builder: (context) => KpltEditPage(kplt: kplt),
+          //           ),
+          //         );
+          //       },
+          //       style: ElevatedButton.styleFrom(
+          //         backgroundColor: AppColors.primaryColor,
+          //         foregroundColor: Colors.white,
+          //         padding: const EdgeInsets.symmetric(vertical: 14),
+          //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          //       ),
+          //       child: const Text("Edit Data KPLT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          //     ),
+          //   ),
+          //   const SizedBox(height: 24),
+          // ]
         ],
       ),
     );
