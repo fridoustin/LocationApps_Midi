@@ -19,7 +19,6 @@ class KpltFormData {
   final File pdfKks;
   final File excelFpl;
   final File excelPe;
-  final File pdfFormUkur;
   final File videoTrafficSiang;
   final File videoTrafficMalam;
   final File video360Siang;
@@ -43,9 +42,6 @@ class KpltFormData {
   final String namaPemilik;
   final String kontakPemilik;
   final String formUlok;
-  final String approvalIntip;
-  final DateTime tanggalApprovalIntip;
-  final String fileIntip;
 
   KpltFormData({
     required this.ulokId,
@@ -59,7 +55,6 @@ class KpltFormData {
     required this.spd,
     required this.peRab,
     required this.pdfFoto,
-    required this.pdfFormUkur,
     required this.pdfPembanding,
     required this.pdfKks,
     required this.excelFpl,
@@ -87,9 +82,6 @@ class KpltFormData {
     required this.hargaSewa,
     required this.namaPemilik,
     required this.kontakPemilik,
-    required this.approvalIntip,
-    required this.tanggalApprovalIntip,
-    required this.fileIntip,
     required this.formUlok
   });
 }

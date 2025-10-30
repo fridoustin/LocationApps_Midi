@@ -89,7 +89,6 @@ class KpltRepositoryImpl implements KpltRepository {
             case 'pdf_kks': oldPath = originalKplt.pdfKks; break;
             case 'excel_fpl': oldPath = originalKplt.excelFpl; break;
             case 'excel_pe': oldPath = originalKplt.excelPe; break;
-            case 'pdf_form_ukur': oldPath = originalKplt.pdfFormUkur; break;
             case 'video_traffic_siang': oldPath = originalKplt.videoTrafficSiang; break;
             case 'video_traffic_malam': oldPath = originalKplt.videoTrafficMalam; break;
             case 'video_360_siang': oldPath = originalKplt.video360Siang; break;

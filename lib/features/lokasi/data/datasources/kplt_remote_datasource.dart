@@ -137,7 +137,6 @@ class KpltRemoteDatasource {
         'excel_fpl': formData.excelFpl,
         'excel_pe': formData.excelPe,
         'counting_kompetitor': formData.countingKompetitor,
-        'pdf_form_ukur': formData.pdfFormUkur,
         'video_traffic_siang': formData.videoTrafficSiang,
         'video_traffic_malam': formData.videoTrafficMalam,
         'video_360_siang': formData.video360Siang,
@@ -181,7 +180,6 @@ class KpltRemoteDatasource {
         'spd': formData.spd,
         'pe_rab': formData.peRab,
         ...uploadedFileColumnData,
-        'progress_toko': 'Running',
         'kplt_approval': 'In Progress',
         'is_active': true,
         'nama_kplt': formData.namaKplt,
@@ -203,10 +201,8 @@ class KpltRemoteDatasource {
         'nama_pemilik': formData.namaPemilik,
         'kontak_pemilik': formData.kontakPemilik,
         'form_ulok': formData.formUlok,
-        'approval_intip_status': formData.approvalIntip,
-        'tanggal_approval_intip': formData.tanggalApprovalIntip.toIso8601String(),
-        'file_intip': formData.fileIntip
       };
+      kpltData.removeWhere((key, value) => value == null);
       await client.from('kplt').insert(kpltData);
 
     } catch (e) {

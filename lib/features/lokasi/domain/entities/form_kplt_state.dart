@@ -41,7 +41,6 @@ class KpltFormState extends Equatable {
   final File? pdfKks;
   final File? excelFpl;
   final File? excelPe;
-  final File? pdfFormUkur;
   final File? videoTrafficSiang;
   final File? videoTrafficMalam;
   final File? video360Siang;
@@ -53,13 +52,11 @@ class KpltFormState extends Equatable {
   final String? existingPdfKksPath;
   final String? existingExcelFplPath;
   final String? existingExcelPePath;
-  final String? existingPdfFormUkurPath;
   final String? existingVideoTrafficSiangPath;
   final String? existingVideoTrafficMalamPath;
   final String? existingVideo360SiangPath;
   final String? existingVideo360MalamPath;
   final String? existingPetaCoveragePath;
-  // --- TAMBAHAN 1 ---
   final DateTime? lastEdited;
 
   const KpltFormState({
@@ -98,7 +95,6 @@ class KpltFormState extends Equatable {
     this.pdfKks,
     this.excelFpl,
     this.excelPe,
-    this.pdfFormUkur,
     this.videoTrafficSiang,
     this.videoTrafficMalam,
     this.video360Siang,
@@ -110,13 +106,11 @@ class KpltFormState extends Equatable {
     this.existingPdfKksPath,
     this.existingExcelFplPath,
     this.existingExcelPePath,
-    this.existingPdfFormUkurPath,
     this.existingVideoTrafficSiangPath,
     this.existingVideoTrafficMalamPath,
     this.existingVideo360SiangPath,
     this.existingVideo360MalamPath,
     this.existingPetaCoveragePath,
-    // --- TAMBAHAN 2 ---
     this.lastEdited,
   });
 
@@ -124,7 +118,6 @@ class KpltFormState extends Equatable {
     return KpltFormState(
       status: KpltFormStatus.initial, 
       ulokId: ulokId,
-      // --- TAMBAHAN 3 ---
       lastEdited: null,
     );
   }
@@ -164,7 +157,6 @@ class KpltFormState extends Equatable {
     File? pdfKks,
     File? excelFpl,
     File? excelPe,
-    File? pdfFormUkur,
     File? videoTrafficSiang,
     File? videoTrafficMalam,
     File? video360Siang,
@@ -182,7 +174,6 @@ class KpltFormState extends Equatable {
     String? existingVideo360SiangPath,
     String? existingVideo360MalamPath,
     String? existingPetaCoveragePath,
-    // --- TAMBAHAN 4 ---
     DateTime? lastEdited,
   }) {
     return KpltFormState(
@@ -221,7 +212,6 @@ class KpltFormState extends Equatable {
       pdfKks: pdfKks ?? this.pdfKks,
       excelFpl: excelFpl ?? this.excelFpl,
       excelPe: excelPe ?? this.excelPe,
-      pdfFormUkur: pdfFormUkur ?? this.pdfFormUkur,
       videoTrafficSiang: videoTrafficSiang ?? this.videoTrafficSiang,
       videoTrafficMalam: videoTrafficMalam ?? this.videoTrafficMalam,
       video360Siang: video360Siang ?? this.video360Siang,
@@ -233,13 +223,11 @@ class KpltFormState extends Equatable {
       existingPdfKksPath: existingPdfKksPath ?? this.existingPdfKksPath,
       existingExcelFplPath: existingExcelFplPath ?? this.existingExcelFplPath,
       existingExcelPePath: existingExcelPePath ?? this.existingExcelPePath,
-      existingPdfFormUkurPath: existingPdfFormUkurPath ?? this.existingPdfFormUkurPath,
       existingVideoTrafficSiangPath: existingVideoTrafficSiangPath ?? this.existingVideoTrafficSiangPath,
       existingVideoTrafficMalamPath: existingVideoTrafficMalamPath ?? this.existingVideoTrafficMalamPath,
       existingVideo360SiangPath: existingVideo360SiangPath ?? this.existingVideo360SiangPath,
       existingVideo360MalamPath: existingVideo360MalamPath ?? this.existingVideo360MalamPath,
       existingPetaCoveragePath: existingPetaCoveragePath ?? this.existingPetaCoveragePath,
-      // --- TAMBAHAN 5 ---
       lastEdited: lastEdited ?? this.lastEdited,
     );
   }
@@ -282,14 +270,12 @@ class KpltFormState extends Equatable {
       existingPdfKksPath: kplt.pdfKks,
       existingExcelFplPath: kplt.excelFpl,
       existingExcelPePath: kplt.excelPe,
-      existingPdfFormUkurPath: kplt.pdfFormUkur,
       existingVideoTrafficSiangPath: kplt.videoTrafficSiang,
       existingVideoTrafficMalamPath: kplt.videoTrafficMalam,
       existingVideo360SiangPath: kplt.video360Siang,
       existingVideo360MalamPath: kplt.video360Malam,
       existingPetaCoveragePath: kplt.petaCoverage,
-      // --- TAMBAHAN 6 ---
-      lastEdited: null, // Data dari form KPLT (bukan draft) tidak punya 'lastEdited'
+      lastEdited: null, 
     );
   }
 
@@ -300,13 +286,12 @@ class KpltFormState extends Equatable {
         alasHak, jumlahLantai, lebarDepan, panjang, luas, hargaSewa, namaPemilik,
         kontakPemilik, karakterLokasi, sosialEkonomi, peStatus, skorFpl, std,
         apc, spd, peRab, pdfFoto, countingKompetitor, pdfPembanding, pdfKks,
-        excelFpl, excelPe, pdfFormUkur, videoTrafficSiang, videoTrafficMalam,
+        excelFpl, excelPe, videoTrafficSiang, videoTrafficMalam,
         video360Siang, video360Malam, petaCoverage, existingPdfFotoPath,
         existingCountingKompetitorPath, existingPdfPembandingPath, existingPdfKksPath,
-        existingExcelFplPath, existingExcelPePath, existingPdfFormUkurPath,
+        existingExcelFplPath, existingExcelPePath,
         existingVideoTrafficSiangPath, existingVideoTrafficMalamPath,
         existingVideo360SiangPath, existingVideo360MalamPath, existingPetaCoveragePath,
-        // --- TAMBAHAN 7 ---
         lastEdited,
       ];
 
@@ -346,7 +331,6 @@ class KpltFormState extends Equatable {
       'pdfKksPath': pdfKks?.path,
       'excelFplPath': excelFpl?.path,
       'excelPePath': excelPe?.path,
-      'pdfFormUkurPath': pdfFormUkur?.path,
       'videoTrafficSiangPath': videoTrafficSiang?.path,
       'videoTrafficMalamPath': videoTrafficMalam?.path,
       'video360SiangPath': video360Siang?.path,
@@ -358,13 +342,11 @@ class KpltFormState extends Equatable {
       'existingPdfKksPath': existingPdfKksPath,
       'existingExcelFplPath': existingExcelFplPath,
       'existingExcelPePath': existingExcelPePath,
-      'existingPdfFormUkurPath': existingPdfFormUkurPath,
       'existingVideoTrafficSiangPath': existingVideoTrafficSiangPath,
       'existingVideoTrafficMalamPath': existingVideoTrafficMalamPath,
       'existingVideo360SiangPath': existingVideo360SiangPath,
       'existingVideo360MalamPath': existingVideo360MalamPath,
       'existingPetaCoveragePath': existingPetaCoveragePath,
-      // --- TAMBAHAN 8 ---
       'lastEdited': lastEdited?.toIso8601String(),
     };
   }
@@ -407,7 +389,6 @@ class KpltFormState extends Equatable {
       pdfKks: json['pdfKksPath'] != null ? File(json['pdfKksPath']) : null,
       excelFpl: json['excelFplPath'] != null ? File(json['excelFplPath']) : null,
       excelPe: json['excelPePath'] != null ? File(json['excelPePath']) : null,
-      pdfFormUkur: json['pdfFormUkurPath'] != null ? File(json['pdfFormUkurPath']) : null,
       videoTrafficSiang: json['videoTrafficSiangPath'] != null ? File(json['videoTrafficSiangPath']) : null,
       videoTrafficMalam: json['videoTrafficMalamPath'] != null ? File(json['videoTrafficMalamPath']) : null,
       video360Siang: json['video360SiangPath'] != null ? File(json['video360SiangPath']) : null,
@@ -419,13 +400,11 @@ class KpltFormState extends Equatable {
       existingPdfKksPath: json['existingPdfKksPath'],
       existingExcelFplPath: json['existingExcelFplPath'],
       existingExcelPePath: json['existingExcelPePath'],
-      existingPdfFormUkurPath: json['existingPdfFormUkurPath'],
       existingVideoTrafficSiangPath: json['existingVideoTrafficSiangPath'],
       existingVideoTrafficMalamPath: json['existingVideoTrafficMalamPath'],
       existingVideo360SiangPath: json['existingVideo360SiangPath'],
       existingVideo360MalamPath: json['existingVideo360MalamPath'],
       existingPetaCoveragePath: json['existingPetaCoveragePath'],
-      // --- TAMBAHAN 9 ---
       lastEdited: json['lastEdited'] != null ? DateTime.parse(json['lastEdited']) : null,
     );
   }
