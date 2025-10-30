@@ -94,9 +94,6 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
       case 'excelPe':
         state = state.copyWith(excelPe: file);
         break;
-      case 'pdfFormUkur':
-        state = state.copyWith(pdfFormUkur: file);
-        break;
       case 'videoTrafficSiang':
         state = state.copyWith(videoTrafficSiang: file);
         break;
@@ -134,7 +131,7 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
         s.peStatus == null || s.skorFpl == null || s.std == null || s.apc == null ||
         s.spd == null || s.peRab == null || s.pdfFoto == null || s.countingKompetitor == null ||
         s.pdfPembanding == null || s.pdfKks == null || s.excelFpl == null || s.excelPe == null ||
-        s.pdfFormUkur == null || s.videoTrafficSiang == null || s.videoTrafficMalam == null ||
+        s.videoTrafficSiang == null || s.videoTrafficMalam == null ||
         s.video360Siang == null || s.video360Malam == null || s.petaCoverage == null)
     {
       state = state.copyWith(status: KpltFormStatus.error, errorMessage: 'Harap lengkapi semua data.');
@@ -179,7 +176,6 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
         pdfKks: s.pdfKks!,
         excelFpl: s.excelFpl!,
         excelPe: s.excelPe!,
-        pdfFormUkur: s.pdfFormUkur!,
         videoTrafficSiang: s.videoTrafficSiang!,
         videoTrafficMalam: s.videoTrafficMalam!,
         video360Siang: s.video360Siang!,
@@ -202,9 +198,6 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
         hargaSewa: ulokDetail.hargaSewa!,
         namaPemilik: ulokDetail.namaPemilik!,
         kontakPemilik: ulokDetail.kontakPemilik!,
-        approvalIntip: ulokDetail.approvalIntip!,
-        tanggalApprovalIntip: ulokDetail.tanggalApprovalIntip!,
-        fileIntip: ulokDetail.fileIntip!,
         formUlok: ulokDetail.formUlok!
       );
 
@@ -261,7 +254,6 @@ class KpltFormNotifier extends StateNotifier<KpltFormState> {
         'pdf_kks': state.pdfKks,
         'excel_fpl': state.excelFpl,
         'excel_pe': state.excelPe,
-        'pdf_form_ukur': state.pdfFormUkur,
         'video_traffic_siang': state.videoTrafficSiang,
         'video_traffic_malam': state.videoTrafficMalam,
         'video_360_siang': state.video360Siang,
