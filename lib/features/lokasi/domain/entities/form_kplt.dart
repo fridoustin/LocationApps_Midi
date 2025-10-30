@@ -40,7 +40,8 @@ class FormKPLT {
   final String? pdfKks;
   final String? excelFpl;
   final String? excelPe;
-  final String? pdfFormUkur;
+  final String? formUkur;
+  final DateTime? tanggalUkur;
   final String? videoTrafficSiang;
   final String? videoTrafficMalam;
   final String? video360Siang;
@@ -89,7 +90,8 @@ class FormKPLT {
     this.pdfKks,
     this.excelFpl,
     this.excelPe,
-    this.pdfFormUkur,
+    this.formUkur,
+    this.tanggalUkur,
     this.videoTrafficSiang,
     this.videoTrafficMalam,
     this.video360Siang,
@@ -125,7 +127,6 @@ class FormKPLT {
     if (lat != null && lon != null) {
       latLongValue = '$lat,$lon';
     }
-    
     return FormKPLT(
       id: map['id'],
       ulokId: map['ulok_id'],
@@ -149,8 +150,8 @@ class FormKPLT {
       namaPemilik: map['nama_pemilik'] ?? ulokData['nama_pemilik'],
       kontakPemilik: map['kontak_pemilik'] ?? ulokData['kontak_pemilik'],
       formUlok: map['form_ulok'] ?? ulokData['form_ulok'],
-      approvalIntip: map['approval_intip_status'] ?? ulokData['approval_intip_status'],
-      fileIntip: map['file_intip'] ?? ulokData['file_intip'],
+      approvalIntip: map['approval_intip'],
+      fileIntip: map['file_intip'],
       tanggalApprovalIntip: map['tanggal_approval_intip'] == null ? null : DateTime.parse(map['tanggal_approval_intip']),
       karakterLokasi: map['karakter_lokasi'],
       sosialEkonomi: map['sosial_ekonomi'],
@@ -166,7 +167,8 @@ class FormKPLT {
       pdfKks: map['pdf_kks'],
       excelFpl: map['excel_fpl'],
       excelPe: map['excel_pe'],
-      pdfFormUkur: map['pdf_form_ukur'],
+      formUkur: map['form_ukur'],
+      tanggalUkur: map['tanggal_ukur'] == null ? null : DateTime.parse(map['tanggal_ukur']),
       videoTrafficSiang: map['video_traffic_siang'],
       videoTrafficMalam: map['video_traffic_malam'],
       video360Siang: map['video_360_siang'],
@@ -185,8 +187,6 @@ class FormKPLT {
     if (lat != null && lon != null) {
       latLongValue = '$lat,$lon';
     }
-    
-    // Kode lainnya sudah benar
     return FormKPLT(
       id: map['id'],
       ulokId: map['id'],
@@ -210,9 +210,9 @@ class FormKPLT {
       namaPemilik: map['nama_pemilik'],
       kontakPemilik: map['kontak_pemilik'],
       formUlok: map['form_ulok'],
-      approvalIntip: map['approval_intip_status'],
-      fileIntip: map['file_intip'],
-      tanggalApprovalIntip: map['tanggal_approval_intip'] == null ? null : DateTime.parse(map['tanggal_approval_intip']),
+      approvalIntip: null,
+      fileIntip: null,
+      tanggalApprovalIntip: null,
       karakterLokasi: null,
       sosialEkonomi: null,
       peStatus: null,
@@ -227,7 +227,8 @@ class FormKPLT {
       pdfKks: null,
       excelFpl: null,
       excelPe: null,
-      pdfFormUkur: null,
+      formUkur: null,
+      tanggalUkur: null,
       videoTrafficSiang: null,
       videoTrafficMalam: null,
       video360Siang: null,
@@ -270,7 +271,7 @@ class FormKPLT {
       namaPemilik: map['nama_pemilik'],
       kontakPemilik: map['kontak_pemilik'],
       formUlok: map['form_ulok'],
-      approvalIntip: map['approval_intip_status'],
+      approvalIntip: map['approval_intip'],
       fileIntip: map['file_intip'],
       tanggalApprovalIntip: map['tanggal_approval_intip'] == null ? null : DateTime.parse(map['tanggal_approval_intip']),
       karakterLokasi: map['karakter_lokasi'],
@@ -287,7 +288,8 @@ class FormKPLT {
       pdfKks: map['pdf_kks'],
       excelFpl: map['excel_fpl'],
       excelPe: map['excel_pe'],
-      pdfFormUkur: map['pdf_form_ukur'],
+      formUkur: map['form_ukur'],
+      tanggalUkur: map['tanggal_ukur'] == null ? null : DateTime.parse(map['tanggal_ukur']),
       videoTrafficSiang: map['video_traffic_siang'],
       videoTrafficMalam: map['video_traffic_malam'],
       video360Siang: map['video_360_siang'],
