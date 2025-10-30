@@ -700,11 +700,6 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
                       onTap: () =>
                           pickFile(formNotifier.onFilePicked, 'excelPe')),
                   FileUploadWidget(
-                      label: "PDF Form Ukur",
-                      fileName: formState.pdfFormUkur?.path.split('/').last, 
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'pdfFormUkur')),
-                  FileUploadWidget(
                       label: "Video Traffic Siang",
                       fileName: formState.videoTrafficSiang?.path.split('/').last, 
                       onTap: () =>
