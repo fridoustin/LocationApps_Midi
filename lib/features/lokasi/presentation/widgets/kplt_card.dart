@@ -16,7 +16,7 @@ class KpltCard extends StatefulWidget {
   @override
   State<KpltCard> createState() => _KpltCardState();
 }
-
+  
 class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _animationController;
@@ -42,44 +42,58 @@ class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin
 
   // Helper untuk mendapatkan progress percentage
   double _getProgressPercentage() {
-    // TODO: Nanti ganti dengan data real dari FormKPLT
-    return widget.kplt.progressPercentage ?? 0.0; 
-    // switch (widget.kplt.status) {
-    //   case 'Need Input': return 0.0;
-    //   case 'In Progress': return 10.0;
-    //   case 'Waiting for Forum': return 50.0;
-    //   case 'OK': return 100.0;
-    //   case 'NOK': return 100.0;
-    //   default: return 0.0;
-    // }
+    return widget.kplt.progressPercentage ?? 0.0;
   }
 
   // Helper untuk mendapatkan list progress steps
   List<_ProgressStepData> _getProgressSteps() {
-    // TODO: Nanti ambil dari widget.kplt.progressSteps
-    // return widget.kplt.progressSteps ?? [];
-    
     final currentProgress = _getProgressPercentage();
     
-    // Dummy data - nanti ganti dengan data real dari database
     return [
       _ProgressStepData(
         title: 'KPLT Created',
         date: widget.kplt.tanggal,
-        isCompleted: currentProgress >= 10,
-        percentage: 10,
+        isCompleted: true, 
       ),
       _ProgressStepData(
         title: 'Site Survey',
         date: currentProgress >= 20 ? widget.kplt.tanggal.add(const Duration(days: 2)) : null,
         isCompleted: currentProgress >= 20,
-        percentage: 20,
       ),
       _ProgressStepData(
         title: 'Document Collection',
         date: currentProgress >= 30 ? widget.kplt.tanggal.add(const Duration(days: 5)) : null,
         isCompleted: currentProgress >= 30,
-        percentage: 30,
+      ),
+      _ProgressStepData(
+        title: 'KPLT Approval',
+        date: currentProgress >= 40 ? widget.kplt.tanggal.add(const Duration(days: 7)) : null,
+        isCompleted: currentProgress >= 40,
+      ),
+      _ProgressStepData(
+        title: 'MOU Process',
+        date: currentProgress >= 50 ? widget.kplt.tanggal.add(const Duration(days: 10)) : null,
+        isCompleted: currentProgress >= 50,
+      ),
+      _ProgressStepData(
+        title: 'Notaris Process',
+        date: currentProgress >= 60 ? widget.kplt.tanggal.add(const Duration(days: 15)) : null,
+        isCompleted: currentProgress >= 60,
+      ),
+      _ProgressStepData(
+        title: 'Perizinan',
+        date: currentProgress >= 70 ? widget.kplt.tanggal.add(const Duration(days: 20)) : null,
+        isCompleted: currentProgress >= 70,
+      ),
+      _ProgressStepData(
+        title: 'Renovasi',
+        date: currentProgress >= 80 ? widget.kplt.tanggal.add(const Duration(days: 30)) : null,
+        isCompleted: currentProgress >= 80,
+      ),
+      _ProgressStepData(
+        title: 'Grand Opening',
+        date: currentProgress >= 90 ? widget.kplt.tanggal.add(const Duration(days: 45)) : null,
+        isCompleted: currentProgress >= 90,
       ),
     ];
   }
@@ -259,6 +273,20 @@ class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin
 
   Widget _buildProgressSteps() {
     final steps = _getProgressSteps();
+    
+    // Filter hanya step yang sudah completed atau step berikutnya yang sedang in progress
+    final displayedSteps = <_ProgressStepData>[];
+    bool foundInProgress = false;
+    
+    for (var step in steps) {
+      if (step.isCompleted) {
+        displayedSteps.add(step);
+      } else if (!foundInProgress) {
+        displayedSteps.add(step);
+        foundInProgress = true;
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
@@ -271,7 +299,7 @@ class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin
               Icon(Icons.list_alt, size: 20, color: AppColors.secondaryColor),
               SizedBox(width: 8),
               Text(
-                'Progress Timeline',
+                'Progress',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -281,9 +309,9 @@ class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin
             ],
           ),
           const SizedBox(height: 16),
-          ...List.generate(steps.length, (index) {
-            final step = steps[index];
-            final isLast = index == steps.length - 1;
+          ...List.generate(displayedSteps.length, (index) {
+            final step = displayedSteps[index];
+            final isLast = index == displayedSteps.length - 1;
             return _buildProgressStepItem(step, isLast);
           }),
         ],
@@ -296,6 +324,7 @@ class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Timeline indicator
           SizedBox(
             width: 24,
             child: Column(
@@ -305,9 +334,13 @@ class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: step.isCompleted ? AppColors.secondaryColor : Colors.transparent,
+                    color: step.isCompleted 
+                        ? AppColors.successColor 
+                        : Colors.transparent,
                     border: Border.all(
-                      color: step.isCompleted ? AppColors.secondaryColor : Colors.grey[400]!,
+                      color: step.isCompleted 
+                          ? AppColors.successColor 
+                          : Colors.grey[400]!,
                       width: 2,
                     ),
                   ),
@@ -321,63 +354,70 @@ class _KpltCardState extends State<KpltCard> with SingleTickerProviderStateMixin
                     child: Container(
                       width: 2,
                       margin: const EdgeInsets.only(top: 4),
-                      color: step.isCompleted ? AppColors.secondaryColor : Colors.grey[300],
+                      color: Colors.grey[300],
                     ),
                   ),
               ],
             ),
           ),
           const SizedBox(width: 12),
+
+          // Content
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-              child: Row(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Step info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  // Title
+                  Text(
+                    step.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Date info (only for completed)
+                  if (step.isCompleted && step.date != null)
+                    Row(
                       children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 16,
+                          color: AppColors.successColor,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
-                          step.title,
+                          'Selesai: ${DateFormat('dd MMM yyyy, HH:mm').format(step.date!.toLocal())}',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: step.isCompleted ? Colors.black87 : Colors.grey[600],
+                            fontSize: 12,
+                            color: Colors.grey[600],
                           ),
                         ),
-                        if (step.date != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            DateFormat('dd MMM yyyy').format(step.date!),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.pending_outlined,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Dalam Progress',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: step.isCompleted 
-                          ? AppColors.secondaryColor.withOpacity(0.15) 
-                          : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${step.percentage}%',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: step.isCompleted ? AppColors.secondaryColor : Colors.grey[600],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -392,12 +432,10 @@ class _ProgressStepData {
   final String title;
   final DateTime? date;
   final bool isCompleted;
-  final int percentage;
 
   _ProgressStepData({
     required this.title,
     this.date,
     required this.isCompleted,
-    required this.percentage,
   });
 }
