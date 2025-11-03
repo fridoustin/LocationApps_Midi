@@ -12,7 +12,6 @@ import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/error_screens/no_connection_screen.dart';
-import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
 import 'package:midi_location/features/statistik/presentation/pages/statistik_screen.dart';
 
 final mainNavigationProvider = StateProvider<int>((ref) => 0);
