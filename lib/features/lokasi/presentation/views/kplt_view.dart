@@ -8,7 +8,6 @@ import 'package:midi_location/features/lokasi/presentation/widgets/kplt_filter_d
 import 'package:midi_location/features/lokasi/presentation/views/history_kplt_view.dart';
 import 'package:midi_location/features/lokasi/presentation/views/recent_kplt_view.dart';
 
-// Provider untuk tab KPLT (Recent, History)
 final kpltSubTabProvider = StateProvider<int>((ref) => 0);
 
 class KpltView extends ConsumerStatefulWidget {
@@ -72,7 +71,6 @@ class _KpltViewState extends ConsumerState<KpltView>
 
     return Column(
       children: [
-        // Sub-tabs (Recent, History)
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: _buildSubTabBar(currentSubTab),

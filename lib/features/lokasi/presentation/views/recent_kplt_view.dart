@@ -26,7 +26,6 @@ class RecentKpltView extends ConsumerWidget {
       },
       child: CustomScrollView(
         slivers: [
-          // --- SEKSI PERLU INPUT ---
           needInputAsync.when(
             data: (list) {
               final ordered = List.of(list);
@@ -88,7 +87,6 @@ class RecentKpltView extends ConsumerWidget {
             error: (err, stack) => SliverToBoxAdapter(child: Center(child: Text('Error: $err'))),
           ),
 
-          // --- SEKSI SEDANG PROSES ---
           inProgressAsync.when(
             data: (list) {
               final ordered = List.of(list);
