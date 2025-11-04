@@ -1,5 +1,8 @@
 {
     "cmake.ignoreCMakeListsMissing": true,
     "deno.enable": true,
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.project.sourcePaths": [
+        "lib/features/lokasi/presentation/widgets"
+    ]
 }

@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/all_kplt_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/kplt_form_detail_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/card_list_skeleton.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/kplt_card.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/kplt_input_card.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/kplt_list_skeleton.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/section_header.dart';
 
@@ -83,7 +83,7 @@ class RecentKpltView extends ConsumerWidget {
                 ],
               );
             },
-            loading: () => const SliverToBoxAdapter(child: KpltListSkeleton()),
+            loading: () => const SliverToBoxAdapter(child: CommonListSkeleton()),
             error: (err, stack) => SliverToBoxAdapter(child: Center(child: Text('Error: $err'))),
           ),
 
@@ -155,7 +155,7 @@ class RecentKpltView extends ConsumerWidget {
                 ],
               );
             },
-            loading: () => const SliverToBoxAdapter(child: KpltListSkeleton()),
+            loading: () => const SliverToBoxAdapter(child: CommonListSkeleton()),
             error: (err, stack) => SliverToBoxAdapter(child: Center(child: Text('Error: $err'))),
           ),
         ],

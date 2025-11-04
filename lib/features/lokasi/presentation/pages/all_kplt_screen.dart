@@ -5,9 +5,9 @@ import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/kplt_form_detail_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/card_list_skeleton.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/kplt_card.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/kplt_input_card.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/kplt_list_skeleton.dart';
 
 class AllKpltListPage extends ConsumerWidget {
   static const String route = '/all-kplt-list';
@@ -60,7 +60,7 @@ class AllKpltListPage extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: KpltListSkeleton()),
+        loading: () => const Center(child: CommonListSkeleton()),
         error: (e, st) => Center(child: Text('Error: $e')),
       ),
     );

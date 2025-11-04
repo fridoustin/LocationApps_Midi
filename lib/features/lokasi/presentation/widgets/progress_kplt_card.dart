@@ -458,12 +458,6 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
                   if (isCompleted && completedAt != null)
                     Row(
                       children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          size: 16,
-                          color: AppColors.successColor,
-                        ),
-                        const SizedBox(width: 4),
                         Text(
                           'Selesai: ${DateFormat('dd MMM yyyy, HH:mm').format(completedAt.toLocal())}',
                           style: TextStyle(
@@ -479,14 +473,14 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
                         Icon(
                           Icons.pending_outlined,
                           size: 16,
-                          color: Colors.grey[600],
+                          color: AppColors.orange,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Dalam Progress',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: AppColors.orange,
                           ),
                         ),
                       ],
@@ -555,7 +549,7 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
                       Icon(Icons.call_split, size: 16, color: AppColors.secondaryColor),
                       SizedBox(width: 6),
                       Text(
-                        'Proses Parallel',
+                        'Proses Perizinan',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

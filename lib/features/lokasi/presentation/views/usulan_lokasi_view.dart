@@ -7,10 +7,10 @@ import 'package:midi_location/features/lokasi/domain/entities/ulok_filter.dart';
 import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/card_list_skeleton.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_card.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_filter_dialog.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/ulok_list_skeleton.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_draft_card.dart';
 
 final usulanLokasiSubTabProvider = StateProvider<int>((ref) => 0);
@@ -332,7 +332,7 @@ class _UsulanLokasiViewState extends ConsumerState<UsulanLokasiView>
           ),
         );
       },
-      loading: () => const UlokListSkeleton(),
+      loading: () => const CommonListSkeleton(),
       error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
     );
   }
@@ -366,7 +366,7 @@ class _UsulanLokasiViewState extends ConsumerState<UsulanLokasiView>
           ),
         );
       },
-      loading: () => const UlokListSkeleton(),
+      loading: () => const CommonListSkeleton(),
       error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
     );
   }
@@ -449,7 +449,7 @@ class _UsulanLokasiViewState extends ConsumerState<UsulanLokasiView>
           ),
         );
       },
-      loading: () => const UlokListSkeleton(),
+      loading: () => const CommonListSkeleton(),
       error: (err, stack) => Center(child: Text('Gagal memuat draft: $err')),
     );
   }

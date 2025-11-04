@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/kplt_form_detail_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/card_list_skeleton.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/kplt_card.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/kplt_list_skeleton.dart';
 import 'package:midi_location/core/constants/color.dart';
 
 class HistoryKpltView extends ConsumerWidget {
@@ -42,7 +42,7 @@ class HistoryKpltView extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const KpltListSkeleton(),
+      loading: () => const CommonListSkeleton(),
       error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
     );
   }
