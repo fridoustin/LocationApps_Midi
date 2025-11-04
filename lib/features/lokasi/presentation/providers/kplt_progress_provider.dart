@@ -4,6 +4,7 @@ import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_rem
 import 'package:midi_location/features/lokasi/data/repositories/kplt_progress_repository_impl.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
+import 'package:midi_location/features/lokasi/presentation/views/progress_kplt_view.dart';
 
 // Provider untuk data source
 final kpltProgressRemoteDatasourceProvider = Provider<KpltProgressRemoteDatasource>((ref) {
@@ -17,37 +18,42 @@ final kpltProgressRepositoryProvider = Provider<KpltProgressRepository>((ref) {
   return KpltProgressRepositoryImpl(ds);
 });
 
-// Provider untuk fetch all progress list (by current user) dengan enrichment
-final progressListProvider = FutureProvider.autoDispose<List<ProgressKplt>>((ref) async {
+Future<ProgressKplt> _enrichProgress(KpltProgressRepository repo, ProgressKplt progress) async {
+  final completionData = await repo.getCompletionStatus(progress.id);
+  final percentage = ProgressCalculator.calculatePercentage(completionData);
+  final currentStatusString = ProgressCalculator.determineCurrentStatus(completionData);
+  final currentStatus = ProgressKpltStatus.fromString(currentStatusString);
+  
+  return progress.copyWith(
+    computedPercentage: percentage,
+    status: currentStatus,
+  );
+}
+
+final recentProgressListProvider = FutureProvider.autoDispose<List<ProgressKplt>>((ref) async {
   final repo = ref.watch(kpltProgressRepositoryProvider);
-  final progressList = await repo.getAllProgress();
-  
-  // Enrich each progress dengan percentage dan status yang benar
-  final enrichedList = <ProgressKplt>[];
-  
-  for (var progress in progressList) {
-    final completionData = await repo.getCompletionStatus(progress.id);
-    
-    // Calculate percentage
-    final percentage = ProgressCalculator.calculatePercentage(completionData);
-    
-    // Determine current status
-    final currentStatusString = ProgressCalculator.determineCurrentStatus(completionData);
-    final currentStatus = ProgressKpltStatus.fromString(currentStatusString);
-    
-    // Update progress dengan data yang benar
-    enrichedList.add(
-      progress.copyWith(
-        computedPercentage: percentage,
-        status: currentStatus,
-      ),
-    );
-  }
+  final query = ref.watch(progressSearchQueryProvider);
+  final filter = ref.watch(progressFilterProvider);
+  final progressList = await repo.getRecentProgress(query, filter: filter);
+  final enrichedList = await Future.wait(
+    progressList.map((progress) => _enrichProgress(repo, progress))
+  );
   
   return enrichedList;
 });
 
-// Provider untuk fetch progress by KPLT ID dengan enrichment
+final historyProgressListProvider = FutureProvider.autoDispose<List<ProgressKplt>>((ref) async {
+  final repo = ref.watch(kpltProgressRepositoryProvider);
+  final query = ref.watch(progressSearchQueryProvider);
+  final filter = ref.watch(progressFilterProvider);
+  final progressList = await repo.getHistoryProgress(query, filter: filter);
+  final enrichedList = await Future.wait(
+    progressList.map((progress) => _enrichProgress(repo, progress))
+  );
+  
+  return enrichedList;
+});
+
 final progressByKpltIdProvider = FutureProvider.family.autoDispose<ProgressKplt?, String>(
   (ref, kpltId) async {
     final repo = ref.watch(kpltProgressRepositoryProvider);
@@ -56,19 +62,11 @@ final progressByKpltIdProvider = FutureProvider.family.autoDispose<ProgressKplt?
     if (progress == null) return null;
     
     // Enrich dengan completion data
-    final completionData = await repo.getCompletionStatus(progress.id);
-    final percentage = ProgressCalculator.calculatePercentage(completionData);
-    final currentStatusString = ProgressCalculator.determineCurrentStatus(completionData);
-    final currentStatus = ProgressKpltStatus.fromString(currentStatusString);
-    
-    return progress.copyWith(
-      computedPercentage: percentage,
-      status: currentStatus,
-    );
+    final repoForEnrich = ref.watch(kpltProgressRepositoryProvider);
+    return await _enrichProgress(repoForEnrich, progress);
   },
 );
 
-// Provider untuk get completion status (return Map<String, dynamic>)
 final completionStatusProvider = FutureProvider.family.autoDispose<Map<String, dynamic>, String>(
   (ref, progressId) async {
     final repo = ref.watch(kpltProgressRepositoryProvider);

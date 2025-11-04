@@ -4,12 +4,19 @@ import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/progress_kplt_card.dart';
 
-class ProgressKpltView extends ConsumerWidget {
+class ProgressKpltView extends ConsumerStatefulWidget {
   const ProgressKpltView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final progressAsync = ref.watch(progressListProvider);
+  ConsumerState<ProgressKpltView> createState() => _ProgressKpltViewState();
+}
+
+class _ProgressKpltViewState extends ConsumerState<ProgressKpltView> {
+  final _providerToWatch = recentProgressListProvider;
+
+  @override
+  Widget build(BuildContext context) {
+    final progressAsync = ref.watch(_providerToWatch);
 
     return progressAsync.when(
       data: (progressList) {
@@ -44,7 +51,7 @@ class ProgressKpltView extends ConsumerWidget {
 
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(progressListProvider);
+            ref.invalidate(_providerToWatch);
           },
           color: AppColors.primaryColor,
           backgroundColor: AppColors.cardColor,
@@ -57,14 +64,6 @@ class ProgressKpltView extends ConsumerWidget {
                 progress: progress,
                 onTap: () {
                   // Navigate to detail page if needed
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (_) => ProgressKpltDetailPage(
-                  //       progress: progress,
-                  //     ),
-                  //   ),
-                  // );
                 },
               );
             },
@@ -103,7 +102,8 @@ class ProgressKpltView extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: () => ref.invalidate(progressListProvider),
+                onPressed: () =>
+                    ref.invalidate(_providerToWatch),
                 icon: const Icon(Icons.refresh),
                 label: const Text('Coba Lagi'),
                 style: ElevatedButton.styleFrom(

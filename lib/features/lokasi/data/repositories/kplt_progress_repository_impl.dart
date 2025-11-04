@@ -1,3 +1,4 @@
+import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_remote_datasource.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
@@ -8,8 +9,14 @@ class KpltProgressRepositoryImpl implements KpltProgressRepository {
   KpltProgressRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<List<ProgressKplt>> getAllProgress() async {
-    final raw = await remoteDataSource.getAllProgress();
+  Future<List<ProgressKplt>> getRecentProgress(String query, {KpltFilter? filter}) async {
+    final raw = await remoteDataSource.getRecentProgress(query, filter: filter);
+    return raw.map((e) => ProgressKplt.fromMap(e)).toList();
+  }
+
+  @override
+  Future<List<ProgressKplt>> getHistoryProgress(String query, {KpltFilter? filter}) async {
+    final raw = await remoteDataSource.getHistoryProgress(query, filter: filter);
     return raw.map((e) => ProgressKplt.fromMap(e)).toList();
   }
 
@@ -35,3 +42,4 @@ class KpltProgressRepositoryImpl implements KpltProgressRepository {
     return await remoteDataSource.getCompletionStatus(progressId);
   }
 }
+

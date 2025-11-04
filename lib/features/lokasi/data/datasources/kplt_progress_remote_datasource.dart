@@ -1,47 +1,91 @@
 import 'package:flutter/foundation.dart';
+import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class KpltProgressRemoteDatasource {
   final SupabaseClient client;
   KpltProgressRemoteDatasource(this.client);
 
-  Future<List<Map<String, dynamic>>> getAllProgress() async {
+  Future<List<Map<String, dynamic>>> getRecentProgress(String query, {KpltFilter? filter}) async {
     try {
       final userId = client.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not logged in');
+      if (userId == null) throw const AuthException('User not Authenticated');
+
+      var request = client.from('progress_kplt').select('''
+            *,
+            kplt!inner (
+              id, nama_kplt, alamat, kecamatan, kabupaten, provinsi, pe_status, kplt_approval,
+              ulok!inner ( users_id, nama_ulok )
+            )
+          ''')
+          .eq('kplt.ulok.users_id', userId)
+          .not('status', 'eq', 'Grand Opening');
+
+      if (query.isNotEmpty) {
+        request = request.ilike('kplt.nama_kplt', '%$query%');
       }
 
-      final response = await client
-        .from('progress_kplt')
-        .select('''
-          *,
-          kplt!inner (
-            id,
-            nama_kplt,
-            alamat,
-            kecamatan,
-            kabupaten,
-            provinsi,
-            pe_status,
-            kplt_approval,
-            ulok!inner (
-              users_id
-            )
-          )
-        ''')
-        .eq('kplt.ulok.users_id', userId)
-        .order('created_at', ascending: false);
-      
-      final data = (response as List)
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
+      if (filter != null && filter.status != null) {
+        request = request.eq('status', filter.status!);
+      }
 
-      debugPrint('✅ Found ${data.length} progress for user: $userId');
+      if (filter != null && filter.year != null) {
+        final month = filter.month ?? 1;
+        final start = DateTime(filter.year!, month, 1);
+        final end = DateTime(filter.year!, filter.month ?? 12, 31, 23, 59, 59);
+        request = request.gte('created_at', start.toIso8601String()).lte('created_at', end.toIso8601String());
+      }
+
+      final response = await request.order('created_at', ascending: false);
+      final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+
+      debugPrint('✅ Found ${data.length} RECENT (Non-GO) progress for user: $userId');
       return data;
-      
+
     } catch (e) {
-      debugPrint('❌ getAllProgress error: $e');
+      debugPrint('❌ getRecentProgress error: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getHistoryProgress(String query, {KpltFilter? filter}) async {
+    try {
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) throw const AuthException('User not Authenticated');
+
+      var request = client.from('progress_kplt').select('''
+            *,
+            kplt!inner (
+              id, nama_kplt, alamat, kecamatan, kabupaten, provinsi, pe_status, kplt_approval,
+              ulok!inner ( users_id, nama_ulok )
+            )
+          ''')
+          .eq('kplt.ulok.users_id', userId)
+          .eq('status', 'Grand Opening'); 
+
+      if (query.isNotEmpty) {
+        request = request.ilike('kplt.nama_kplt', '%$query%');
+      }
+
+      if (filter != null && filter.status != null) {
+        request = request.eq('status', filter.status!);
+      }
+
+      if (filter != null && filter.year != null) {
+        final month = filter.month ?? 1;
+        final start = DateTime(filter.year!, month, 1);
+        final end = DateTime(filter.year!, filter.month ?? 12, 31, 23, 59, 59);
+        request = request.gte('created_at', start.toIso8601String()).lte('created_at', end.toIso8601String());
+      }
+
+      final response = await request.order('created_at', ascending: false);
+      final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+
+      debugPrint('✅ Found ${data.length} HISTORY (GO) progress for user: $userId');
+      return data;
+
+    } catch (e) {
+      debugPrint('❌ getHistoryProgress error: $e');
       rethrow;
     }
   }
@@ -80,7 +124,7 @@ class KpltProgressRemoteDatasource {
           .from('progress_kplt')
           .insert({
             'kplt_id': kpltId,
-            'status': 'not_started',
+            'status': 'Not Started',
           })
           .select('id')
           .single();
