@@ -92,49 +92,6 @@ class _HistoryViewState extends ConsumerState<HistoryView>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeline column
-          SizedBox(
-            width: 24,
-            child: Column(
-              children: [
-                // Circle indicator
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isCompleted
-                        ? AppColors.successColor
-                        : Colors.grey[400],
-                    border: Border.all(
-                      color: isCompleted
-                          ? AppColors.successColor
-                          : Colors.grey[400]!,
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    isCompleted ? Icons.check : Icons.close,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                ),
-
-                // Connecting line
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.only(top: 4),
-                      color: Colors.grey[300],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
           // Content
           Expanded(
             child: Padding(
