@@ -1,4 +1,5 @@
 import 'package:midi_location/core/utils/auth_secure.dart';
+import 'package:midi_location/core/utils/biometric_auth.dart';
 
 import '../../data/datasource/auth_remote_datasource.dart';
 import '../../domain/entities/user.dart' as app;
@@ -41,12 +42,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signOut() async {
+    await BiometricAuth.disableBiometric();
+    await SecureAuth.clearSavedCredentials();
     await _dataSource.signOut();
     try {
       await SecureAuth.clearSavedCredentials();
     } catch (_) {}
   }
-  
+
   @override
   Future<bool> isUserAuthorized(String userId) async {
     try {
