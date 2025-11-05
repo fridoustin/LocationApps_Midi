@@ -16,8 +16,9 @@ class SummaryGridSection extends ConsumerWidget {
       data: (stats) {
         final String totalUlok = stats.totalUlok.toString();
         final String totalKPLT = stats.totalKplt.toString();
-        const String tugasAktif = "0";
-        const String perpanjangan = "0";
+        final String totalTugas = stats.totalTugas.toString();
+        final String totalGo = stats.totalGo.toString();
+
 
         return GridView.count(
           crossAxisCount: 2,
@@ -31,25 +32,25 @@ class SummaryGridSection extends ConsumerWidget {
               title: 'Total Ulok',
               count: totalUlok,
               iconPath: 'assets/icons/loc.svg',
-              backgroundColor: AppColors.cardBlue,
+              backgroundColor: AppColors.primaryColor,
             ),
             SummaryCard(
               title: 'Total KPLT',
               count: totalKPLT,
               iconPath: 'assets/icons/kplt.svg',
-              backgroundColor: AppColors.successColor,
+              backgroundColor: AppColors.orange,
             ),
             SummaryCard(
-              title: 'Tugas Aktif',
-              count: tugasAktif,
+              title: 'Total Tugas',
+              count: totalTugas,
               iconPath: 'assets/icons/penugasan.svg',
-              backgroundColor: AppColors.primaryColor,
+              backgroundColor: AppColors.cardBlue,
             ),
             SummaryCard(
-              title: 'Perpanjangan',
-              count: perpanjangan,
-              iconPath: 'assets/icons/perpanjangan.svg',
-              backgroundColor: AppColors.warningColor,
+              title: 'Total GO',
+              count: totalGo,
+              iconPath: 'assets/icons/ok.svg',
+              backgroundColor: AppColors.successColor,
             ),
           ],
         );

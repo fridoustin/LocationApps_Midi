@@ -69,7 +69,7 @@ class TaskListSection extends ConsumerWidget {
                         'Lihat Semua',
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.secondaryColor,
+                          color: AppColors.primaryColor,
                           fontWeight: FontWeight.w500,
                         ),
                       ),

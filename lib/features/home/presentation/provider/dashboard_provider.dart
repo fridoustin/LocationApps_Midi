@@ -1,5 +1,3 @@
-// lib/features/home/presentation/provider/dashboard_provider.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:midi_location/features/home/data/datasources/dashboard_remote_datasource.dart';
@@ -7,7 +5,7 @@ import 'package:midi_location/features/home/data/repositories/dashboard_reposito
 import 'package:midi_location/features/home/domain/entities/dashboard.dart';
 import 'package:midi_location/features/home/domain/repositories/dashboard_repository.dart';
 
-enum DashboardView { ulok, kplt }
+enum DashboardView { ulok, kplt } 
 
 final dashboardRemoteDataSourceProvider = Provider<DashboardRemoteDataSource>((
   ref,
@@ -52,14 +50,24 @@ final filteredDashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((
       }
 
       final monthIndex = monthToFilter - 1;
-      if (monthIndex >= 0 && monthIndex < stats.monthlyUlokData.length) {
+
+      if (monthIndex >= 0 &&
+          monthIndex < stats.monthlyUlokData.length &&
+          monthIndex < stats.monthlyKpltData.length &&
+          monthIndex < stats.monthlyTugasData.length && 
+          monthIndex < stats.monthlyGoData.length) {   
+        
         final ulokDataForMonth = stats.monthlyUlokData[monthIndex];
         final kpltDataForMonth = stats.monthlyKpltData[monthIndex];
+        final tugasDataForMonth = stats.monthlyTugasData[monthIndex]; 
+        final goDataForMonth = stats.monthlyGoData[monthIndex];       
 
         return AsyncValue.data(
           DashboardStats(
             totalUlok: ulokDataForMonth.total,
             totalKplt: kpltDataForMonth.total,
+            totalTugas: tugasDataForMonth.total, 
+            totalGo: goDataForMonth.total,     
             ulokStatusCounts: {
               'OK': ulokDataForMonth.ok,
               'NOK': ulokDataForMonth.nok,
@@ -70,8 +78,21 @@ final filteredDashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((
               'NOK': kpltDataForMonth.total - kpltDataForMonth.approved,
               'In Progress': 0,
             },
+            tugasStatusCounts: {
+              'OK': tugasDataForMonth.ok,
+              'NOK': tugasDataForMonth.nok,
+              'In Progress': tugasDataForMonth.inProgress,
+            },
+            goStatusCounts: {
+              'OK': goDataForMonth.ok,
+              'NOK': goDataForMonth.nok,
+              'In Progress': goDataForMonth.inProgress,
+            },
+
             monthlyUlokData: stats.monthlyUlokData,
             monthlyKpltData: stats.monthlyKpltData,
+            monthlyTugasData: stats.monthlyTugasData,
+            monthlyGoData: stats.monthlyGoData,
           ),
         );
       }

@@ -1,10 +1,16 @@
 class DashboardStats {
   final int totalUlok;
   final int totalKplt;
+  final int totalTugas;
+  final int totalGo;
   final Map<String, int> ulokStatusCounts;
   final Map<String, int> kpltStatusCounts;
+  final Map<String, int> tugasStatusCounts;
+  final Map<String, int> goStatusCounts;
   final List<MonthlyData> monthlyUlokData;
   final List<MonthlyData> monthlyKpltData;
+  final List<MonthlyData> monthlyTugasData;
+  final List<MonthlyData> monthlyGoData;
 
   DashboardStats({
     required this.totalUlok,
@@ -13,6 +19,12 @@ class DashboardStats {
     required this.kpltStatusCounts,
     required this.monthlyUlokData,
     required this.monthlyKpltData,
+    required this.totalTugas,
+    required this.totalGo,
+    required this.tugasStatusCounts,
+    required this.goStatusCounts,
+    required this.monthlyTugasData,
+    required this.monthlyGoData,
   });
 }
 
