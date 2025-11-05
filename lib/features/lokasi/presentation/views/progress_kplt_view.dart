@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/progress_kplt_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/progress_kplt_filter_dialog.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/progress_kplt_card.dart';
@@ -222,7 +223,14 @@ class _ProgressKpltViewState extends ConsumerState<ProgressKpltView>
               return ProgressKpltCard(
                 progress: progress,
                 onTap: () {
-                  // Navigate to detail page if needed
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProgressKpltDetailPage(
+                        progress: progress,
+                      ),
+                    ),
+                  );
                 },
               );
             },
@@ -269,7 +277,14 @@ class _ProgressKpltViewState extends ConsumerState<ProgressKpltView>
               return ProgressKpltCard(
                 progress: progress,
                 onTap: () {
-                  // Navigate to detail page if needed
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProgressKpltDetailPage(
+                        progress: progress,
+                      ),
+                    ),
+                  );
                 },
               );
             },

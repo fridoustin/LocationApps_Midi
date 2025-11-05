@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/progress_kplt_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 
 class ProgressKpltCard extends ConsumerStatefulWidget {
@@ -80,7 +81,18 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
       child: Column(
         children: [
           InkWell(
-            onTap: widget.onTap,
+            onTap: () {
+              if (widget.onTap != null) {
+                widget.onTap!();
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProgressKpltDetailPage(progress: widget.progress),
+                  ),
+                );
+              }
+            },
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -458,6 +470,12 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
                   if (isCompleted && completedAt != null)
                     Row(
                       children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 16,
+                          color: AppColors.successColor,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
                           'Selesai: ${DateFormat('dd MMM yyyy, HH:mm').format(completedAt.toLocal())}',
                           style: TextStyle(
