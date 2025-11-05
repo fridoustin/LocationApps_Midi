@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/utils/show_error_dialog.dart';
+import 'package:midi_location/core/utils/auth_secure.dart';
 import 'package:midi_location/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 
@@ -17,6 +19,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _rememberMe = false;
 
   Future<void> _login() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -33,12 +36,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     });
 
     try {
+      // gunakan repository sign in (sudah ada di project)
       await ref
           .read(authRepositoryProvider)
           .signInWithEmailPassword(
             _emailController.text.trim(),
             _passwordController.text.trim(),
           );
+
+      // Setelah repository selesai, periksa apakah session berhasil (beberapa impl menyimpan session di client)
+      final supabase = ref.read(supabaseClientProvider);
+      final session = supabase.auth.currentSession;
+
+      if (session != null) {
+        // jika login sukses dan user pilih remember -> simpan credensial
+        if (_rememberMe) {
+          await SecureAuth.saveCredentials(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+        } else {
+          await SecureAuth.clearSavedCredentials();
+        }
+
+        // navigasi / biarkan authStateProvider memancarkan user, biasanya AuthGate akan menangani redirect
+        // kalau butuh langsung navigasi:
+        // Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      } else {
+        // kalau session null -> anggap login gagal
+        showErrorDialog(context, 'Gagal masuk: sesi tidak tersedia', title: 'Login Gagal');
+      }
     } catch (e) {
       if (mounted) {
         final errorMessage = e.toString().replaceAll("Exception: ", "");
@@ -205,29 +232,61 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                               ),
 
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                              Padding(
+                              padding: const EdgeInsets.only(left: 4.0, right: 4.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
+                                  Row(
+                                    children: [
+                                      Transform.translate(
+                                        offset: const Offset(-12, 0), 
+                                        child: Checkbox(
+                                          visualDensity: VisualDensity.compact,
+                                          checkColor: AppColors.white,
+                                          activeColor: AppColors.primaryColor,
+                                          value: _rememberMe,
+                                          onChanged: (v) {
+                                            setState(() {
+                                              _rememberMe = v ?? false;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      Transform.translate(
+                                        offset: const Offset(-12, 0), 
+                                        child: const Text(
+                                        'Remember me',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      ),
+                                    ],
+                                  ),
                                   TextButton(
-                                    onPressed:
-                                        _isLoading
-                                            ? null
-                                            : () {
-                                              Navigator.pushNamed(
-                                                context,
-                                                ForgotPasswordPage.route,
-                                              );
-                                            },
+                                    onPressed: _isLoading
+                                        ? null
+                                        : () {
+                                            Navigator.pushNamed(context, ForgotPasswordPage.route);
+                                          },
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(0, 0),
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
                                     child: const Text(
                                       'Lupa Password?',
                                       style: TextStyle(
                                         color: Color(0xFFD32F2F),
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
+                            ),
 
                               const SizedBox(height: 10),
 
