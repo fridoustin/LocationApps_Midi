@@ -15,8 +15,7 @@ class AssignmentRemoteDataSource {
     final response = await _supabase
         .from('activity_templates')
         .select()
-        .eq('is_active', true)
-        .order('display_order');
+        .eq('is_active', true);
 
     return (response as List)
         .map((json) => ActivityTemplate.fromMap(json))
