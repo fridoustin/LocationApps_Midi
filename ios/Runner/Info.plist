@@ -66,5 +66,7 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSFaceIDUsageDescription</key>
+		<string>Use Face ID to quickly sign in to the app</string>
 	</dict>
 </plist>
