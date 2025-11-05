@@ -2,8 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 
@@ -27,11 +29,17 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     final completionAsync = ref.watch(completionStatusProvider(widget.progress.id));
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Detail Progress KPLT'),
-        backgroundColor: AppColors.primaryColor,
-        foregroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundColor,
+      appBar: CustomTopBar.general(
+        title:'Detail Progress KPLT',
+        showNotificationButton: false,
+        leadingWidget: IconButton(
+          icon: SvgPicture.asset(
+            "assets/icons/left_arrow.svg",
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: completionAsync.when(
         data: (completionData) {
