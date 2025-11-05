@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/routes/route.dart';
 import 'package:midi_location/core/services/notification_service.dart';
+import 'package:midi_location/core/utils/auth_helpers.dart';
 import 'package:midi_location/features/auth/presentation/pages/login_screen.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
@@ -106,16 +107,23 @@ class _MyAppState extends ConsumerState<MyApp> {
         if (_isHandlingAuthChange) return;
         _isHandlingAuthChange = true;
         try {
-          final session = supabase.auth.currentSession;
-          if (session != null) {
-            try {
-              await supabase.auth.signOut();
-            } catch (_) {}
+          final restored = await tryRestoreSession();
+          if (!restored) {
+            // kalau gagal restore, navigasi ke login
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              LoginPage.route,
+              (route) => false,
+            );
+          } else {
+            // berhasil restore -> invalidasi provider agar data fresh
+            final container = ProviderScope.containerOf(
+              navigatorKey.currentContext!,
+              listen: false,
+            );
+            container.invalidate(userProfileProvider);
+            container.invalidate(dashboardStatsProvider);
+            // tetap di aplikasi
           }
-          navigatorKey.currentState?.pushNamedAndRemoveUntil(
-            LoginPage.route,
-            (route) => false,
-          );
         } finally {
           Future.microtask(() => _isHandlingAuthChange = false);
         }
