@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/services/notification_service.dart';
 import 'package:midi_location/core/utils/auth_secure.dart';
+import 'package:midi_location/core/utils/biometric_auth.dart';
 import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:midi_location/features/auth/presentation/pages/login_screen.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
@@ -32,14 +33,28 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   void initState() {
     super.initState();
 
-    // Auto-login from saved credentials once after first frame (non-blocking)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final client = ref.read(supabaseClientProvider);
       final session = client.auth.currentSession;
       if (session == null) {
+        final creds = await BiometricAuth.tryBiometricLogin();
+        if (creds != null) {
+          try {
+            final res = await client.auth.signInWithPassword(
+              email: creds['email']!,
+              password: creds['password']!,
+            );
+            final sess = res.session ?? client.auth.currentSession;
+            if (sess != null) {
+              ref.invalidate(userProfileProvider);
+              // done
+              return;
+            }
+          } catch (_) {}
+        }
+
         final auto = await SecureAuth.tryAutoLoginFromSavedCredentials();
         if (auto) {
-          // jika berhasil -> invalidate provider agar data terfetch ulang
           ref.invalidate(userProfileProvider);
           ref.invalidate(dashboardStatsProvider);
           ref.invalidate(ulokListProvider);
