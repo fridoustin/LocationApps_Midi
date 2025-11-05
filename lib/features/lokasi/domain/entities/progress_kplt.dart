@@ -59,6 +59,7 @@ class ProgressKplt {
   final String? kpltKecamatan;
   final String? kpltKabupaten;
   final String? kpltProvinsi;
+  final String? kpltKelurahan;
   final int? computedPercentage;
 
   ProgressKplt({
@@ -72,6 +73,7 @@ class ProgressKplt {
     this.kpltKecamatan,
     this.kpltKabupaten,
     this.kpltProvinsi,
+    this.kpltKelurahan,
     this.computedPercentage,
   });
 
@@ -93,6 +95,7 @@ class ProgressKplt {
       kpltKecamatan: kpltData?['kecamatan'] as String?,
       kpltKabupaten: kpltData?['kabupaten'] as String?,
       kpltProvinsi: kpltData?['provinsi'] as String?,
+      kpltKelurahan: kpltData?['desa_kelurahan'] as String?,
       computedPercentage: map['computed_percentage'] as int?,
     );
   }
@@ -118,6 +121,7 @@ class ProgressKplt {
     String? kpltKecamatan,
     String? kpltKabupaten,
     String? kpltProvinsi,
+    String? kpltKelurahan,
     int? computedPercentage,
   }) {
     return ProgressKplt(
@@ -131,6 +135,7 @@ class ProgressKplt {
       kpltKecamatan: kpltKecamatan ?? this.kpltKecamatan,
       kpltKabupaten: kpltKabupaten ?? this.kpltKabupaten,
       kpltProvinsi: kpltProvinsi ?? this.kpltProvinsi,
+      kpltKelurahan: kpltKelurahan ?? this.kpltKelurahan,
       computedPercentage: computedPercentage ?? this.computedPercentage,
     );
   }

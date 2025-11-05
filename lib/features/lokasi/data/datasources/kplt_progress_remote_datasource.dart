@@ -14,7 +14,7 @@ class KpltProgressRemoteDatasource {
       var request = client.from('progress_kplt').select('''
             *,
             kplt!inner (
-              id, nama_kplt, alamat, kecamatan, kabupaten, provinsi, pe_status, kplt_approval,
+              id, nama_kplt, alamat, kecamatan, kabupaten, desa_kelurahan, provinsi, pe_status, kplt_approval,
               ulok!inner ( users_id, nama_ulok )
             )
           ''')
@@ -56,7 +56,7 @@ class KpltProgressRemoteDatasource {
       var request = client.from('progress_kplt').select('''
             *,
             kplt!inner (
-              id, nama_kplt, alamat, kecamatan, kabupaten, provinsi, pe_status, kplt_approval,
+              id, nama_kplt, alamat, kecamatan, kabupaten, desa_kelurahan, provinsi, pe_status, kplt_approval,
               ulok!inner ( users_id, nama_ulok )
             )
           ''')
@@ -103,6 +103,7 @@ class KpltProgressRemoteDatasource {
               alamat,
               kecamatan,
               kabupaten,
+              desa_kelurahan,
               provinsi,
               status
             )
