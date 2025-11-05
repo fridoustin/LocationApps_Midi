@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/utils/show_error_dialog.dart';
 import 'package:midi_location/core/utils/auth_secure.dart';
+import 'package:midi_location/core/utils/biometric_auth.dart';
 import 'package:midi_location/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 
@@ -20,6 +21,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _rememberMe = false;
+  bool _enableBiometric = false;
+  bool _biometricAvailable = false;
+  bool _initializingBiometricState = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initBiometricState();
+    _loadSavedCredentialsIfAny();
+  }
+
+  Future<void> _initBiometricState() async {
+    final canBio = await BiometricAuth.canAuthenticateBiometrics();
+    final enabled = await BiometricAuth.isBiometricEnabled();
+    if (!mounted) return;
+    setState(() {
+      _biometricAvailable = canBio;
+      _enableBiometric = enabled;
+      _initializingBiometricState = false;
+    });
+  }
+
+  Future<void> _loadSavedCredentialsIfAny() async {
+    final creds = await SecureAuth.readCredentials();
+    if (!mounted) return;
+    if (creds != null) {
+      setState(() {
+        _emailController.text = creds['email'] ?? '';
+        _passwordController.text = creds['password'] ?? '';
+        _rememberMe = true;
+      });
+    }
+  }
 
   Future<void> _login() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -36,7 +70,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     });
 
     try {
-      // gunakan repository sign in (sudah ada di project)
       await ref
           .read(authRepositoryProvider)
           .signInWithEmailPassword(
@@ -44,12 +77,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             _passwordController.text.trim(),
           );
 
-      // Setelah repository selesai, periksa apakah session berhasil (beberapa impl menyimpan session di client)
       final supabase = ref.read(supabaseClientProvider);
       final session = supabase.auth.currentSession;
 
       if (session != null) {
-        // jika login sukses dan user pilih remember -> simpan credensial
         if (_rememberMe) {
           await SecureAuth.saveCredentials(
             _emailController.text.trim(),
@@ -59,11 +90,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           await SecureAuth.clearSavedCredentials();
         }
 
-        // navigasi / biarkan authStateProvider memancarkan user, biasanya AuthGate akan menangani redirect
-        // kalau butuh langsung navigasi:
-        // Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        if (_enableBiometric && _biometricAvailable) {
+          await BiometricAuth.enableBiometric(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+          if (!_rememberMe) {
+            setState(() => _rememberMe = true);
+            await SecureAuth.saveCredentials(
+              _emailController.text.trim(),
+              _passwordController.text,
+            );
+          }
+        } else {
+          if (!_enableBiometric) {
+            await BiometricAuth.disableBiometric();
+          }
+        }
       } else {
-        // kalau session null -> anggap login gagal
         showErrorDialog(context, 'Gagal masuk: sesi tidak tersedia', title: 'Login Gagal');
       }
     } catch (e) {
@@ -78,6 +122,135 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         });
       }
     }
+  }
+
+  Widget _buildRememberAndForgotRow() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4.0, right: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Transform.translate(
+                offset: const Offset(-12, 0),
+                child: Checkbox(
+                  visualDensity: VisualDensity.compact,
+                  checkColor: AppColors.white,
+                  activeColor: AppColors.primaryColor,
+                  value: _rememberMe,
+                  onChanged: (v) {
+                    setState(() {
+                      _rememberMe = v ?? false;
+                      if (!_rememberMe && _enableBiometric) {
+                        _enableBiometric = false;
+                        BiometricAuth.disableBiometric();
+                      }
+                    });
+                  },
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(-12, 0),
+                child: const Text(
+                  'Remember me',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          TextButton(
+            onPressed: _isLoading
+                ? null
+                : () {
+                    Navigator.pushNamed(context, ForgotPasswordPage.route);
+                  },
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text(
+              'Lupa Password?',
+              style: TextStyle(
+                color: Color(0xFFD32F2F),
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBiometricToggle() {
+    if (_initializingBiometricState) {
+      return const SizedBox.shrink();
+    }
+
+    if (!_biometricAvailable) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 4.0, right: 4.0, top: 6.0),
+      child: Row(
+        children: [
+          Transform.translate(
+            offset: const Offset(-12, 0),
+            child: Checkbox(
+              visualDensity: VisualDensity.compact,
+              checkColor: AppColors.white,
+              activeColor: AppColors.primaryColor,
+              value: _enableBiometric,
+              onChanged: (v) async {
+                final enabled = v ?? false;
+                if (enabled && !_rememberMe) {
+                  setState(() {
+                    _rememberMe = true;
+                    _enableBiometric = true;
+                  });
+                  if (_emailController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
+                    await SecureAuth.saveCredentials(
+                      _emailController.text.trim(),
+                      _passwordController.text,
+                    );
+                    await BiometricAuth.enableBiometric(
+                      _emailController.text.trim(),
+                      _passwordController.text,
+                    );
+                  } else {
+                    setState(() {
+                      _enableBiometric = true;
+                    });
+                  }
+                } else {
+                  setState(() {
+                    _enableBiometric = enabled;
+                  });
+                  if (!enabled) {
+                    await BiometricAuth.disableBiometric();
+                  }
+                }
+              },
+            ),
+          ),
+          Transform.translate(
+            offset: const Offset(-12, 0),
+            child: const Text(
+              'Enable biometric login',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -112,9 +285,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             height: 1.5,
                           ),
                         ),
-
                         const SizedBox(height: 40),
-
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
@@ -134,9 +305,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 30),
-
                               const Text(
                                 'Email',
                                 style: TextStyle(
@@ -176,9 +345,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 20),
-
                               const Text(
                                 'Password',
                                 style: TextStyle(
@@ -214,9 +381,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
+                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
                                       color: Colors.grey[600],
                                     ),
                                     onPressed: () {
@@ -231,65 +396,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   ),
                                 ),
                               ),
-
-                              Padding(
-                              padding: const EdgeInsets.only(left: 4.0, right: 4.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Transform.translate(
-                                        offset: const Offset(-12, 0), 
-                                        child: Checkbox(
-                                          visualDensity: VisualDensity.compact,
-                                          checkColor: AppColors.white,
-                                          activeColor: AppColors.primaryColor,
-                                          value: _rememberMe,
-                                          onChanged: (v) {
-                                            setState(() {
-                                              _rememberMe = v ?? false;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Transform.translate(
-                                        offset: const Offset(-12, 0), 
-                                        child: const Text(
-                                        'Remember me',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      ),
-                                    ],
-                                  ),
-                                  TextButton(
-                                    onPressed: _isLoading
-                                        ? null
-                                        : () {
-                                            Navigator.pushNamed(context, ForgotPasswordPage.route);
-                                          },
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: const Size(0, 0),
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: const Text(
-                                      'Lupa Password?',
-                                      style: TextStyle(
-                                        color: Color(0xFFD32F2F),
-                                        fontSize: 14
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                              const SizedBox(height: 8),
+                              _buildRememberAndForgotRow(),
+                              _buildBiometricToggle(),
 
                               const SizedBox(height: 10),
-
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -305,23 +416,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     ),
                                     elevation: 0,
                                   ),
-                                  child:
-                                      _isLoading
-                                          ? const SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              color: Colors.white,
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                          : const Text(
-                                            'Log In',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
                                           ),
+                                        )
+                                      : const Text(
+                                          'Log In',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                 ),
                               ),
                             ],
@@ -333,7 +443,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
               ),
-
               const Padding(
                 padding: EdgeInsets.only(bottom: 8, top: 8),
                 child: Text(
