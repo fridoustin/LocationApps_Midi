@@ -1,3 +1,5 @@
+import 'package:midi_location/core/utils/auth_secure.dart';
+
 import '../../data/datasource/auth_remote_datasource.dart';
 import '../../domain/entities/user.dart' as app;
 import '../../domain/repositories/auth_repository.dart';
@@ -38,10 +40,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signOut() {
-    return _dataSource.signOut();
+  Future<void> signOut() async {
+    await _dataSource.signOut();
+    try {
+      await SecureAuth.clearSavedCredentials();
+    } catch (_) {}
   }
-
+  
   @override
   Future<bool> isUserAuthorized(String userId) async {
     try {
