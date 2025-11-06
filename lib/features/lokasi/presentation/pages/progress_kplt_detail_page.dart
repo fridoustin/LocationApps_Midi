@@ -25,6 +25,13 @@ class ProgressKpltDetailPage extends ConsumerStatefulWidget {
 class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage> {
   String? _selectedStep;
 
+  String _formatDateSafe(String? dateStr) {
+  if (dateStr == null) return '-';
+  final dt = DateTime.tryParse(dateStr);
+  if (dt == null) return '-';
+  return DateFormat('dd MMMM yyyy').format(dt.toLocal());
+}
+
   @override
   Widget build(BuildContext context) {
     final completionAsync = ref.watch(completionStatusProvider(widget.progress.id));
@@ -507,7 +514,8 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     final stepData = completionData[stepKey];
     final isCompleted = stepData?['completed'] == true;
     final isActive = _isActiveStep(stepKey);
-    final date = stepData?['date'] as String?;
+    final completedDate = stepData?['date'] as String?;
+    final createdDate = stepData?['created_date'] as String?;
 
     String title;
     String description;
@@ -677,7 +685,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
             ),
           ),
           
-          if (isCompleted && date != null) ...[
+          if (isCompleted && completedDate != null) ...[
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
@@ -691,13 +699,13 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                   _buildInfoRow(
                     icon: Icons.calendar_today,
                     label: 'Tanggal Mulai',
-                    value: DateFormat('dd MMMM yyyy').format(DateTime.parse(date).toLocal()),
+                    value: _formatDateSafe(createdDate),
                   ),
                   const SizedBox(height: 12),
                   _buildInfoRow(
                     icon: Icons.event_available,
                     label: 'Tanggal Selesai',
-                    value: DateFormat('dd MMMM yyyy').format(DateTime.parse(date).toLocal()),
+                    value: _formatDateSafe(completedDate),
                   ),
                 ],
               ),
