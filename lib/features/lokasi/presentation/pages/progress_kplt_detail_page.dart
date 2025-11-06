@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/mou_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 
 class ProgressKpltDetailPage extends ConsumerStatefulWidget {
@@ -481,8 +482,8 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                     height: 1.2,
                   ),
                 ),
-              )
-            )
+              ),
+            ),
           ],
         ),
       ),
@@ -701,6 +702,8 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            _buildViewDetailButton(context, stepKey),
           ] else if (isActive) ...[
             const SizedBox(height: 20),
             Container(
@@ -840,6 +843,71 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         return 'Belum Dimulai';
       default:
         return status;
+    }
+  }
+
+  Widget _buildViewDetailButton(BuildContext context, String stepKey) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => _navigateToStepDetail(context, stepKey),
+        icon: const Icon(Icons.visibility, size: 20),
+        label: const Text('Lihat Detail'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToStepDetail(BuildContext context, String stepKey) {
+    switch (stepKey) {
+      case 'mou':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MouDetailPage(
+              progressKpltId: widget.progress.id,
+              kpltName: widget.progress.kpltNama ?? 'KPLT',
+            ),
+          ),
+        );
+        break;
+      case 'izin_tetangga':
+        // TODO: Navigate to Izin Tetangga detail
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Halaman Izin Tetangga belum tersedia')),
+        );
+        break;
+      case 'perizinan':
+        // TODO: Navigate to Perizinan detail
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Halaman Perizinan belum tersedia')),
+        );
+        break;
+      case 'notaris':
+        // TODO: Navigate to Notaris detail
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Halaman Notaris belum tersedia')),
+        );
+        break;
+      case 'renovasi':
+        // TODO: Navigate to Renovasi detail
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Halaman Renovasi belum tersedia')),
+        );
+        break;
+      case 'grand_opening':
+        // TODO: Navigate to Grand Opening detail
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Halaman Grand Opening belum tersedia')),
+        );
+        break;
     }
   }
 }
