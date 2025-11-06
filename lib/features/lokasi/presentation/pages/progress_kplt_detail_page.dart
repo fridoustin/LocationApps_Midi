@@ -430,7 +430,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedStep = key;
+          _selectedStep = (_selectedStep == key) ? null : key;
         });
       },
       child: Container(
@@ -440,7 +440,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
           color: isSelected ? AppColors.primaryColor.withOpacity(0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: isSelected 
-              ? Border.all(color: AppColors.primaryColor, width: 2)
+              ? Border.all(color: AppColors.primaryColor, width: 1)
               : null,
         ),
         child: Column(
