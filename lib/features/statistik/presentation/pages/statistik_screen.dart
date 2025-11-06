@@ -8,6 +8,7 @@ import 'package:midi_location/features/statistik/presentation/providers/statisti
 import 'package:midi_location/features/statistik/presentation/widgets/achievement_card.dart';
 import 'package:midi_location/features/statistik/presentation/widgets/annual_ulok_chart.dart';
 import 'package:midi_location/features/statistik/presentation/widgets/assignment_card.dart';
+import 'package:midi_location/features/statistik/presentation/widgets/kplt_progress_summary_card.dart';
 import 'package:midi_location/features/statistik/presentation/widgets/statistic_skeleton.dart';
 import 'package:midi_location/features/statistik/presentation/widgets/summary_grid.dart';
 import 'package:midi_location/features/statistik/presentation/widgets/ulok_status_card.dart';
@@ -27,6 +28,8 @@ class StatistikScreen extends ConsumerWidget {
         return const StatisticsLoadingSkeleton();
       },
       error: (error, stackTrace) {
+        print('Error di StatistikScreen: $error');
+        print(stackTrace);
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -69,7 +72,8 @@ class _BuildStatisticsPage extends ConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        return ref.refresh(statisticProvider.future);
+        ref.invalidate(statisticProvider);
+        await ref.read(statisticProvider.future);
       },
       color: AppColors.primaryColor,
       child: SingleChildScrollView(
@@ -130,15 +134,17 @@ class _BuildStatisticsPage extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   SummaryGrid(data: data),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   AnnualUlokChart(data: data),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   UlokStatusCard(data: data),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  KpltProgressSummaryCard(data: data),
+                  const SizedBox(height: 16),
                   AssignmentCard(data: data),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   AchievementCard(data: data),
                 ],
               ),
