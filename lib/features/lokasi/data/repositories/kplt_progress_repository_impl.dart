@@ -1,6 +1,8 @@
+import 'package:midi_location/features/lokasi/domain/entities/izin_tetangga.dart';
 import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_remote_datasource.dart';
 import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
+import 'package:midi_location/features/lokasi/domain/entities/perizinan.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
 
@@ -48,6 +50,26 @@ class KpltProgressRepositoryImpl implements KpltProgressRepository {
     final map = await remoteDataSource.getMouData(progressKpltId);
     if (map == null) return null;
     return Mou.fromMap(map);
+  }
+
+  @override
+  Future<IzinTetangga?> getIzinTetanggaData(String progressKpltId) async {
+    final map = await remoteDataSource.getIzinTetanggaData(progressKpltId);
+    if (map == null) return null;
+    return IzinTetangga.fromMap(map);
+  }
+
+  @override
+  Future<Perizinan?> getPerizinanData(String progressKpltId) async {
+    final map = await remoteDataSource.getPerizinanData(progressKpltId);
+    if (map == null) return null;
+    return Perizinan.fromMap(map);
+  }
+
+  @override
+  Future<List<HistoryPerizinan>> getHistoryPerizinan(String perizinanId) async {
+    final data = await remoteDataSource.getHistoryPerizinan(perizinanId);
+    return data.map((map) => HistoryPerizinan.fromMap(map)).toList();
   }
 }
 

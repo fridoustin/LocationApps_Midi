@@ -247,4 +247,56 @@ class KpltProgressRemoteDatasource {
       return null;
     }
   }
+
+  /// Get Izin Tetangga data by progress_kplt_id
+  Future<Map<String, dynamic>?> getIzinTetanggaData(String progressKpltId) async {
+    try {
+      final response = await client
+          .from('izin_tetangga')
+          .select('*')
+          .eq('progress_kplt_id', progressKpltId)
+          .maybeSingle();
+
+      debugPrint('✅ Izin Tetangga data fetched for progress: $progressKpltId');
+      return response != null ? Map<String, dynamic>.from(response) : null;
+    } catch (e) {
+      debugPrint('❌ getIzinTetanggaData error: $e');
+      return null;
+    }
+  }
+
+  /// Get Perizinan data by progress_kplt_id
+  Future<Map<String, dynamic>?> getPerizinanData(String progressKpltId) async {
+    try {
+      final response = await client
+          .from('perizinan')
+          .select('*')
+          .eq('progress_kplt_id', progressKpltId)
+          .maybeSingle();
+
+      debugPrint('✅ Perizinan data fetched for progress: $progressKpltId');
+      return response != null ? Map<String, dynamic>.from(response) : null;
+    } catch (e) {
+      debugPrint('❌ getPerizinanData error: $e');
+      return null;
+    }
+  }
+
+  /// Get History Perizinan by perizinan_id
+  Future<List<Map<String, dynamic>>> getHistoryPerizinan(String perizinanId) async {
+    try {
+      final response = await client
+          .from('history_perizinan')
+          .select('*')
+          .eq('perizinan_id', perizinanId)
+          .order('created_at', ascending: false);
+
+      final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      debugPrint('✅ Found ${data.length} history for perizinan: $perizinanId');
+      return data;
+    } catch (e) {
+      debugPrint('❌ getHistoryPerizinan error: $e');
+      return [];
+    }
+  }
 }
