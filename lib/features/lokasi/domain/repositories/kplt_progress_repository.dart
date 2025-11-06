@@ -1,5 +1,7 @@
+import 'package:midi_location/features/lokasi/domain/entities/izin_tetangga.dart';
 import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
+import 'package:midi_location/features/lokasi/domain/entities/perizinan.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 
 abstract class KpltProgressRepository {
@@ -10,5 +12,8 @@ abstract class KpltProgressRepository {
   Future<void> updateStatus(String progressId, String status);
   Future<Map<String, dynamic>> getCompletionStatus(String progressId);
   Future<Mou?> getMouData(String progressKpltId);
+  Future<IzinTetangga?> getIzinTetanggaData(String progressKpltId);
+  Future<Perizinan?> getPerizinanData(String progressKpltId);
+  Future<List<HistoryPerizinan>> getHistoryPerizinan(String perizinanId);
 }
 
