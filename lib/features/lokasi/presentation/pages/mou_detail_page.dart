@@ -149,10 +149,6 @@ class MouDetailPage extends ConsumerWidget {
           _buildHeaderCard(mou),
           const SizedBox(height: 16),
 
-          // Status Card
-          _buildStatusCard(mou),
-          const SizedBox(height: 16),
-
           // Informasi Pemilik
           _buildSectionCard(
             title: 'Informasi Pemilik',
@@ -280,8 +276,8 @@ class MouDetailPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'MOU',
+                Text(
+                  kpltName,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -290,7 +286,7 @@ class MouDetailPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  kpltName,
+                  'MOU',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey[600],
@@ -299,6 +295,7 @@ class MouDetailPage extends ConsumerWidget {
               ],
             ),
           ),
+          _buildStatusCard(mou)
         ],
       ),
     );
@@ -311,7 +308,7 @@ class MouDetailPage extends ConsumerWidget {
     final statusIcon = isCompleted ? Icons.check_circle : Icons.pending;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -327,29 +324,15 @@ class MouDetailPage extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Icon(statusIcon, color: statusColor, size: 24),
+          Icon(statusIcon, color: statusColor, size: 18),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Status MOU',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                statusText,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: statusColor,
-                ),
-              ),
-            ],
+          Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: statusColor,
+            ),
           ),
         ],
       ),
@@ -391,7 +374,9 @@ class MouDetailPage extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          const Divider(thickness: 1, height: 1),
+          const SizedBox(height: 8),
           ...children,
         ],
       ),
