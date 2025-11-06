@@ -230,4 +230,21 @@ class KpltProgressRemoteDatasource {
       return {};
     }
   }
+
+  /// Get MOU data by progress_kplt_id
+  Future<Map<String, dynamic>?> getMouData(String progressKpltId) async {
+    try {
+      final response = await client
+          .from('mou')
+          .select('*')
+          .eq('progress_kplt_id', progressKpltId)
+          .maybeSingle();
+
+      debugPrint('✅ MOU data fetched for progress: $progressKpltId');
+      return response != null ? Map<String, dynamic>.from(response) : null;
+    } catch (e) {
+      debugPrint('❌ getMouData error: $e');
+      return null;
+    }
+  }
 }

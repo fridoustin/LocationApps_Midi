@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_remote_datasource.dart';
 import 'package:midi_location/features/lokasi/data/repositories/kplt_progress_repository_impl.dart';
+import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
 import 'package:midi_location/features/lokasi/presentation/views/progress_kplt_view.dart';
@@ -71,5 +72,13 @@ final completionStatusProvider = FutureProvider.family.autoDispose<Map<String, d
   (ref, progressId) async {
     final repo = ref.watch(kpltProgressRepositoryProvider);
     return await repo.getCompletionStatus(progressId);
+  },
+);
+
+/// Provider untuk mendapatkan data MOU berdasarkan progress_kplt_id
+final mouDataProvider = FutureProvider.family.autoDispose<Mou?, String>(
+  (ref, progressKpltId) async {
+    final repo = ref.watch(kpltProgressRepositoryProvider);
+    return await repo.getMouData(progressKpltId);
   },
 );

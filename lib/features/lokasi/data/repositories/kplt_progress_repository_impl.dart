@@ -1,5 +1,6 @@
 import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_remote_datasource.dart';
+import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
 
@@ -40,6 +41,13 @@ class KpltProgressRepositoryImpl implements KpltProgressRepository {
   @override
   Future<Map<String, dynamic>> getCompletionStatus(String progressId) async {
     return await remoteDataSource.getCompletionStatus(progressId);
+  }
+
+  @override
+  Future<Mou?> getMouData(String progressKpltId) async {
+    final map = await remoteDataSource.getMouData(progressKpltId);
+    if (map == null) return null;
+    return Mou.fromMap(map);
   }
 }
 
