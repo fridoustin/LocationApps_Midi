@@ -31,7 +31,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: CustomTopBar.general(
-        title:'Detail Progress KPLT',
+        title: 'Detail Progress KPLT',
         showNotificationButton: false,
         leadingWidget: IconButton(
           icon: SvgPicture.asset(
@@ -44,18 +44,24 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
       body: completionAsync.when(
         data: (completionData) {
           return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Card - Dago Atas
+                // Header Card - Modern Style
                 _buildHeaderCard(),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // Timeline Progress KPLT
-                _buildTimelineSection(completionData),
+                // Location Info Card
+                _buildLocationCard(),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // Timeline Progress Card
+                _buildTimelineCard(completionData),
+
+                const SizedBox(height: 16),
 
                 // Detail Card - Show selected step or current active
                 _buildDetailCard(completionData),
@@ -67,17 +73,50 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-              const SizedBox(height: 16),
-              Text('Error: $err'),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(completionStatusProvider(widget.progress.id)),
-                child: const Text('Retry'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Gagal memuat data',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$err',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => ref.invalidate(completionStatusProvider(widget.progress.id)),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Coba Lagi'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -86,136 +125,226 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
 
   Widget _buildHeaderCard() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.progress.kpltNama ?? 'Nama KPLT',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.store,
+                  color: AppColors.primaryColor,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.progress.kpltNama ?? 'Nama KPLT',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(widget.progress.status.value).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _getStatusLabel(widget.progress.status.value),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: _getStatusColor(widget.progress.status.value),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SvgPicture.asset(
+                "assets/icons/location.svg",
+                width: 20,
+                height: 20,
+                colorFilter: ColorFilter.mode(AppColors.primaryColor, BlendMode.srcIn),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Lokasi KPLT',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow('Provinsi', widget.progress.kpltProvinsi ?? '-', 
-                        'Kabupaten/Kota', widget.progress.kpltKabupaten ?? '-'),
+          _buildLocationRow('Provinsi', widget.progress.kpltProvinsi ?? '-'),
           const SizedBox(height: 12),
-          _buildInfoRow('Kecamatan', widget.progress.kpltKecamatan ?? '-',
-                        'Kelurahan/Desa', widget.progress.kpltKelurahan ?? '-'),
+          _buildLocationRow('Kabupaten/Kota', widget.progress.kpltKabupaten ?? '-'),
           const SizedBox(height: 12),
-          _buildSingleInfoRow('Alamat', widget.progress.kpltAlamat ?? '-'),
+          _buildLocationRow('Kecamatan', widget.progress.kpltKecamatan ?? '-'),
+          const SizedBox(height: 12),
+          _buildLocationRow('Kelurahan/Desa', widget.progress.kpltKelurahan ?? '-'),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.place_outlined, size: 20, color: Colors.grey[600]),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Alamat Lengkap',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.progress.kpltAlamat ?? '-',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label1, String value1, String label2, String value2) {
+  Widget _buildLocationRow(String label, String value) {
     return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label1,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value1,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label2,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value2,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSingleInfoRow(String label, String value) {
-    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimelineSection(Map<String, dynamic> completionData) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Timeline Progress KPLT',
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const Text(
+          ': ',
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.black54,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 24),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineCard(Map<String, dynamic> completionData) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.timeline, color: AppColors.primaryColor, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Timeline Progress',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
           _buildHorizontalTimeline(completionData),
         ],
       ),
@@ -224,12 +353,12 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
 
   Widget _buildHorizontalTimeline(Map<String, dynamic> completionData) {
     final steps = [
-      {'key': 'mou', 'label': 'MOU'},
-      {'key': 'izin_tetangga', 'label': 'Ijin\nTetangga'},
-      {'key': 'perizinan', 'label': 'Perizinan'},
-      {'key': 'notaris', 'label': 'Notaris'},
-      {'key': 'renovasi', 'label': 'Renovasi'},
-      {'key': 'grand_opening', 'label': 'Grand\nOpening'},
+      {'key': 'mou', 'label': 'MOU', 'icon': Icons.handshake},
+      {'key': 'izin_tetangga', 'label': 'Izin\nTetangga', 'icon': Icons.people},
+      {'key': 'perizinan', 'label': 'Perizinan', 'icon': Icons.description},
+      {'key': 'notaris', 'label': 'Notaris', 'icon': Icons.account_balance},
+      {'key': 'renovasi', 'label': 'Renovasi', 'icon': Icons.construction},
+      {'key': 'grand_opening', 'label': 'Grand\nOpening', 'icon': Icons.celebration},
     ];
 
     return SingleChildScrollView(
@@ -237,23 +366,38 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
       child: Row(
         children: List.generate(steps.length, (index) {
           final step = steps[index];
-          final isCompleted = completionData[step['key']]?['completed'] == true;
+          final stepKey = step['key'] as String;
+          final stepLabel = step['label'] as String;
+          final stepIcon = step['icon'] as IconData;
+          final isCompleted = completionData[stepKey]?['completed'] == true;
           final isLast = index == steps.length - 1;
-          final isSelected = _selectedStep == step['key'];
+          final isSelected = _selectedStep == stepKey;
 
           return Row(
             children: [
               _buildTimelineNode(
-                step['label']!,
-                step['key']!,
+                stepLabel,
+                stepKey,
+                stepIcon,
                 isCompleted,
                 isSelected,
               ),
               if (!isLast)
                 Container(
-                  width: 60,
+                  width: 50,
                   height: 3,
-                  color: isCompleted ? AppColors.successColor : Colors.grey[300],
+                  margin: const EdgeInsets.only(bottom: 45),
+                  decoration: BoxDecoration(
+                    gradient: isCompleted
+                        ? LinearGradient(
+                            colors: [
+                              AppColors.successColor,
+                              AppColors.successColor.withOpacity(0.7),
+                            ],
+                          )
+                        : null,
+                    color: isCompleted ? null : Colors.grey[300],
+                  ),
                 ),
             ],
           );
@@ -262,18 +406,25 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     );
   }
 
-  Widget _buildTimelineNode(String label, String key, bool isCompleted, bool isSelected) {
-    Color color;
-    IconData icon;
+  Widget _buildTimelineNode(String label, String key, IconData iconData, bool isCompleted, bool isSelected) {
+    final isActive = _isActiveStep(key);
+    
+    Color backgroundColor;
+    Color iconColor;
+    IconData displayIcon;
 
     if (isCompleted) {
-      color = AppColors.successColor;
-      icon = Icons.check_circle;
+      backgroundColor = AppColors.successColor;
+      iconColor = Colors.white;
+      displayIcon = Icons.check_circle;
+    } else if (isActive) {
+      backgroundColor = Colors.orange;
+      iconColor = Colors.white;
+      displayIcon = Icons.pending;
     } else {
-      // Check if this is the current active step
-      final isActive = _isActiveStep(key);
-      color = isActive ? Colors.orange : Colors.grey[300]!;
-      icon = isActive ? Icons.pending : Icons.more_horiz;
+      backgroundColor = Colors.grey[300]!;
+      iconColor = Colors.grey[600]!;
+      displayIcon = iconData;
     }
 
     return GestureDetector(
@@ -283,24 +434,34 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         });
       },
       child: Container(
-        width: 80,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        width: 90,
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          border: isSelected ? Border.all(color: AppColors.primaryColor, width: 2) : null,
+          color: isSelected ? AppColors.primaryColor.withOpacity(0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
+          border: isSelected 
+              ? Border.all(color: AppColors.primaryColor, width: 2)
+              : null,
         ),
         child: Column(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color,
+                color: backgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: backgroundColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Icon(
-                icon,
-                color: Colors.white,
+                displayIcon,
+                color: iconColor,
                 size: 28,
               ),
             ),
@@ -310,8 +471,8 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: Colors.black87,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? AppColors.primaryColor : Colors.black87,
                 height: 1.2,
               ),
             ),
@@ -322,7 +483,6 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
   }
 
   bool _isActiveStep(String key) {
-    // Logic untuk determine active step based on current progress status
     final currentStatus = widget.progress.status.value;
     
     if (currentStatus == 'not_started') return key == 'mou';
@@ -341,31 +501,47 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     final date = stepData?['date'] as String?;
 
     String title;
+    String description;
+    IconData stepIcon;
+    
     switch (stepKey) {
       case 'mou':
         title = 'MOU';
+        description = 'Tahap pembuatan dan penandatanganan kesepakatan awal';
+        stepIcon = Icons.handshake;
         break;
       case 'izin_tetangga':
-        title = 'Ijin Tetangga';
+        title = 'Izin Tetangga';
+        description = 'Proses mendapatkan persetujuan dari tetangga sekitar';
+        stepIcon = Icons.people;
         break;
       case 'perizinan':
         title = 'Perizinan';
+        description = 'Pengurusan dokumen dan izin resmi dari instansi terkait';
+        stepIcon = Icons.description;
         break;
       case 'notaris':
         title = 'Notaris';
+        description = 'Proses legalisasi dokumen melalui notaris';
+        stepIcon = Icons.account_balance;
         break;
       case 'renovasi':
         title = 'Renovasi';
+        description = 'Tahap perbaikan dan penataan lokasi';
+        stepIcon = Icons.construction;
         break;
       case 'grand_opening':
         title = 'Grand Opening';
+        description = 'Peresmian dan pembukaan lokasi';
+        stepIcon = Icons.celebration;
         break;
       default:
         title = 'Progress';
+        description = 'Detail tahapan progress';
+        stepIcon = Icons.info;
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -374,65 +550,147 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Status
           Row(
             children: [
-              Text(
-                'Status: ',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isCompleted 
-                      ? AppColors.successColor.withOpacity(0.1)
-                      : Colors.orange.withOpacity(0.1),
+                      ? AppColors.successColor.withOpacity(0.15)
+                      : Colors.orange.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  isCompleted ? 'Done' : 'In Progress',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: isCompleted ? AppColors.successColor : Colors.orange,
-                  ),
+                child: Icon(
+                  stepIcon,
+                  color: isCompleted ? AppColors.successColor : Colors.orange,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           
+          const SizedBox(height: 20),
+          const Divider(height: 1),
+          const SizedBox(height: 20),
+          
+          // Status Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isCompleted 
+                    ? [AppColors.successColor.withOpacity(0.1), AppColors.successColor.withOpacity(0.05)]
+                    : [Colors.orange.withOpacity(0.1), Colors.orange.withOpacity(0.05)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isCompleted 
+                    ? AppColors.successColor.withOpacity(0.3)
+                    : Colors.orange.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isCompleted ? Icons.check_circle : Icons.schedule,
+                  size: 20,
+                  color: isCompleted ? AppColors.successColor : Colors.orange,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isCompleted ? 'Selesai' : 'Dalam Pengerjaan',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isCompleted ? AppColors.successColor : Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
           if (isCompleted && date != null) ...[
-            const SizedBox(height: 12),
-            _buildDateRow('Mulai', date),
-            const SizedBox(height: 8),
-            _buildDateRow('Selesai', date),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                children: [
+                  _buildInfoRow(
+                    icon: Icons.calendar_today,
+                    label: 'Tanggal Mulai',
+                    value: DateFormat('dd MMMM yyyy').format(DateTime.parse(date).toLocal()),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    icon: Icons.event_available,
+                    label: 'Tanggal Selesai',
+                    value: DateFormat('dd MMMM yyyy').format(DateTime.parse(date).toLocal()),
+                  ),
+                ],
+              ),
+            ),
           ] else ...[
-            const SizedBox(height: 12),
-            Text(
-              'Proses ini sedang dalam pengerjaan',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Tahapan ini sedang dalam proses pengerjaan',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange[900],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -441,25 +699,33 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     );
   }
 
-  Widget _buildDateRow(String label, String dateString) {
-    final date = DateTime.parse(dateString);
-    final formatted = DateFormat('dd MMMM yyyy').format(date.toLocal());
-    
+  Widget _buildInfoRow({required IconData icon, required String label, required String value}) {
     return Row(
       children: [
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
-        Text(
-          label = 'Mulai $formatted',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+        Icon(icon, size: 18, color: Colors.grey[600]),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -474,5 +740,46 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     if (status == 'renovasi') return 'renovasi';
     if (status == 'grand_opening') return 'grand_opening';
     return 'mou';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'grand_opening':
+        return AppColors.successColor;
+      case 'in_progress':
+      case 'mou':
+      case 'perizinan':
+      case 'notaris':
+      case 'renovasi':
+        return Colors.orange;
+      case 'not_started':
+        return Colors.grey;
+      default:
+        return AppColors.primaryColor;
+    }
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'done':
+        return 'Selesai';
+      case 'in_progress':
+        return 'Dalam Progress';
+      case 'mou':
+        return 'Tahap MOU';
+      case 'perizinan':
+        return 'Tahap Perizinan';
+      case 'notaris':
+        return 'Tahap Notaris';
+      case 'renovasi':
+        return 'Tahap Renovasi';
+      case 'grand_opening':
+        return 'Grand Opening';
+      case 'not_started':
+        return 'Belum Dimulai';
+      default:
+        return status;
+    }
   }
 }
