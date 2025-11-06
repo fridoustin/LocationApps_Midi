@@ -21,8 +21,16 @@ class StatisticData {
   final int statusKpltApproved;
   final int statusKpltInprogress;
   final int statusKpltRejected;
+  final int statusKpltWaitingForum;
   final int penugasanSelesai;
   final int penugasanBerjalan;
+  final int progressNotStarted;
+  final int progressMou;
+  final int progressIzinTetangga;
+  final int progressPerizinan;
+  final int progressNotaris;
+  final int progressRenovasi;
+  final int progressGrandOpening;
 
   StatisticData({
     required this.performaApproved,
@@ -45,8 +53,16 @@ class StatisticData {
     required this.statusKpltApproved,
     required this.statusKpltInprogress,
     required this.statusKpltRejected,
+    required this.statusKpltWaitingForum,
     required this.penugasanSelesai,
     required this.penugasanBerjalan,
+    required this.progressNotStarted,
+    required this.progressMou,
+    required this.progressIzinTetangga,
+    required this.progressPerizinan,
+    required this.progressNotaris,
+    required this.progressRenovasi,
+    required this.progressGrandOpening,
   });
 
   factory StatisticData.fromJson(Map<String, dynamic> json) {
@@ -85,8 +101,16 @@ class StatisticData {
       statusKpltApproved: json['status_kplt_approved'] ?? 0,
       statusKpltInprogress: json['status_kplt_inprogress'] ?? 0,
       statusKpltRejected: json['status_kplt_rejected'] ?? 0,
+      statusKpltWaitingForum: json['status_kplt_waiting_forum'] ?? 0,
       penugasanSelesai: json['penugasan_selesai'] ?? 0,
       penugasanBerjalan: json['penugasan_berjalan'] ?? 0,
+      progressNotStarted: json['progress_not_started'] ?? 0,
+      progressMou: json['progress_mou'] ?? 0,
+      progressIzinTetangga: json['progress_izin_tetangga'] ?? 0,
+      progressPerizinan: json['progress_perizinan'] ?? 0,
+      progressNotaris: json['progress_notaris'] ?? 0,
+      progressRenovasi: json['progress_renovasi'] ?? 0,
+      progressGrandOpening: json['progress_grand_opening'] ?? 0,
     );
   }
 }
@@ -97,6 +121,7 @@ class AnnualChartData {
   final int totalApproved;
   final int totalRejected;
   final int totalInprogress;
+  final int totalWaitingForum;
 
   AnnualChartData({
     required this.month,
@@ -104,6 +129,7 @@ class AnnualChartData {
     required this.totalApproved,
     required this.totalRejected,
     required this.totalInprogress,
+    required this.totalWaitingForum,
   });
 
   factory AnnualChartData.fromJson(Map<String, dynamic> json) {
@@ -113,6 +139,7 @@ class AnnualChartData {
       totalApproved: json['total_approved'] ?? 0,
       totalRejected: json['total_rejected'] ?? 0,
       totalInprogress: json['total_inprogress'] ?? 0,
+      totalWaitingForum: json['total_waiting_forum'] ?? 0,
     );
   }
 }

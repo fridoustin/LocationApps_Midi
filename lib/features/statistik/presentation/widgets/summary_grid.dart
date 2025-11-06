@@ -34,47 +34,50 @@ class SummaryGrid extends StatelessWidget {
       data.ringkasanTugasSelesaiVsLastMonth,
     );
 
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.7,
-      children: [
-        _RingkasanCard(
-          title: 'ULOK Diajukan',
-          count: data.ringkasanUlokDiajukan.toString(),
-          iconPath: 'assets/icons/loc.svg',
-          backgroundColor: AppColors.cardBlue,
-          percentage: ulokDiajukanPerc,
-          lastMonthValue: data.ringkasanUlokDiajukanVsLastMonth,
-        ),
-        _RingkasanCard(
-          title: 'ULOK Approved',
-          count: data.ringkasanUlokApproved.toString(),
-          iconPath: 'assets/icons/loc.svg',
-          backgroundColor: AppColors.successColor,
-          percentage: ulokApprovedPerc,
-          lastMonthValue: data.ringkasanUlokApprovedVsLastMonth,
-        ),
-        _RingkasanCard(
-          title: 'KPLT Aktif',
-          count: data.ringkasanKpltAktif.toString(),
-          iconPath: 'assets/icons/kplt.svg',
-          backgroundColor: AppColors.cardOrange,
-          percentage: kpltAktifPerc,
-          lastMonthValue: data.ringkasanKpltAktifVsLastMonth,
-        ),
-        _RingkasanCard(
-          title: 'Tugas Selesai',
-          count: data.ringkasanTugasSelesai.toString(),
-          iconPath: 'assets/icons/penugasan.svg',
-          backgroundColor: AppColors.primaryColor,
-          percentage: tugasSelesaiPerc,
-          lastMonthValue: data.ringkasanTugasSelesaiVsLastMonth,
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: GridView.count(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        childAspectRatio: 1.6,
+        children: [
+          _RingkasanCard(
+            title: 'ULOK Diajukan',
+            count: data.ringkasanUlokDiajukan.toString(),
+            iconPath: 'assets/icons/loc.svg',
+            backgroundColor: AppColors.cardBlue,
+            percentage: ulokDiajukanPerc,
+            lastMonthValue: data.ringkasanUlokDiajukanVsLastMonth,
+          ),
+          _RingkasanCard(
+            title: 'ULOK Approved',
+            count: data.ringkasanUlokApproved.toString(),
+            iconPath: 'assets/icons/loc.svg',
+            backgroundColor: AppColors.successColor,
+            percentage: ulokApprovedPerc,
+            lastMonthValue: data.ringkasanUlokApprovedVsLastMonth,
+          ),
+          _RingkasanCard(
+            title: 'KPLT Aktif',
+            count: data.ringkasanKpltAktif.toString(),
+            iconPath: 'assets/icons/kplt.svg',
+            backgroundColor: AppColors.cardOrange,
+            percentage: kpltAktifPerc,
+            lastMonthValue: data.ringkasanKpltAktifVsLastMonth,
+          ),
+          _RingkasanCard(
+            title: 'Tugas Selesai',
+            count: data.ringkasanTugasSelesai.toString(),
+            iconPath: 'assets/icons/penugasan.svg',
+            backgroundColor: AppColors.primaryColor,
+            percentage: tugasSelesaiPerc,
+            lastMonthValue: data.ringkasanTugasSelesaiVsLastMonth,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -175,7 +178,6 @@ class _RingkasanCard extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     Row(
                       children: [
                         if (showArrow)

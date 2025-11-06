@@ -112,20 +112,17 @@ class _MyAppState extends ConsumerState<MyApp> {
         try {
           final restored = await tryRestoreSession();
           if (!restored) {
-            // kalau gagal restore, navigasi ke login
             navigatorKey.currentState?.pushNamedAndRemoveUntil(
               LoginPage.route,
               (route) => false,
             );
           } else {
-            // berhasil restore -> invalidasi provider agar data fresh
             final container = ProviderScope.containerOf(
               navigatorKey.currentContext!,
               listen: false,
             );
             container.invalidate(userProfileProvider);
             container.invalidate(dashboardStatsProvider);
-            // tetap di aplikasi
           }
         } finally {
           Future.microtask(() => _isHandlingAuthChange = false);

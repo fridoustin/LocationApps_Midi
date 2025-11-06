@@ -37,9 +37,15 @@ class AssignmentCard extends ConsumerWidget {
                 color: AppColors.black,
               ),
             ),
-            Text(
-              formattedDate,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 6),
+                Text(
+                  formattedDate,
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             IntrinsicHeight(
