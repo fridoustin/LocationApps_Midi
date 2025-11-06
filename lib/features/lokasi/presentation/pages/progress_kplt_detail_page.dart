@@ -1,4 +1,4 @@
-// lib/features/lokasi/presentation/pages/progress_kplt_detail_page.dart
+// ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -420,7 +420,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     } else if (isActive) {
       backgroundColor = Colors.orange;
       iconColor = Colors.white;
-      displayIcon = Icons.pending;
+      displayIcon = iconData;
     } else {
       backgroundColor = Colors.grey[300]!;
       iconColor = Colors.grey[600]!;
@@ -498,6 +498,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     final stepKey = _selectedStep ?? _getCurrentActiveStep();
     final stepData = completionData[stepKey];
     final isCompleted = stepData?['completed'] == true;
+    final isActive = _isActiveStep(stepKey);
     final date = stepData?['date'] as String?;
 
     String title;
@@ -564,12 +565,18 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                 decoration: BoxDecoration(
                   color: isCompleted 
                       ? AppColors.successColor.withOpacity(0.15)
-                      : Colors.orange.withOpacity(0.15),
+                      : isActive
+                          ? Colors.orange.withOpacity(0.15)
+                          : Colors.grey.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   stepIcon,
-                  color: isCompleted ? AppColors.successColor : Colors.orange,
+                  color: isCompleted 
+                      ? AppColors.successColor 
+                      : isActive
+                          ? Colors.orange
+                          : Colors.grey[600],
                   size: 24,
                 ),
               ),
@@ -611,13 +618,17 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
               gradient: LinearGradient(
                 colors: isCompleted 
                     ? [AppColors.successColor.withOpacity(0.1), AppColors.successColor.withOpacity(0.05)]
-                    : [Colors.orange.withOpacity(0.1), Colors.orange.withOpacity(0.05)],
+                    : isActive
+                        ? [Colors.orange.withOpacity(0.1), Colors.orange.withOpacity(0.05)]
+                        : [Colors.grey.withOpacity(0.1), Colors.grey.withOpacity(0.05)],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isCompleted 
                     ? AppColors.successColor.withOpacity(0.3)
-                    : Colors.orange.withOpacity(0.3),
+                    : isActive
+                        ? Colors.orange.withOpacity(0.3)
+                        : Colors.grey.withOpacity(0.3),
                 width: 1,
               ),
             ),
@@ -625,17 +636,33 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isCompleted ? Icons.check_circle : Icons.schedule,
+                  isCompleted 
+                      ? Icons.check_circle 
+                      : isActive
+                          ? Icons.schedule
+                          : Icons.lock_outline,
                   size: 20,
-                  color: isCompleted ? AppColors.successColor : Colors.orange,
+                  color: isCompleted 
+                      ? AppColors.successColor 
+                      : isActive
+                          ? Colors.orange
+                          : Colors.grey[600],
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  isCompleted ? 'Selesai' : 'Dalam Pengerjaan',
+                  isCompleted 
+                      ? 'Selesai' 
+                      : isActive
+                          ? 'Dalam Pengerjaan'
+                          : 'Belum Dimulai',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isCompleted ? AppColors.successColor : Colors.orange,
+                    color: isCompleted 
+                        ? AppColors.successColor 
+                        : isActive
+                            ? Colors.orange
+                            : Colors.grey[700],
                   ),
                 ),
               ],
@@ -667,7 +694,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                 ],
               ),
             ),
-          ] else ...[
+          ] else if (isActive) ...[
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
@@ -686,6 +713,32 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.orange[900],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_outline, color: Colors.grey[600], size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Tahapan ini belum dapat dimulai. Selesaikan tahapan sebelumnya terlebih dahulu.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[700],
                         fontWeight: FontWeight.w500,
                       ),
                     ),
