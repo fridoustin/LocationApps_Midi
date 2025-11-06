@@ -470,12 +470,6 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
                   if (isCompleted && completedAt != null)
                     Row(
                       children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          size: 16,
-                          color: AppColors.successColor,
-                        ),
-                        const SizedBox(width: 4),
                         Text(
                           'Selesai: ${DateFormat('dd MMM yyyy, HH:mm').format(completedAt.toLocal())}',
                           style: TextStyle(

@@ -466,16 +466,23 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? AppColors.primaryColor : Colors.black87,
-                height: 1.2,
-              ),
-            ),
+            SizedBox(
+              height: 32,
+              child: Center(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: isSelected ? AppColors.primaryColor : Colors.black87,
+                    height: 1.2,
+                  ),
+                ),
+              )
+            )
           ],
         ),
       ),
