@@ -16,6 +16,7 @@ import 'package:midi_location/features/notification/presentation/provider/notifi
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 import 'package:midi_location/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,8 @@ Future<void> main() async {
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
+
+  await initializeDateFormatting('id_ID', null);
 
   final container = ProviderContainer();
   await container.read(notificationServiceProvider).initialize(container);
