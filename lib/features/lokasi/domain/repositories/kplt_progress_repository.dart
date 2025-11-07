@@ -4,6 +4,7 @@ import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
 import 'package:midi_location/features/lokasi/domain/entities/notaris.dart';
 import 'package:midi_location/features/lokasi/domain/entities/perizinan.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/renovasi.dart';
 
 abstract class KpltProgressRepository {
   Future<List<ProgressKplt>> getRecentProgress(String query, {KpltFilter? filter});
@@ -18,5 +19,7 @@ abstract class KpltProgressRepository {
   Future<List<HistoryPerizinan>> getHistoryPerizinan(String perizinanId);
   Future<Notaris?> getNotarisData(String progressKpltId);
   Future<List<HistoryNotaris>> getHistoryNotaris(String notarisId);
+  Future<Renovasi?> getRenovasiData(String progressKpltId);
+  Future<List<HistoryRenovasi>> getHistoryRenovasi(String renovasiId);
 }
 
