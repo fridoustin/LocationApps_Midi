@@ -4,6 +4,7 @@ import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_rem
 import 'package:midi_location/features/lokasi/data/repositories/kplt_progress_repository_impl.dart';
 import 'package:midi_location/features/lokasi/domain/entities/izin_tetangga.dart';
 import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
+import 'package:midi_location/features/lokasi/domain/entities/notaris.dart';
 import 'package:midi_location/features/lokasi/domain/entities/perizinan.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
@@ -106,5 +107,21 @@ final historyPerizinanProvider = FutureProvider.family.autoDispose<List<HistoryP
   (ref, perizinanId) async {
     final repo = ref.watch(kpltProgressRepositoryProvider);
     return await repo.getHistoryPerizinan(perizinanId);
+  },
+);
+
+/// Provider untuk mendapatkan data Notaris berdasarkan progress_kplt_id
+final notarisDataProvider = FutureProvider.family.autoDispose<Notaris?, String>(
+  (ref, progressKpltId) async {
+    final repo = ref.watch(kpltProgressRepositoryProvider);
+    return await repo.getNotarisData(progressKpltId);
+  },
+);
+
+/// Provider untuk mendapatkan history notaris berdasarkan notaris_id
+final historyNotarisProvider = FutureProvider.family.autoDispose<List<HistoryNotaris>, String>(
+  (ref, notarisId) async {
+    final repo = ref.watch(kpltProgressRepositoryProvider);
+    return await repo.getHistoryNotaris(notarisId);
   },
 );
