@@ -9,6 +9,7 @@ import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/izin_tetangga_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/mou_detail_page.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/notaris_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/perizinan_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 
@@ -911,9 +912,14 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         );
         break;
       case 'notaris':
-        // TODO: Navigate to Notaris detail
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Halaman Notaris belum tersedia')),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NotarisDetailPage(
+              progressKpltId: widget.progress.id,
+              kpltName: widget.progress.kpltNama ?? 'KPLT',
+            ),
+          ),
         );
         break;
       case 'renovasi':
