@@ -299,4 +299,38 @@ class KpltProgressRemoteDatasource {
       return [];
     }
   }
+
+  /// Get Notaris data by progress_kplt_id
+  Future<Map<String, dynamic>?> getNotarisData(String progressKpltId) async {
+    try {
+      final response = await client
+          .from('notaris')
+          .select('*')
+          .eq('progress_kplt_id', progressKpltId)
+          .maybeSingle();
+
+      debugPrint('✅ Notaris data fetched for progress: $progressKpltId');
+      return response != null ? Map<String, dynamic>.from(response) : null;
+    } catch (e) {
+      debugPrint('❌ getNotarisData error: $e');
+      return null;
+    }
+  }
+
+  /// Get History Notaris by notaris_id
+  Future<List<Map<String, dynamic>>> getHistoryNotaris(String notarisId) async {
+    try {
+      final response = await client
+          .from('history_notaris')
+          .select('*')
+          .eq('notaris_id', notarisId)
+          .order('created_at', ascending: false);
+      final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      debugPrint('✅ Found ${data.length} history for notaris: $notarisId');
+      return data;
+    } catch (e) {
+      debugPrint('❌ getHistoryNotaris error: $e');
+      return [];
+    }
+  }
 }

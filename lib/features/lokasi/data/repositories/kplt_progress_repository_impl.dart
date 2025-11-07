@@ -2,6 +2,7 @@ import 'package:midi_location/features/lokasi/domain/entities/izin_tetangga.dart
 import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_remote_datasource.dart';
 import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
+import 'package:midi_location/features/lokasi/domain/entities/notaris.dart';
 import 'package:midi_location/features/lokasi/domain/entities/perizinan.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
@@ -70,6 +71,19 @@ class KpltProgressRepositoryImpl implements KpltProgressRepository {
   Future<List<HistoryPerizinan>> getHistoryPerizinan(String perizinanId) async {
     final data = await remoteDataSource.getHistoryPerizinan(perizinanId);
     return data.map((map) => HistoryPerizinan.fromMap(map)).toList();
+  }
+
+  @override
+  Future<Notaris?> getNotarisData(String progressKpltId) async {
+    final map = await remoteDataSource.getNotarisData(progressKpltId);
+    if (map == null) return null;
+    return Notaris.fromMap(map);
+  }
+
+  @override
+  Future<List<HistoryNotaris>> getHistoryNotaris(String notarisId) async {
+    final data = await remoteDataSource.getHistoryNotaris(notarisId);
+    return data.map((map) => HistoryNotaris.fromMap(map)).toList();
   }
 }
 
