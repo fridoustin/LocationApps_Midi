@@ -368,4 +368,20 @@ class KpltProgressRemoteDatasource {
       return [];
     }
   }
+
+  /// Get Grand Opening data by progress_kplt_id
+  Future<Map<String, dynamic>?> getGrandOpeningData(String progressKpltId) async {
+    try {
+      final response = await client
+          .from('grand_opening')
+          .select('*')
+          .eq('progress_kplt_id', progressKpltId)
+          .maybeSingle();
+      debugPrint('✅ Grand Opening data fetched for progress: $progressKpltId');
+      return response != null ? Map<String, dynamic>.from(response) : null;
+    } catch (e) {
+      debugPrint('❌ getGrandOpeningData error: $e');
+      return null;
+    }
+  }
 }

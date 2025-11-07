@@ -1,3 +1,4 @@
+import 'package:midi_location/features/lokasi/domain/entities/grand_opening.dart';
 import 'package:midi_location/features/lokasi/domain/entities/izin_tetangga.dart';
 import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_remote_datasource.dart';
@@ -98,6 +99,13 @@ class KpltProgressRepositoryImpl implements KpltProgressRepository {
   Future<List<HistoryRenovasi>> getHistoryRenovasi(String renovasiId) async {
     final data = await remoteDataSource.getHistoryRenovasi(renovasiId);
     return data.map((map) => HistoryRenovasi.fromMap(map)).toList();
+  }
+
+  @override
+  Future<GrandOpening?> getGrandOpeningData(String progressKpltId) async {
+    final map = await remoteDataSource.getGrandOpeningData(progressKpltId);
+    if (map == null) return null;
+    return GrandOpening.fromMap(map);
   }
 }
 
