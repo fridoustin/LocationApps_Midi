@@ -1,3 +1,4 @@
+import 'package:midi_location/features/lokasi/domain/entities/grand_opening.dart';
 import 'package:midi_location/features/lokasi/domain/entities/izin_tetangga.dart';
 import 'package:midi_location/features/lokasi/domain/entities/kplt_filter.dart';
 import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
@@ -21,5 +22,6 @@ abstract class KpltProgressRepository {
   Future<List<HistoryNotaris>> getHistoryNotaris(String notarisId);
   Future<Renovasi?> getRenovasiData(String progressKpltId);
   Future<List<HistoryRenovasi>> getHistoryRenovasi(String renovasiId);
+  Future<GrandOpening?> getGrandOpeningData(String progressKpltId);
 }
 
