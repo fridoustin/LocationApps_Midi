@@ -221,12 +221,8 @@ class HistoryRenovasiPage extends ConsumerWidget {
   }
 
   Widget _buildHistoryCard(BuildContext context, HistoryRenovasi history, int number) {
-    final percentage = history.percentageComplete ?? 0;
-    final progressColor = percentage >= 100 
-        ? AppColors.successColor 
-        : percentage >= 50 
-            ? Colors.orange 
-            : Colors.red;
+    final prosesPercentage = history.prosesRenov ?? 0;
+    final progressColor = history.progressColor;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -265,12 +261,14 @@ class HistoryRenovasiPage extends ConsumerWidget {
               const SizedBox(width: 12),
               Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
-              Text(
-                DateFormat('dd MMM yyyy, HH:mm').format(history.createdAt),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  DateFormat('dd MMM yyyy, HH:mm').format(history.updatedAt),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -279,12 +277,17 @@ class HistoryRenovasiPage extends ConsumerWidget {
           const Divider(height: 1, thickness: 1),
           const SizedBox(height: 16),
 
-          // Progress Indicator
-          if (history.planRenov != null || history.prosesRenov != null) ...[
+          // Progress Tracking
+          if (history.planRenov != null || history.prosesRenov != null || history.deviasi != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: progressColor.withOpacity(0.1),
+                gradient: LinearGradient(
+                  colors: [
+                    progressColor.withOpacity(0.1),
+                    progressColor.withOpacity(0.05),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: progressColor.withOpacity(0.3)),
               ),
@@ -293,33 +296,72 @@ class HistoryRenovasiPage extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Progress',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: progressColor,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Progress',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            history.progressStatus,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: progressColor,
+                            ),
+                          ),
+                        ],
                       ),
                       Text(
-                        '${percentage.toStringAsFixed(1)}%',
+                        '${prosesPercentage.toStringAsFixed(1)}%',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: progressColor,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: percentage / 100,
+                      value: prosesPercentage / 100,
                       minHeight: 6,
                       backgroundColor: Colors.grey[200],
                       valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildProgressMiniItem(
+                        'Plan',
+                        history.planRenov != null ? '${history.planRenov!.toStringAsFixed(1)}%' : '-',
+                        Colors.blue,
+                      ),
+                      _buildProgressMiniItem(
+                        'Proses',
+                        history.prosesRenov != null ? '${history.prosesRenov!.toStringAsFixed(1)}%' : '-',
+                        progressColor,
+                      ),
+                      _buildProgressMiniItem(
+                        'Deviasi',
+                        history.deviasi != null 
+                            ? '${history.deviasi! >= 0 ? '+' : ''}${history.deviasi!.toStringAsFixed(1)}%' 
+                            : '-',
+                        history.deviasi != null 
+                            ? (history.deviasi! >= 0 ? Colors.green : Colors.red)
+                            : Colors.grey,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -383,44 +425,6 @@ class HistoryRenovasiPage extends ConsumerWidget {
             const SizedBox(height: 16),
           ],
 
-          // Data Finansial
-          if (history.planRenov != null || history.prosesRenov != null || history.deviasi != null) ...[
-            _buildSectionTitle('Data Finansial'),
-            const SizedBox(height: 8),
-            if (history.planRenov != null)
-              _buildInfoRow(
-                'Plan Renovasi',
-                NumberFormat.currency(
-                  locale: 'id_ID',
-                  symbol: 'Rp ',
-                  decimalDigits: 0,
-                ).format(history.planRenov),
-              ),
-            if (history.planRenov != null && history.prosesRenov != null)
-              const SizedBox(height: 8),
-            if (history.prosesRenov != null)
-              _buildInfoRow(
-                'Proses Renovasi',
-                NumberFormat.currency(
-                  locale: 'id_ID',
-                  symbol: 'Rp ',
-                  decimalDigits: 0,
-                ).format(history.prosesRenov),
-              ),
-            if (history.prosesRenov != null && history.deviasi != null)
-              const SizedBox(height: 8),
-            if (history.deviasi != null)
-              _buildInfoRow(
-                'Deviasi',
-                NumberFormat.currency(
-                  locale: 'id_ID',
-                  symbol: 'Rp ',
-                  decimalDigits: 0,
-                ).format(history.deviasi),
-              ),
-            const SizedBox(height: 16),
-          ],
-
           // Tanggal Serah Terima & Selesai
           if (history.tglSerahTerima != null || history.tglSelesaiRenov != null) ...[
             _buildSectionTitle('Informasi Tambahan'),
@@ -440,6 +444,29 @@ class HistoryRenovasiPage extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildProgressMiniItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 

@@ -1,3 +1,5 @@
+// lib/features/lokasi/presentation/pages/renovasi_detail_page.dart
+
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';
@@ -154,10 +156,10 @@ class RenovasiDetailPage extends ConsumerWidget {
           _buildHeaderCard(context, data),
           const SizedBox(height: 16),
 
-          // Progress Card (jika ada data plan dan proses)
-          if (data.planRenov != null || data.prosesRenov != null)
-            _buildProgressCard(data),
-          if (data.planRenov != null || data.prosesRenov != null)
+          // Progress Tracking Card - ALWAYS SHOW if data exists
+          if (data.planRenov != null || data.prosesRenov != null || data.deviasi != null)
+            _buildProgressTrackingCard(data),
+          if (data.planRenov != null || data.prosesRenov != null || data.deviasi != null)
             const SizedBox(height: 16),
 
           // Informasi Store
@@ -217,47 +219,6 @@ class RenovasiDetailPage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Data Finansial
-          _buildSectionCard(
-            title: 'Data Finansial',
-            icon: Icons.attach_money,
-            children: [
-              _buildInfoRow(
-                'Plan Renovasi',
-                data.planRenov != null
-                    ? NumberFormat.currency(
-                        locale: 'id_ID',
-                        symbol: 'Rp ',
-                        decimalDigits: 0,
-                      ).format(data.planRenov)
-                    : '-',
-              ),
-              const SizedBox(height: 12),
-              _buildInfoRow(
-                'Proses Renovasi',
-                data.prosesRenov != null
-                    ? NumberFormat.currency(
-                        locale: 'id_ID',
-                        symbol: 'Rp ',
-                        decimalDigits: 0,
-                      ).format(data.prosesRenov)
-                    : '-',
-              ),
-              const SizedBox(height: 12),
-              _buildInfoRow(
-                'Deviasi',
-                data.deviasi != null
-                    ? NumberFormat.currency(
-                        locale: 'id_ID',
-                        symbol: 'Rp ',
-                        decimalDigits: 0,
-                      ).format(data.deviasi)
-                    : '-',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
           // Informasi Tambahan
           _buildSectionCard(
             title: 'Informasi Tambahan',
@@ -268,6 +229,11 @@ class RenovasiDetailPage extends ConsumerWidget {
                 data.tglSerahTerima != null
                     ? DateFormat('dd MMMM yyyy').format(data.tglSerahTerima!)
                     : '-',
+              ),
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                'Terakhir Diupdate',
+                DateFormat('dd MMMM yyyy, HH:mm').format(data.updatedAt),
               ),
               if (data.tglSelesaiRenov != null) ...[
                 const SizedBox(height: 12),
@@ -412,83 +378,197 @@ class RenovasiDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProgressCard(Renovasi data) {
-    final percentage = data.percentageComplete ?? 0;
-    final progressColor = percentage >= 100 
-        ? AppColors.successColor 
-        : percentage >= 50 
-            ? Colors.orange 
-            : Colors.red;
+  Widget _buildProgressTrackingCard(Renovasi data) {
+    final prosesPercentage = data.prosesRenov ?? 0;
+    final progressColor = data.progressColor;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            progressColor.withOpacity(0.1),
-            progressColor.withOpacity(0.05),
-          ],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: progressColor.withOpacity(0.3),
-          width: 1,
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Progress Renovasi',
+              Icon(Icons.track_changes, color: AppColors.primaryColor, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Progress Tracking Renovasi',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: progressColor,
-                ),
-              ),
-              Text(
-                '${percentage.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: progressColor,
+                  color: Colors.black87,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: percentage / 100,
-              minHeight: 8,
-              backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+          const SizedBox(height: 16),
+          
+          // Progress Bar dengan Status
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  progressColor.withOpacity(0.1),
+                  progressColor.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: progressColor.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Progress Aktual',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          data.progressStatus,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: progressColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${prosesPercentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: progressColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: prosesPercentage / 100,
+                    minHeight: 10,
+                    backgroundColor: Colors.grey[200],
+                    valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Plan: ${data.planRenov != null ? NumberFormat.compact(locale: 'id_ID').format(data.planRenov) : '-'}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+          
+          const SizedBox(height: 16),
+          const Divider(height: 1, thickness: 1),
+          const SizedBox(height: 16),
+          
+          // Detail Progress
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildProgressItem(
+                    'Plan',
+                    data.planRenov != null ? '${data.planRenov!.toStringAsFixed(1)}%' : '-',
+                    Icons.flag,
+                    Colors.blue,
+                  ),
                 ),
-              ),
-              Text(
-                'Proses: ${data.prosesRenov != null ? NumberFormat.compact(locale: 'id_ID').format(data.prosesRenov) : '-'}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildProgressItem(
+                    'Proses',
+                    data.prosesRenov != null ? '${data.prosesRenov!.toStringAsFixed(1)}%' : '-',
+                    Icons.trending_up,
+                    progressColor,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildProgressItem(
+                    'Deviasi',
+                    data.deviasi != null 
+                        ? '${data.deviasi! >= 0 ? '+' : ''}${data.deviasi!.toStringAsFixed(1)}%' 
+                        : '-',
+                    Icons.analytics,
+                    data.deviasi != null 
+                        ? (data.deviasi! >= 0 ? Colors.green : Colors.red)
+                        : Colors.grey,
+                    subtitle: data.deviasiStatus,
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressItem(String label, String value, IconData icon, Color color, {String? subtitle}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 9,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       ),
     );

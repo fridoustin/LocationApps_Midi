@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Renovasi {
   final String id;
   final String? progressKpltId;
@@ -80,10 +82,32 @@ class Renovasi {
 
   bool get isCompleted => tglSelesaiRenov != null;
   
-  double? get percentageComplete {
-    if (planRenov == null || planRenov == 0) return null;
-    if (prosesRenov == null) return 0;
-    return (prosesRenov! / planRenov!) * 100;
+  // Helper untuk menentukan status progress
+  String get progressStatus {
+    if (prosesRenov == null) return 'Belum Ada Data';
+    if (prosesRenov! >= 100) return 'Selesai';
+    if (prosesRenov! >= 75) return 'Hampir Selesai';
+    if (prosesRenov! >= 50) return 'Setengah Jalan';
+    if (prosesRenov! >= 25) return 'Dalam Progress';
+    return 'Baru Dimulai';
+  }
+
+  // Helper untuk warna progress
+  Color get progressColor {
+    if (prosesRenov == null) return Colors.grey;
+    if (prosesRenov! >= 100) return const Color(0xFF4CAF50); // Green
+    if (prosesRenov! >= 75) return const Color(0xFF8BC34A); // Light Green
+    if (prosesRenov! >= 50) return const Color(0xFFFFC107); // Amber
+    if (prosesRenov! >= 25) return const Color(0xFFFF9800); // Orange
+    return const Color(0xFFF44336); // Red
+  }
+
+  // Helper untuk status deviasi
+  String get deviasiStatus {
+    if (deviasi == null) return '-';
+    if (deviasi! > 0) return 'Di Atas Target';
+    if (deviasi! < 0) return 'Di Bawah Target';
+    return 'Sesuai Target';
   }
 }
 
@@ -168,9 +192,21 @@ class HistoryRenovasi {
     );
   }
 
-  double? get percentageComplete {
-    if (planRenov == null || planRenov == 0) return null;
-    if (prosesRenov == null) return 0;
-    return (prosesRenov! / planRenov!) * 100;
+  String get progressStatus {
+    if (prosesRenov == null) return 'Belum Ada Data';
+    if (prosesRenov! >= 100) return 'Selesai';
+    if (prosesRenov! >= 75) return 'Hampir Selesai';
+    if (prosesRenov! >= 50) return 'Setengah Jalan';
+    if (prosesRenov! >= 25) return 'Dalam Progress';
+    return 'Baru Dimulai';
+  }
+
+  Color get progressColor {
+    if (prosesRenov == null) return Colors.grey;
+    if (prosesRenov! >= 100) return const Color(0xFF4CAF50);
+    if (prosesRenov! >= 75) return const Color(0xFF8BC34A);
+    if (prosesRenov! >= 50) return const Color(0xFFFFC107);
+    if (prosesRenov! >= 25) return const Color(0xFFFF9800);
+    return const Color(0xFFF44336);
   }
 }
