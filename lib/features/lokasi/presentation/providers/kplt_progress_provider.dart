@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/features/auth/presentation/providers/auth_provider.dart';
 import 'package:midi_location/features/lokasi/data/datasources/kplt_progress_remote_datasource.dart';
 import 'package:midi_location/features/lokasi/data/repositories/kplt_progress_repository_impl.dart';
+import 'package:midi_location/features/lokasi/domain/entities/grand_opening.dart';
 import 'package:midi_location/features/lokasi/domain/entities/izin_tetangga.dart';
 import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
 import 'package:midi_location/features/lokasi/domain/entities/notaris.dart';
@@ -139,5 +140,13 @@ final historyRenovasiProvider = FutureProvider.family.autoDispose<List<HistoryRe
   (ref, renovasiId) async {
     final repo = ref.watch(kpltProgressRepositoryProvider);
     return await repo.getHistoryRenovasi(renovasiId);
+  },
+);
+
+/// Provider untuk mendapatkan data Grand Opening berdasarkan progress_kplt_id
+final grandOpeningDataProvider = FutureProvider.family.autoDispose<GrandOpening?, String>(
+  (ref, progressKpltId) async {
+    final repo = ref.watch(kpltProgressRepositoryProvider);
+    return await repo.getGrandOpeningData(progressKpltId);
   },
 );
