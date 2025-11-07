@@ -11,6 +11,7 @@ import 'package:midi_location/features/lokasi/presentation/pages/izin_tetangga_d
 import 'package:midi_location/features/lokasi/presentation/pages/mou_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/notaris_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/perizinan_detail_page.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/renovasi_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 
 class ProgressKpltDetailPage extends ConsumerStatefulWidget {
@@ -923,9 +924,14 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         );
         break;
       case 'renovasi':
-        // TODO: Navigate to Renovasi detail
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Halaman Renovasi belum tersedia')),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RenovasiDetailPage(
+              progressKpltId: widget.progress.id,
+              kpltName: widget.progress.kpltNama ?? 'KPLT',
+            ),
+          ),
         );
         break;
       case 'grand_opening':
