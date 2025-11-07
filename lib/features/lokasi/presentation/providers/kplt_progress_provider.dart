@@ -7,6 +7,7 @@ import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
 import 'package:midi_location/features/lokasi/domain/entities/notaris.dart';
 import 'package:midi_location/features/lokasi/domain/entities/perizinan.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/renovasi.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
 import 'package:midi_location/features/lokasi/presentation/views/progress_kplt_view.dart';
 
@@ -123,5 +124,20 @@ final historyNotarisProvider = FutureProvider.family.autoDispose<List<HistoryNot
   (ref, notarisId) async {
     final repo = ref.watch(kpltProgressRepositoryProvider);
     return await repo.getHistoryNotaris(notarisId);
+  },
+);
+
+final renovasiDataProvider = FutureProvider.family.autoDispose<Renovasi?, String>(
+  (ref, progressKpltId) async {
+    final repo = ref.watch(kpltProgressRepositoryProvider);
+    return await repo.getRenovasiData(progressKpltId);
+  },
+);
+
+/// Provider untuk mendapatkan history renovasi berdasarkan renovasi_id
+final historyRenovasiProvider = FutureProvider.family.autoDispose<List<HistoryRenovasi>, String>(
+  (ref, renovasiId) async {
+    final repo = ref.watch(kpltProgressRepositoryProvider);
+    return await repo.getHistoryRenovasi(renovasiId);
   },
 );
