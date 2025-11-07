@@ -371,7 +371,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
       {'key': 'perizinan', 'label': 'Perizinan', 'icon': Icons.description},
       {'key': 'notaris', 'label': 'Notaris', 'icon': Icons.account_balance},
       {'key': 'renovasi', 'label': 'Renovasi', 'icon': Icons.construction},
-      {'key': 'grand_opening', 'label': 'Grand\nOpening', 'icon': Icons.celebration},
+      {'key': 'grand_opening', 'label': 'Grand\nOpening', 'icon': Icons.celebration_rounded},
     ];
 
     return SingleChildScrollView(
@@ -716,7 +716,6 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
               ),
             ),
             const SizedBox(height: 16),
-            _buildViewDetailButton(context, stepKey),
           ] else if (isActive) ...[
             const SizedBox(height: 20),
             Container(
@@ -769,6 +768,10 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                 ],
               ),
             ),
+          ],
+          if (isCompleted || isActive) ...[
+            const SizedBox(height: 16),
+            _buildViewDetailButton(context, stepKey),
           ],
         ],
       ),
