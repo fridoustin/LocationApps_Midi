@@ -263,7 +263,7 @@ class HistoryRenovasiPage extends ConsumerWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  DateFormat('dd MMM yyyy, HH:mm').format(history.updatedAt),
+                  DateFormat('dd MMM yyyy, HH:mm').format(history.createdAt),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],

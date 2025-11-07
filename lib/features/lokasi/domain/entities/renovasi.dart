@@ -130,7 +130,6 @@ class HistoryRenovasi {
   final String? finalStatusRenov;
   final DateTime? tglSelesaiRenov;
   final DateTime createdAt;
-  final DateTime updatedAt;
 
   HistoryRenovasi({
     required this.id,
@@ -150,7 +149,6 @@ class HistoryRenovasi {
     this.finalStatusRenov,
     this.tglSelesaiRenov,
     required this.createdAt,
-    required this.updatedAt,
   });
 
   factory HistoryRenovasi.fromMap(Map<String, dynamic> map) {
@@ -188,7 +186,6 @@ class HistoryRenovasi {
           ? DateTime.parse(map['tgl_selesai_renov'] as String)
           : null,
       createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
     );
   }
 
