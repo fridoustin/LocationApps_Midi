@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/grand_opening_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/izin_tetangga_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/mou_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/notaris_detail_page.dart';
@@ -935,9 +936,14 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         );
         break;
       case 'grand_opening':
-        // TODO: Navigate to Grand Opening detail
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Halaman Grand Opening belum tersedia')),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GrandOpeningDetailPage(
+              progressKpltId: widget.progress.id,
+              kpltName: widget.progress.kpltNama ?? 'KPLT',
+            ),
+          ),
         );
         break;
     }
