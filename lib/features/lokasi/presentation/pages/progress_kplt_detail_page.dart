@@ -7,7 +7,9 @@ import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/izin_tetangga_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/mou_detail_page.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/perizinan_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
 
 class ProgressKpltDetailPage extends ConsumerStatefulWidget {
@@ -887,15 +889,25 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         );
         break;
       case 'izin_tetangga':
-        // TODO: Navigate to Izin Tetangga detail
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Halaman Izin Tetangga belum tersedia')),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => IzinTetanggaDetailPage(
+              progressKpltId: widget.progress.id,
+              kpltName: widget.progress.kpltNama ?? 'KPLT',
+            ),
+          ),
         );
         break;
       case 'perizinan':
-        // TODO: Navigate to Perizinan detail
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Halaman Perizinan belum tersedia')),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PerizinanDetailPage(
+              progressKpltId: widget.progress.id,
+              kpltName: widget.progress.kpltNama ?? 'KPLT',
+            ),
+          ),
         );
         break;
       case 'notaris':
