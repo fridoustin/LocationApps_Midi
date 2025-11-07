@@ -5,6 +5,7 @@ import 'package:midi_location/features/lokasi/domain/entities/mou.dart';
 import 'package:midi_location/features/lokasi/domain/entities/notaris.dart';
 import 'package:midi_location/features/lokasi/domain/entities/perizinan.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
+import 'package:midi_location/features/lokasi/domain/entities/renovasi.dart';
 import 'package:midi_location/features/lokasi/domain/repositories/kplt_progress_repository.dart';
 
 class KpltProgressRepositoryImpl implements KpltProgressRepository {
@@ -84,6 +85,19 @@ class KpltProgressRepositoryImpl implements KpltProgressRepository {
   Future<List<HistoryNotaris>> getHistoryNotaris(String notarisId) async {
     final data = await remoteDataSource.getHistoryNotaris(notarisId);
     return data.map((map) => HistoryNotaris.fromMap(map)).toList();
+  }
+
+  @override
+  Future<Renovasi?> getRenovasiData(String progressKpltId) async {
+    final map = await remoteDataSource.getRenovasiData(progressKpltId);
+    if (map == null) return null;
+    return Renovasi.fromMap(map);
+  }
+
+  @override
+  Future<List<HistoryRenovasi>> getHistoryRenovasi(String renovasiId) async {
+    final data = await remoteDataSource.getHistoryRenovasi(renovasiId);
+    return data.map((map) => HistoryRenovasi.fromMap(map)).toList();
   }
 }
 

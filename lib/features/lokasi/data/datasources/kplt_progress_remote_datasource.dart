@@ -333,4 +333,39 @@ class KpltProgressRemoteDatasource {
       return [];
     }
   }
+
+  /// Get Renovasi data by progress_kplt_id
+  Future<Map<String, dynamic>?> getRenovasiData(String progressKpltId) async {
+    try {
+      final response = await client
+          .from('renovasi')
+          .select('*')
+          .eq('progress_kplt_id', progressKpltId)
+          .maybeSingle();
+
+      debugPrint('✅ Renovasi data fetched for progress: $progressKpltId');
+      return response != null ? Map<String, dynamic>.from(response) : null;
+    } catch (e) {
+      debugPrint('❌ getRenovasiData error: $e');
+      return null;
+    }
+  }
+
+  /// Get History Renovasi by renovasi_id
+  Future<List<Map<String, dynamic>>> getHistoryRenovasi(String renovasiId) async {
+    try {
+      final response = await client
+          .from('history_renovasi')
+          .select('*')
+          .eq('renovasi_id', renovasiId)
+          .order('created_at', ascending: false);
+
+      final data = (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      debugPrint('✅ Found ${data.length} history for renovasi: $renovasiId');
+      return data;
+    } catch (e) {
+      debugPrint('❌ getHistoryRenovasi error: $e');
+      return [];
+    }
+  }
 }
