@@ -12,7 +12,6 @@ import 'package:midi_location/core/widgets/file_upload.dart';
 import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/ulok_form_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/dropdown.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/form_card.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_picker.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/text_field.dart';
 import 'package:midi_location/features/wilayah/domain/entities/wilayah.dart';
@@ -35,7 +34,6 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
   // Controllers
   final _namaUlokC = TextEditingController();
   final _alamatC = TextEditingController();
-  final _latLngC = TextEditingController();
   final _alasHakC = TextEditingController();
   final _jumlahLantaiC = TextEditingController();
   final _lebarDepanC = TextEditingController();
@@ -44,6 +42,13 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
   final _hargaSewaC = TextEditingController();
   final _namaPemilikC = TextEditingController();
   final _kontakPemilikC = TextEditingController();
+
+  // Flags untuk tracking user typing
+  bool _isUserTypingJumlahLantai = false;
+  bool _isUserTypingLebarDepan = false;
+  bool _isUserTypingPanjang = false;
+  bool _isUserTypingLuas = false;
+  bool _isUserTypingHargaSewa = false;
 
   @override
   void initState() {
@@ -77,7 +82,6 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     _hargaSewaC.dispose();
     _namaPemilikC.dispose();
     _kontakPemilikC.dispose();
-    _latLngC.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -94,7 +98,6 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     }
 
     final LatLng? selectedLatLng = await showDialog<LatLng>(
-      // ignore: use_build_context_synchronously
       context: context,
       builder: (context) => MapPickerDialog(initialPoint: currentLatLng),
     );
@@ -111,6 +114,7 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
       builder: (BuildContext context) => CustomSuccessDialog(title: message, iconPath: iconPath),
     );
 
+    await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
@@ -121,16 +125,50 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     }
   }
 
-  Widget _buildMapPreview(UlokFormState formState) { // aman
+  String _formatNumber(num? number) {
+    if (number == null) return '';
+    if (number.truncateToDouble() == number) {
+      return number.truncate().toString();
+    }
+    return number.toString();
+  }
+
+  void _updateControllerIfNeeded(
+    TextEditingController controller,
+    String newValue,
+    bool isUserTyping,
+  ) {
+    // HANYA update jika user TIDAK sedang typing
+    if (!isUserTyping && controller.text != newValue) {
+      final selection = controller.selection;
+      controller.text = newValue;
+      // Maintain cursor position if possible
+      if (selection.start <= newValue.length) {
+        controller.selection = selection;
+      }
+    }
+  }
+
+  Widget _buildMapPreview(UlokFormState formState) {
     if (formState.latLng == null) {
       return const SizedBox.shrink();
     }
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
-      child: SizedBox(
+      padding: const EdgeInsets.only(top: 12.0),
+      child: Container(
         height: 250,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -165,8 +203,8 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                     children: [
                       FloatingActionButton.small(
                         heroTag: 'zoomIn',
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.white,
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primaryColor,
                         onPressed: () {
                           _mapController.move(
                             _mapController.camera.center,
@@ -178,8 +216,8 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
                       const SizedBox(height: 8),
                       FloatingActionButton.small(
                         heroTag: 'zoomOut',
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.white,
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primaryColor,
                         onPressed: () {
                           _mapController.move(
                             _mapController.camera.center,
@@ -199,6 +237,78 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     );
   }
 
+  Widget _buildFileUploadCard(String label, String? fileName, String? existingUrl, VoidCallback onTap) {
+    final hasFile = (fileName != null && fileName.isNotEmpty) || 
+                    (existingUrl != null && existingUrl.isNotEmpty);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: hasFile 
+                      ? AppColors.primaryColor.withOpacity(0.1)
+                      : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  hasFile ? Icons.check_circle : Icons.upload_file,
+                  color: hasFile ? AppColors.primaryColor : Colors.grey[600],
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (hasFile) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        fileName ?? existingUrl?.split('/').last ?? '',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                hasFile ? Icons.edit : Icons.add_circle_outline,
+                color: AppColors.primaryColor,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final formProvider = ulokFormProvider(widget.initialState);
@@ -206,49 +316,58 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     final formNotifier = ref.read(formProvider.notifier);
 
     ref.listen<UlokFormState>(formProvider, (previous, next) {
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
-        String formatNumber(num? number) {
-          if (number == null) return '';
-          if (number.truncateToDouble() == number) {
-            return number.truncate().toString();
-          }
-          return number.toString();
+        // Update controllers HANYA jika user TIDAK sedang typing
+        _updateControllerIfNeeded(
+          _jumlahLantaiC,
+          _formatNumber(next.jumlahLantai),
+          _isUserTypingJumlahLantai,
+        );
+        
+        _updateControllerIfNeeded(
+          _lebarDepanC,
+          _formatNumber(next.lebarDepan),
+          _isUserTypingLebarDepan,
+        );
+        
+        _updateControllerIfNeeded(
+          _panjangC,
+          _formatNumber(next.panjang),
+          _isUserTypingPanjang,
+        );
+        
+        _updateControllerIfNeeded(
+          _luasC,
+          _formatNumber(next.luas),
+          _isUserTypingLuas,
+        );
+
+        _updateControllerIfNeeded(
+          _hargaSewaC,
+          _formatNumber(next.hargaSewa),
+          _isUserTypingHargaSewa,
+        );
+
+        // Text fields tanpa bouncing issue
+        if (previous?.namaUlok != next.namaUlok && _namaUlokC.text != next.namaUlok) {
+          _namaUlokC.text = next.namaUlok ?? '';
+        }
+        if (previous?.alamat != next.alamat && _alamatC.text != next.alamat) {
+          _alamatC.text = next.alamat ?? '';
+        }
+        if (previous?.alasHak != next.alasHak && _alasHakC.text != next.alasHak) {
+          _alasHakC.text = next.alasHak ?? '';
+        }
+        if (previous?.namaPemilik != next.namaPemilik && _namaPemilikC.text != next.namaPemilik) {
+          _namaPemilikC.text = next.namaPemilik ?? '';
+        }
+        if (previous?.kontakPemilik != next.kontakPemilik && _kontakPemilikC.text != next.kontakPemilik) {
+          _kontakPemilikC.text = next.kontakPemilik ?? '';
         }
 
-        final nextJumlahLantai = formatNumber(next.jumlahLantai);
-        if (_jumlahLantaiC.text != nextJumlahLantai) {
-          _jumlahLantaiC.text = nextJumlahLantai;
-        }
-        
-        final nextLebarDepan = formatNumber(next.lebarDepan);
-        if (_lebarDepanC.text != nextLebarDepan) {
-          _lebarDepanC.text = nextLebarDepan;
-        }
-        
-        final nextPanjang = formatNumber(next.panjang);
-        if (_panjangC.text != nextPanjang) {
-          _panjangC.text = nextPanjang;
-        }
-        
-        final nextLuas = formatNumber(next.luas);
-        if (_luasC.text != nextLuas) {
-          _luasC.text = nextLuas;
-        }
-
-        final nextHargaSewa = formatNumber(next.hargaSewa);
-        if (_hargaSewaC.text != nextHargaSewa) {
-          _hargaSewaC.text = nextHargaSewa;
-        }
-        // Sinkronkan controller jika ada perubahan dari state (misal: saat draft dimuat)
-        if (previous?.namaUlok != next.namaUlok) _namaUlokC.text = next.namaUlok ?? '';
-        if (previous?.alamat != next.alamat) _alamatC.text = next.alamat ?? '';
-        if (previous?.alasHak != next.alasHak) _alasHakC.text = next.alasHak ?? '';
-        if (previous?.namaPemilik != next.namaPemilik) _namaPemilikC.text = next.namaPemilik ?? '';
-        if (previous?.kontakPemilik != next.kontakPemilik) _kontakPemilikC.text = next.kontakPemilik ?? '';
-
+        // Handle status
         if (previous?.status != next.status) {
           if (next.status == UlokFormStatus.success) {
             _showPopupAndNavigateBack("Data Berhasil Disimpan!", "assets/icons/success.svg");
@@ -263,181 +382,481 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage> {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: CustomTopBar.general(
-        title: 'Form ULOK',
+        title: _isEditMode ? 'Edit ULOK' : 'Form ULOK',
         showNotificationButton: false,
         leadingWidget: IconButton(
           icon: SvgPicture.asset(
             "assets/icons/left_arrow.svg",
-            width: 24,
-            height: 24,
-            colorFilter: const ColorFilter.mode(
-              Colors.white,
-              BlendMode.srcIn,
-            ),
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              FormCardSection(
-                title: "Data Usulan Lokasi",
-                iconAsset: "assets/icons/location.svg",
-                children: [
-                  FormTextField(
-                    controller: _namaUlokC, 
-                    label: 'Nama ULOK',
-                    onChanged: formNotifier.onNamaUlokChanged,
-                  ),
-                  SearchableDropdown(
-                    label: "Provinsi",
-                    itemsProvider: provincesProvider,
-                    selectedValue: formState.provinsi != null ? WilayahEntity(id: '', name: formState.provinsi!) : null,
-                    onChanged: formNotifier.onProvinceSelected,
-                  ),
-                  SearchableDropdown(
-                    label: "Kabupaten/Kota",
-                    isEnabled: formState.provinsi != null,
-                    itemsProvider: regenciesProvider,
-                    selectedValue: formState.kabupaten != null ? WilayahEntity(id: '', name: formState.kabupaten!) : null,
-                    onChanged: formNotifier.onRegencySelected,
-                  ),
-                  SearchableDropdown(
-                    label: "Kecamatan",
-                    isEnabled: formState.kabupaten != null,
-                    itemsProvider: districtsProvider,
-                    selectedValue: formState.kecamatan != null ? WilayahEntity(id: '', name: formState.kecamatan!) : null,
-                    onChanged: formNotifier.onDistrictSelected,
-                  ),
-                  SearchableDropdown(
-                    label: "Desa/Kelurahan",
-                    isEnabled: formState.kecamatan != null,
-                    itemsProvider: villagesProvider,
-                    selectedValue: formState.desa != null ? WilayahEntity(id: '', name: formState.desa!) : null,
-                    onChanged: formNotifier.onVillageSelected,
-                  ),
-                  FormTextField(
-                    controller: _alamatC, 
-                    label: 'Alamat', 
-                    maxLines: 3, 
-                    onChanged: formNotifier.onAlamatChanged
-                  ),
-                  FormTextField(
-                    controller: TextEditingController(
-                      text: formState.latLng != null
-                          ? '${formState.latLng!.latitude.toStringAsFixed(6)}, ${formState.latLng!.longitude.toStringAsFixed(6)}'
-                          : '',
+              // Data Usulan Lokasi
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    label: 'Latlong',
-                    readOnly: true,
-                    onTap: () => _openMapDialog(formNotifier, formState.latLng),
-                  ),
-                  _buildMapPreview(formState),
-                ],
-              ),
-              const SizedBox(height: 20),
-              FormCardSection(
-                title: "Data Store",
-                iconAsset: "assets/icons/data_store.svg",
-                children: [
-                  PopupButtonForm(
-                    label: 'Format Store',
-                    optionsProvider: ulokDropdownOptionsProvider('format_store'),
-                    selectedValue: formState.formatStore,
-                    onSelected: (value) => formNotifier.onFormatStoreChanged(value!),
-                  ),
-                  PopupButtonForm(
-                    label: 'Bentuk Objek',
-                    optionsProvider: ulokDropdownOptionsProvider('bentuk_objek'),
-                    selectedValue: formState.bentukObjek,
-                    onSelected: (value) => formNotifier.onBentukObjekChanged(value!),
-                  ),
-                  FormTextField(controller: _alasHakC, label: 'Alas Hak', onChanged: formNotifier.onAlasHakChanged),
-                  FormTextField(controller: _jumlahLantaiC, label: 'Jumlah Lantai', keyboardType: TextInputType.number, onChanged: formNotifier.onJumlahLantaiChanged),
-                  FormTextField(controller: _lebarDepanC, label: 'Lebar Depan (m)', keyboardType: TextInputType.number, onChanged: formNotifier.onLebarDepanChanged),
-                  FormTextField(controller: _panjangC, label: 'Panjang (m)', keyboardType: TextInputType.number, onChanged: formNotifier.onPanjangChanged),
-                  FormTextField(controller: _luasC, label: 'Luas (m2)', keyboardType: TextInputType.number, onChanged: formNotifier.onLuasChanged),
-                  FormTextField(controller: _hargaSewaC, label: 'Harga Sewa (+PPH 10%)', keyboardType: TextInputType.number, onChanged: formNotifier.onHargaSewaChanged),
-                ],
-              ),
-              const SizedBox(height: 20),
-              FormCardSection(
-                title: "Data Pemilik",
-                iconAsset: "assets/icons/avatar.svg",
-                children: [
-                  FormTextField(controller: _namaPemilikC, label: 'Nama Pemilik', onChanged: formNotifier.onNamaPemilikChanged),
-                  FormTextField(controller: _kontakPemilikC, label: 'Kontak Pemilik', keyboardType: TextInputType.phone, onChanged: formNotifier.onKontakPemilikChanged),
-                ],
-              ),
-              const SizedBox(height: 20),
-              FormCardSection(
-                title: "Upload Dokumen",
-                iconAsset: "assets/icons/upload.svg",
-                children: [
-                  FileUploadWidget(
-                    label: "Formulir Usulan Lokasi (PDF)",
-                    fileName: formState.formUlokPdf?.path.split('/').last,
-                    existingFileUrl: formState.existingFormUlokUrl,
-                    onTap: () async {
-                      await pickFile((fieldName, file) => formNotifier.onFilePicked(file), '');
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child : Row(
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (widget.initialState?.ulokId == null) ...[
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final success = await formNotifier.saveDraft();
-                            if (success && mounted) {
-                              _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.cardColor,
-                            foregroundColor: AppColors.primaryColor,
-                            side: const BorderSide(color: AppColors.primaryColor),
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text('Simpan Draft'),
+                          child: SvgPicture.asset(
+                            "assets/icons/location.svg",
+                            width: 20,
+                            height: 20,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.primaryColor,
+                              BlendMode.srcIn,
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Data Usulan Lokasi",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    FormTextField(
+                      controller: _namaUlokC, 
+                      label: 'Nama ULOK',
+                      onChanged: formNotifier.onNamaUlokChanged,
+                    ),
+                    SearchableDropdown(
+                      label: "Provinsi",
+                      itemsProvider: provincesProvider,
+                      selectedValue: formState.provinsi != null 
+                          ? WilayahEntity(id: '', name: formState.provinsi!) 
+                          : null,
+                      onChanged: formNotifier.onProvinceSelected,
+                    ),
+                    SearchableDropdown(
+                      label: "Kabupaten/Kota",
+                      isEnabled: formState.provinsi != null,
+                      itemsProvider: regenciesProvider,
+                      selectedValue: formState.kabupaten != null 
+                          ? WilayahEntity(id: '', name: formState.kabupaten!) 
+                          : null,
+                      onChanged: formNotifier.onRegencySelected,
+                    ),
+                    SearchableDropdown(
+                      label: "Kecamatan",
+                      isEnabled: formState.kabupaten != null,
+                      itemsProvider: districtsProvider,
+                      selectedValue: formState.kecamatan != null 
+                          ? WilayahEntity(id: '', name: formState.kecamatan!) 
+                          : null,
+                      onChanged: formNotifier.onDistrictSelected,
+                    ),
+                    SearchableDropdown(
+                      label: "Desa/Kelurahan",
+                      isEnabled: formState.kecamatan != null,
+                      itemsProvider: villagesProvider,
+                      selectedValue: formState.desa != null 
+                          ? WilayahEntity(id: '', name: formState.desa!) 
+                          : null,
+                      onChanged: formNotifier.onVillageSelected,
+                    ),
+                    FormTextField(
+                      controller: _alamatC, 
+                      label: 'Alamat', 
+                      maxLines: 3, 
+                      onChanged: formNotifier.onAlamatChanged,
+                    ),
+                    FormTextField(
+                      controller: TextEditingController(
+                        text: formState.latLng != null
+                            ? '${formState.latLng!.latitude.toStringAsFixed(6)}, ${formState.latLng!.longitude.toStringAsFixed(6)}'
+                            : '',
                       ),
-                      const SizedBox(width: 10),
-                    ],
-                    
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: formState.status == UlokFormStatus.loading ? null : () {
-                          if (_formKey.currentState?.validate() ?? false) {
-                            formNotifier.submitOrUpdateForm();
+                      label: 'Koordinat',
+                      hint: 'Tap untuk pilih lokasi di peta',
+                      readOnly: true,
+                      onTap: () => _openMapDialog(formNotifier, formState.latLng),
+                      suffixIcon: const Icon(
+                        Icons.map,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                    _buildMapPreview(formState),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Data Store
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: SvgPicture.asset(
+                            "assets/icons/data_store.svg",
+                            width: 20,
+                            height: 20,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.primaryColor,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Data Store",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    PopupButtonForm(
+                      label: 'Format Store',
+                      optionsProvider: ulokDropdownOptionsProvider('format_store'),
+                      selectedValue: formState.formatStore,
+                      onSelected: (value) => formNotifier.onFormatStoreChanged(value!),
+                    ),
+                    PopupButtonForm(
+                      label: 'Bentuk Objek',
+                      optionsProvider: ulokDropdownOptionsProvider('bentuk_objek'),
+                      selectedValue: formState.bentukObjek,
+                      onSelected: (value) => formNotifier.onBentukObjekChanged(value!),
+                    ),
+                    FormTextField(
+                      controller: _alasHakC, 
+                      label: 'Alas Hak', 
+                      onChanged: formNotifier.onAlasHakChanged,
+                    ),
+                    FormTextField(
+                      controller: _jumlahLantaiC, 
+                      label: 'Jumlah Lantai', 
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        _isUserTypingJumlahLantai = true;
+                        formNotifier.onJumlahLantaiChanged(value);
+                        // Reset flag setelah 500ms
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (mounted) {
+                            setState(() => _isUserTypingJumlahLantai = false);
                           }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: formState.status == UlokFormStatus.loading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            // Ganti teks tombol berdasarkan mode Create vs. Edit
-                            : Text(_isEditMode ? 'Update Data' : 'Submit'),
-                      ),
+                        });
+                      },
+                    ),
+                    FormTextField(
+                      controller: _lebarDepanC, 
+                      label: 'Lebar Depan (m)', 
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        _isUserTypingLebarDepan = true;
+                        formNotifier.onLebarDepanChanged(value);
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (mounted) {
+                            setState(() => _isUserTypingLebarDepan = false);
+                          }
+                        });
+                      },
+                    ),
+                    FormTextField(
+                      controller: _panjangC, 
+                      label: 'Panjang (m)', 
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        _isUserTypingPanjang = true;
+                        formNotifier.onPanjangChanged(value);
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (mounted) {
+                            setState(() => _isUserTypingPanjang = false);
+                          }
+                        });
+                      },
+                    ),
+                    FormTextField(
+                      controller: _luasC, 
+                      label: 'Luas (m²)', 
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        _isUserTypingLuas = true;
+                        formNotifier.onLuasChanged(value);
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (mounted) {
+                            setState(() => _isUserTypingLuas = false);
+                          }
+                        });
+                      },
+                    ),
+                    FormTextField(
+                      controller: _hargaSewaC, 
+                      label: 'Harga Sewa (+PPH 10%)', 
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        _isUserTypingHargaSewa = true;
+                        formNotifier.onHargaSewaChanged(value);
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (mounted) {
+                            setState(() => _isUserTypingHargaSewa = false);
+                          }
+                        });
+                      },
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+
+              const SizedBox(height: 16),
+
+              // Data Pemilik
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: SvgPicture.asset(
+                            "assets/icons/avatar.svg",
+                            width: 20,
+                            height: 20,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.primaryColor,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Data Pemilik",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    FormTextField(
+                      controller: _namaPemilikC, 
+                      label: 'Nama Pemilik', 
+                      onChanged: formNotifier.onNamaPemilikChanged,
+                    ),
+                    FormTextField(
+                      controller: _kontakPemilikC, 
+                      label: 'Kontak Pemilik', 
+                      keyboardType: TextInputType.phone, 
+                      onChanged: formNotifier.onKontakPemilikChanged,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Upload Dokumen
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: SvgPicture.asset(
+                            "assets/icons/upload.svg",
+                            width: 20,
+                            height: 20,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.primaryColor,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Upload Dokumen",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFileUploadCard(
+                      "Formulir Usulan Lokasi (PDF)",
+                      formState.formUlokPdf?.path.split('/').last,
+                      formState.existingFormUlokUrl,
+                      () async {
+                        await pickFile(
+                          (fieldName, file) => formNotifier.onFilePicked(file), 
+                          '',
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              Row(
+                children: [
+                  if (!_isEditMode) ...[
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: formState.status == UlokFormStatus.loading
+                            ? null
+                            : () async {
+                                final success = await formNotifier.saveDraft();
+                                if (success && mounted) {
+                                  _showPopupAndNavigateBack(
+                                    "Draft berhasil disimpan!",
+                                    "assets/icons/draft.svg",
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primaryColor,
+                          side: const BorderSide(
+                            color: AppColors.primaryColor,
+                            width: 1.5,
+                          ),
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Simpan Draft',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: formState.status == UlokFormStatus.loading 
+                          ? null 
+                          : () {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                formNotifier.submitOrUpdateForm();
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: formState.status == UlokFormStatus.loading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              _isEditMode ? 'Update Data' : 'Submit',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
