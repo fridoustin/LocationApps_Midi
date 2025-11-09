@@ -16,7 +16,6 @@ import 'package:midi_location/features/lokasi/presentation/providers/kplt_provid
 import 'package:midi_location/core/widgets/file_upload.dart';
 import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/dropdown.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/form_card.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_detail.dart';
@@ -35,11 +34,8 @@ class KpltFormPage extends ConsumerStatefulWidget {
   ConsumerState<KpltFormPage> createState() => _KpltFormPageState();
 }
 
-class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerProviderStateMixin {
+class _KpltFormPageState extends ConsumerState<KpltFormPage> {
   bool _isDetailExpanded = false;
-
-  late final AnimationController _expandController;
-  late final Animation<double> _expandAnimation;
 
   final _skorFplController = TextEditingController();
   final _stdController = TextEditingController();
@@ -51,14 +47,12 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
   bool _isUserTypingSkorFpl = false;
   bool _isUserTypingStd = false;
   bool _isUserTypingApc = false;
-  bool _isUserTypingSpd = false;
   bool _isUserTypingPeRab = false;
 
   // Debounce timers
   Timer? _skorFplDebounceTimer;
   Timer? _stdDebounceTimer;
   Timer? _apcDebounceTimer;
-  Timer? _spdDebounceTimer;
   Timer? _peRabDebounceTimer;
 
   @override
@@ -69,11 +63,9 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
     _spdController.dispose();
     _peRabController.dispose();
     
-    // Cancel all timers
     _skorFplDebounceTimer?.cancel();
     _stdDebounceTimer?.cancel();
     _apcDebounceTimer?.cancel();
-    _spdDebounceTimer?.cancel();
     _peRabDebounceTimer?.cancel();
     
     super.dispose();
@@ -82,28 +74,20 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _expandController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 280));
-    _expandAnimation = CurvedAnimation(parent: _expandController, curve: Curves.easeInOut);
-    if (_isDetailExpanded) {
-      _expandController.value = 1.0;
-    } else {
-      _expandController.value = 0.0;
-    }
   }
 
   void _showLoadingDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => const Center(
-      child: CircularProgressIndicator(
-        backgroundColor: Colors.white,
-        color: AppColors.primaryColor,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          backgroundColor: Colors.white,
+          color: AppColors.primaryColor,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Future<void> _openOrDownloadFile(BuildContext context, String? pathOrUrl, String ulokId) async {
     if (pathOrUrl == null || pathOrUrl.isEmpty) {
@@ -132,10 +116,8 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
     final localFile = File(localPath);
 
     if (await localFile.exists()) {
-      print("Membuka file dari penyimpanan lokal: $localPath");
       await OpenFilex.open(localPath);
     } else {
-      print("File tidak ditemukan lokal, men-download dari: $relativePath");
       _showLoadingDialog(context);
 
       try {
@@ -144,13 +126,9 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
         Navigator.of(context).pop();
 
         await localFile.writeAsBytes(fileBytes, flush: true);
-        print("File berhasil disimpan di: $localPath");
-
         await OpenFilex.open(localPath);
-
       } catch (e) {
         Navigator.of(context).pop();
-        print("Gagal mengunduh atau membuka file: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal mengunduh file: $e')),
         );
@@ -216,8 +194,11 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
     final stdVal = parseNum(_stdController.text);
     final apcVal = parseNum(_apcController.text);
 
-    if (stdVal == null || apcVal == null) return;
-    if (_isUserTypingSpd) return;
+    if (stdVal == null || apcVal == null) {
+      _spdController.text = '';
+      return;
+    }
+    
     final computed = stdVal * apcVal;
 
     String toPlainString(double v) {
@@ -229,11 +210,13 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
     }
 
     final computedStr = toPlainString(computed);
+    _spdController.text = computedStr;
+    
     try {
       final provider = ref.read(kpltFormProvider(widget.ulok.id).notifier);
       provider.onSpdChanged(computedStr);
     } catch (e) {
-      _spdController.text = computedStr;
+      // Already set in controller
     }
   }
 
@@ -263,52 +246,75 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
     }));
   }
 
-  Widget _smallToggleIcon({required bool up, required VoidCallback onTap}) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+  Widget _buildFileUploadCard(String label, String? fileName, VoidCallback onTap) {
+    final hasFile = fileName != null && fileName.isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              up ? 'Tutup Detail' : 'Buka Detail',
-              style: const TextStyle(color: AppColors.primaryColor, fontSize: 12)
-              ),
-            const SizedBox(width: 8),
-            SizedBox(
-          height: 40,
-          child: Center(
-            child: Icon(
-                  up ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.primaryColor,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: hasFile 
+                      ? AppColors.primaryColor.withOpacity(0.1)
+                      : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  hasFile ? Icons.check_circle : Icons.upload_file,
+                  color: hasFile ? AppColors.primaryColor : Colors.grey[600],
                   size: 22,
                 ),
               ),
-            ),
-          ]
-        )
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (hasFile) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        fileName,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                hasFile ? Icons.edit : Icons.add_circle_outline,
+                color: AppColors.primaryColor,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
-  }
-
-  void _expand() {
-    setState(() {
-      _isDetailExpanded = true;
-      _expandController.forward();
-    });
-  }
-
-  void _collapse() {
-    _expandController.reverse().then((_) {
-      if (mounted) {
-        setState(() {
-          _isDetailExpanded = false;
-        });
-      }
-    });
   }
 
   @override
@@ -326,14 +332,11 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
       widget.ulok.provinsi,
     ].where((e) => e.isNotEmpty).join(', ');
 
-    // Mengakses provider form
     final formProvider = kpltFormProvider(widget.ulok.id);
     final formState = ref.watch(formProvider);
     final formNotifier = ref.read(formProvider.notifier);
 
-    // Listener untuk menampilkan Snackbar dan navigasi
     ref.listen<KpltFormState>(formProvider, (previous, next) {
-      // Update controllers only when user is not typing
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
@@ -358,7 +361,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
         _updateControllerIfNeeded(
           _spdController,
           _formatNumber(next.spd),
-          _isUserTypingSpd,
+          false, // SPD is always auto-calculated
         );
 
         _updateControllerIfNeeded(
@@ -368,7 +371,6 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
         );
       });
 
-      // Handle status aksi
       if (previous?.status != next.status) {
         if (next.status == KpltFormStatus.error && next.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -394,384 +396,721 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> with SingleTickerPr
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // title card
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.ulok.namaLokasi, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      SvgPicture.asset("assets/icons/time.svg", width: 14, height: 14, colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn)),
-                      const SizedBox(width: 4),
-                      Text("Approved on $formattedDate", style: const TextStyle(color: Colors.grey, fontSize: 12))
-                    ]),
-                    const SizedBox(height: 12)
-                  ]),
-                ),
-                // small icon visually attached to bottom center of title card (when collapsed)
-                if (!_isDetailExpanded)
-                  Positioned(
-                    bottom: -20,
-                    left: 0,
-                    right: 0,
-                    top: 60,
-                    child: Center(
-                      child: _smallToggleIcon(
-                        up: false,
-                        onTap: _expand,
+            // Header Card - Modern Design
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.store,
+                          color: AppColors.primaryColor,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.ulok.namaLokasi,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Approved $formattedDate",
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isDetailExpanded = !_isDetailExpanded;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _isDetailExpanded ? 'Sembunyikan Detail' : 'Lihat Detail Usulan',
+                            style: const TextStyle(
+                              color: AppColors.primaryColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            _isDetailExpanded 
+                                ? Icons.keyboard_arrow_up_rounded 
+                                : Icons.keyboard_arrow_down_rounded,
+                            color: AppColors.primaryColor,
+                            size: 20,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
 
-            const SizedBox(height: 16),
+            // Expandable Detail Section
+            if (_isDetailExpanded) ...[
+              const SizedBox(height: 16),
 
-            // Expandable area with smooth height animation
-            SizeTransition(
-              sizeFactor: _expandAnimation,
-              axisAlignment: -1.0,
-              child: Column(
+              DetailSectionWidget(
+                title: "Data Usulan Lokasi",
+                iconPath: "assets/icons/location.svg",
                 children: [
-                  DetailSectionWidget(
-                    title: "Data Usulan Lokasi",
-                    iconPath: "assets/icons/location.svg",
-                    children: [
-                      InfoRowWidget(label: "Alamat", value: fullAddress),
-                      InfoRowWidget(label: "LatLong", value: widget.ulok.latLong ?? "-"),
+                  InfoRowWidget(label: "Alamat", value: fullAddress),
+                  InfoRowWidget(label: "LatLong", value: widget.ulok.latLong ?? "-"),
+                  const SizedBox(height: 12),
+                  InteractiveMapWidget(position: latLng),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              DetailSectionWidget(
+                title: "Data Store",
+                iconPath: "assets/icons/data_store.svg",
+                children: [
+                  TwoColumnRowWidget(
+                    label1: "Format Store",
+                    value1: widget.ulok.formatStore ?? '-',
+                    label2: "Bentuk Objek",
+                    value2: widget.ulok.bentukObjek ?? '-',
+                  ),
+                  TwoColumnRowWidget(
+                    label1: "Alas Hak",
+                    value1: widget.ulok.alasHak ?? '-',
+                    label2: "Jumlah Lantai",
+                    value2: widget.ulok.jumlahLantai?.toString() ?? '-',
+                  ),
+                  TwoColumnRowWidget(
+                    label1: "Lebar Depan",
+                    value1: widget.ulok.lebarDepan != null ? '${widget.ulok.lebarDepan} m' : '-',
+                    label2: "Panjang",
+                    value2: widget.ulok.panjang != null ? '${widget.ulok.panjang} m' : '-',
+                  ),
+                  TwoColumnRowWidget(
+                    label1: "Luas",
+                    value1: widget.ulok.luas != null ? '${widget.ulok.luas} m²' : '-',
+                    label2: "Harga Sewa",
+                    value2: widget.ulok.hargaSewa != null
+                        ? NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.ulok.hargaSewa)
+                        : '-',
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              DetailSectionWidget(
+                title: "Data Pemilik",
+                iconPath: "assets/icons/profile.svg",
+                children: [
+                  TwoColumnRowWidget(
+                    label1: "Nama Pemilik",
+                    value1: widget.ulok.namaPemilik ?? '-',
+                    label2: "Kontak Pemilik",
+                    value2: widget.ulok.kontakPemilik ?? '-',
+                  ),
+                ],
+              ),
+
+              if (widget.ulok.approvalIntip != null) ...[
+                const SizedBox(height: 16),
+                DetailSectionWidget(
+                  title: "Data Intip",
+                  iconPath: "assets/icons/analisis.svg",
+                  children: [
+                    TwoColumnRowWidget(
+                      label1: "Status Intip",
+                      value1: widget.ulok.approvalIntip ?? '-',
+                      label2: "Tanggal Intip",
+                      value2: widget.ulok.tanggalApprovalIntip != null 
+                          ? DateFormat('dd MMMM yyyy').format(widget.ulok.tanggalApprovalIntip!) 
+                          : '-',
+                    ),
+                    if (widget.ulok.fileIntip != null && widget.ulok.fileIntip!.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      InteractiveMapWidget(position: latLng),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  DetailSectionWidget(
-                    title: "Data Store",
-                    iconPath: "assets/icons/data_store.svg",
-                    children: [
-                      TwoColumnRowWidget(label1: "Format Store", value1: widget.ulok.formatStore ?? '-', label2: "Bentuk Objek", value2: widget.ulok.bentukObjek ?? '-'),
-                      TwoColumnRowWidget(label1: "Alas Hak", value1: widget.ulok.alasHak ?? '-', label2: "Jumlah Lantai", value2: widget.ulok.jumlahLantai?.toString() ?? '-'),
-                      TwoColumnRowWidget(label1: "Lebar Depan (m)", value1: "${widget.ulok.lebarDepan ?? '-'}", label2: "Panjang (m)", value2: "${widget.ulok.panjang ?? '-'}"),
-                      TwoColumnRowWidget(label1: "Luas (m2)", value1: "${widget.ulok.luas ?? '-'}", label2: "Harga Sewa", value2: widget.ulok.hargaSewa != null ? NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.ulok.hargaSewa) : '-'),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  DetailSectionWidget(
-                    title: "Data Pemilik",
-                    iconPath: "assets/icons/profile.svg",
-                    children: [
-                      TwoColumnRowWidget(label1: "Nama Pemilik", value1: widget.ulok.namaPemilik ?? '-', label2: "Kontak Pemilik", value2: widget.ulok.kontakPemilik ?? '-'),
-                    ],
-                  ),
-
-                  // Data Intip: keep file intip
-                  if (widget.ulok.approvalIntip != null) ...[
-                    const SizedBox(height: 16),
-                    DetailSectionWidget(
-                      title: "Data Intip",
-                      iconPath: "assets/icons/analisis.svg",
-                      children: [
-                        TwoColumnRowWidget(
-                          label1: "Status Intip",
-                          value1: widget.ulok.approvalIntip ?? '-',
-                          label2: "Tanggal Intip",
-                          value2: widget.ulok.tanggalApprovalIntip != null ? DateFormat('dd MMMM yyyy').format(widget.ulok.tanggalApprovalIntip!) : '-',
+                      const Text(
+                        "File Intip:",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.black54,
                         ),
-
-                        if (widget.ulok.fileIntip != null && widget.ulok.fileIntip!.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          const Text("File Intip:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
-                          const SizedBox(height: 8),
-                          _isImageFile(widget.ulok.fileIntip)
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    _getPublicUrl(widget.ulok.fileIntip!),
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(child: CircularProgressIndicator(backgroundColor: Color(0xFFFFFFFF), color: AppColors.primaryColor));
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Center(child: Text('Gagal memuat gambar.'));
-                                    },
-                                  ),
-                                )
-                              : InkWell(
-                                  onTap: () => _openOrDownloadFile(context, widget.ulok.fileIntip, widget.ulok.id),
+                      ),
+                      const SizedBox(height: 8),
+                      _isImageFile(widget.ulok.fileIntip)
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                _getPublicUrl(widget.ulok.fileIntip!),
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(
+                                      backgroundColor: Colors.white,
+                                      color: AppColors.primaryColor,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Center(child: Text('Gagal memuat gambar.'));
+                                },
+                              ),
+                            )
+                          : InkWell(
+                              onTap: () => _openOrDownloadFile(context, widget.ulok.fileIntip, widget.ulok.id),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
-                                        const SizedBox(width: 12),
-                                        Expanded(child: Text(widget.ulok.fileIntip!.split('/').last, overflow: TextOverflow.ellipsis)),
-                                        const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                                      ],
+                                  border: Border.all(color: Colors.grey[200]!),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        widget.ulok.fileIntip!.split('/').last,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            ),
+                    ],
+                  ],
+                ),
+              ],
+
+              if (widget.ulok.formUlok != null && widget.ulok.formUlok!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                DetailSectionWidget(
+                  title: "Form Ulok",
+                  iconPath: "assets/icons/lampiran.svg",
+                  children: [
+                    InkWell(
+                      onTap: () => _openOrDownloadFile(context, widget.ulok.formUlok, widget.ulok.id),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                widget.ulok.formUlok!.split('/').last.split('?').first,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+
+            const SizedBox(height: 24),
+            const Divider(thickness: 1),
+            const SizedBox(height: 8),
+
+            // Form Section - Analisa & FPL
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SvgPicture.asset(
+                          "assets/icons/analisis.svg",
+                          width: 20,
+                          height: 20,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.primaryColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        "Analisa & FPL",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  PopupButtonForm(
+                    label: "Karakter Lokasi",
+                    optionsProvider: dropdownOptionsProvider('karakter'),
+                    selectedValue: formState.karakterLokasi,
+                    onSelected: (value) => formNotifier.onKarakterLokasiChanged(value!),
+                  ),
+                  PopupButtonForm(
+                    label: "Sosial Ekonomi",
+                    optionsProvider: dropdownOptionsProvider('social'),
+                    selectedValue: formState.sosialEkonomi,
+                    onSelected: (value) => formNotifier.onSosialEkonomiChanged(value!),
+                  ),
+                  FormTextField(
+                    controller: _skorFplController,
+                    label: "Skor FPL",
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => _handleTextFieldChange(
+                      value,
+                      formNotifier.onSkorFplChanged,
+                      () => _isUserTypingSkorFpl = true,
+                      _skorFplDebounceTimer,
+                      (timer) => _skorFplDebounceTimer = timer,
+                    ),
+                  ),
+                  FormTextField(
+                    controller: _stdController,
+                    label: "STD",
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => _handleTextFieldChange(
+                      value,
+                      formNotifier.onStdChanged,
+                      () => _isUserTypingStd = true,
+                      _stdDebounceTimer,
+                      (timer) => _stdDebounceTimer = timer,
+                      _tryComputeSpdAndUpdate,
+                    ),
+                  ),
+                  FormTextField(
+                    controller: _apcController,
+                    label: "APC",
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => _handleTextFieldChange(
+                      value,
+                      formNotifier.onApcChanged,
+                      () => _isUserTypingApc = true,
+                      _apcDebounceTimer,
+                      (timer) => _apcDebounceTimer = timer,
+                      _tryComputeSpdAndUpdate,
+                    ),
+                  ),
+                  // SPD Field - Read Only (Auto Calculated)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: const TextSpan(
+                            style: TextStyle(
+                              color: AppColors.black,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            children: [
+                              TextSpan(text: "SPD"),
+                              TextSpan(
+                                text: " *",
+                                style: TextStyle(
+                                  color: AppColors.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        AbsorbPointer(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _spdController.text.isEmpty 
+                                        ? 'Otomatis dihitung dari STD × APC'
+                                        : _spdController.text,
+                                    style: TextStyle(
+                                      color: _spdController.text.isEmpty
+                                          ? AppColors.black.withOpacity(0.5)
+                                          : AppColors.black,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
-                        ]
-                      ],
-                    ),
-                  ],
-
-                  if (widget.ulok.formUlok != null && widget.ulok.formUlok!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    DetailSectionWidget(
-                      title: "Form Ulok",
-                      iconPath: "assets/icons/lampiran.svg",
-                      children: [
-                        InkWell(
-                          onTap: () => _openOrDownloadFile(context, widget.ulok.formUlok, widget.ulok.id),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    widget.ulok.formUlok!.split('/').last.split('?').first,
-                                    style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
-                                    overflow: TextOverflow.ellipsis,
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Icon(
+                                    Icons.calculate,
+                                    color: AppColors.primaryColor,
+                                    size: 18,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.open_in_new_rounded, color: Colors.grey),
                               ],
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ],
-
-                  const SizedBox(height: 12),
-
-                  // bottom toggle icon (to collapse)
-                  Center(child: _smallToggleIcon(up: true, onTap: _collapse)),
-
-                  const SizedBox(height: 12),
+                  ),
                 ],
               ),
             ),
 
-            const Divider(thickness: 1, height: 32),
-            FormCardSection( 
-              title: "Analisa & FPL",
-              iconAsset: "assets/icons/analisis.svg",
-              children: [
-                PopupButtonForm(
-                  label: "Karakter Lokasi",
-                  optionsProvider: dropdownOptionsProvider('karakter'), 
-                  selectedValue: formState.karakterLokasi,
-                  onSelected: (value) => formNotifier.onKarakterLokasiChanged(value!),
-                ),
-                PopupButtonForm(
-                  label: "Sosial Ekonomi",
-                  optionsProvider: dropdownOptionsProvider('social'), 
-                  selectedValue: formState.sosialEkonomi,
-                  onSelected: (value) => formNotifier.onSosialEkonomiChanged(value!),
-                ),
-                FormTextField(
-                  controller: _skorFplController,
-                  label: "Skor FPL",
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => _handleTextFieldChange(
-                    value,
-                    formNotifier.onSkorFplChanged,
-                    () => _isUserTypingSkorFpl = true,
-                    _skorFplDebounceTimer,
-                    (timer) => _skorFplDebounceTimer = timer,
-                  ),
-                ),
-                FormTextField(
-                  controller: _stdController,
-                  label: "STD",
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => _handleTextFieldChange(
-                    value,
-                    formNotifier.onStdChanged,
-                    () => _isUserTypingStd = true,
-                    _stdDebounceTimer,
-                    (timer) => _stdDebounceTimer = timer,
-                    _tryComputeSpdAndUpdate, // <-- after debounce compute attempt
-                  ),
-                ),
-                FormTextField(
-                  controller: _apcController,
-                  label: "APC",
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => _handleTextFieldChange(
-                    value,
-                    formNotifier.onApcChanged,
-                    () => _isUserTypingApc = true,
-                    _apcDebounceTimer,
-                    (timer) => _apcDebounceTimer = timer,
-                    _tryComputeSpdAndUpdate, // <-- after debounce compute attempt
-                  ),
-                ),
-                FormTextField(
-                  controller: _spdController,
-                  label: "SPD",
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => _handleTextFieldChange(
-                    value,
-                    formNotifier.onSpdChanged,
-                    () => _isUserTypingSpd = true,
-                    _spdDebounceTimer,
-                    (timer) => _spdDebounceTimer = timer,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 16),
-            FormCardSection(
-              title: "Data PE",
-              iconAsset: "assets/icons/data_store.svg",
-              children: [
-                PopupButtonForm(
-                  label: "PE Status",
-                  optionsProvider: dropdownOptionsProvider('pe_status'), 
-                  selectedValue: formState.peStatus,
-                  onSelected: (value) => formNotifier.onPeStatusChanged(value!),
-                ),
-                FormTextField(
-                  controller: _peRabController,
-                  label: "PE RAB",
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => _handleTextFieldChange(
-                    value,
-                    formNotifier.onPeRabChanged,
-                    () => _isUserTypingPeRab = true,
-                    _peRabDebounceTimer,
-                    (timer) => _peRabDebounceTimer = timer,
+
+            // Data PE
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            FormCardSection(
-                title: "Upload Dokumen",
-                iconAsset: "assets/icons/lampiran.svg", 
-                children: [
-                  FileUploadWidget(
-                      label: "PDF Foto",
-                      fileName: formState.pdfFoto?.path.split('/').last,
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'pdfFoto')),
-                  FileUploadWidget(
-                      label: "Counting Kompetitor",
-                      fileName: formState.countingKompetitor?.path.split('/').last,
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'countingKompetitor')),
-                  FileUploadWidget(
-                      label: "PDF Pembanding",
-                      fileName: formState.pdfPembanding?.path.split('/').last,
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'pdfPembanding')),
-                  FileUploadWidget(
-                      label: "PDF KKS",
-                      fileName: formState.pdfKks?.path.split('/').last,
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'pdfKks')),
-                  FileUploadWidget(
-                      label: "Excel FPL",
-                      fileName: formState.excelFpl?.path.split('/').last,
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'excelFpl')),
-                  FileUploadWidget(
-                      label: "Excel PE",
-                      fileName: formState.excelPe?.path.split('/').last, 
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'excelPe')),
-                  FileUploadWidget(
-                      label: "Video Traffic Siang",
-                      fileName: formState.videoTrafficSiang?.path.split('/').last, 
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'videoTrafficSiang')),
-                  FileUploadWidget(
-                      label: "Video Traffic Malam",
-                      fileName: formState.videoTrafficMalam?.path.split('/').last, 
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'videoTrafficMalam')),
-                  FileUploadWidget(
-                      label: "Video 360 Siang",
-                      fileName: formState.video360Siang?.path.split('/').last, 
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'video360Siang')),
-                  FileUploadWidget(
-                      label: "Video 360 Malam",
-                      fileName: formState.video360Malam?.path.split('/').last, 
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'video360Malam')),
-                  FileUploadWidget(
-                      label: "Peta Coverage",
-                      fileName: formState.petaCoverage?.path.split('/').last, 
-                      onTap: () =>
-                          pickFile(formNotifier.onFilePicked, 'petaCoverage'))
-                ]),
-            const SizedBox(height: 30),
-            Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child :Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: formState.status == KpltFormStatus.loading ? null : () async {
-                          final success = await formNotifier.saveDraft();
-                          if (success && mounted) {
-                            _showPopupAndNavigateBack("Draft berhasil disimpan!", "assets/icons/draft.svg");
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.cardColor,
-                          foregroundColor: AppColors.primaryColor,
-                          side: const BorderSide(color: AppColors.primaryColor),
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text('Simpan Draft'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: formState.status == KpltFormStatus.loading ? null : () async {
-                          final success = await formNotifier.submitForm();
-                          if (success && mounted) {
-                            _showPopupAndNavigateBack("Data Berhasil Disubmit!", "assets/icons/success.svg");
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: formState.status == KpltFormStatus.loading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Simpan Data KPLT'),
-                      ),
-                    ),
-                  ],
-                )
+                ],
               ),
-            const SizedBox(height: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SvgPicture.asset(
+                          "assets/icons/data_store.svg",
+                          width: 20,
+                          height: 20,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.primaryColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        "Data PE",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  PopupButtonForm(
+                    label: "PE Status",
+                    optionsProvider: dropdownOptionsProvider('pe_status'),
+                    selectedValue: formState.peStatus,
+                    onSelected: (value) => formNotifier.onPeStatusChanged(value!),
+                  ),
+                  FormTextField(
+                    controller: _peRabController,
+                    label: "PE RAB",
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => _handleTextFieldChange(
+                      value,
+                      formNotifier.onPeRabChanged,
+                      () => _isUserTypingPeRab = true,
+                      _peRabDebounceTimer,
+                      (timer) => _peRabDebounceTimer = timer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Upload Dokumen
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SvgPicture.asset(
+                          "assets/icons/lampiran.svg",
+                          width: 20,
+                          height: 20,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.primaryColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        "Upload Dokumen",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildFileUploadCard(
+                    "PDF Foto",
+                    formState.pdfFoto?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'pdfFoto'),
+                  ),
+                  _buildFileUploadCard(
+                    "Counting Kompetitor",
+                    formState.countingKompetitor?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'countingKompetitor'),
+                  ),
+                  _buildFileUploadCard(
+                    "PDF Pembanding",
+                    formState.pdfPembanding?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'pdfPembanding'),
+                  ),
+                  _buildFileUploadCard(
+                    "PDF KKS",
+                    formState.pdfKks?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'pdfKks'),
+                  ),
+                  _buildFileUploadCard(
+                    "Excel FPL",
+                    formState.excelFpl?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'excelFpl'),
+                  ),
+                  _buildFileUploadCard(
+                    "Excel PE",
+                    formState.excelPe?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'excelPe'),
+                  ),
+                  _buildFileUploadCard(
+                    "Video Traffic Siang",
+                    formState.videoTrafficSiang?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'videoTrafficSiang'),
+                  ),
+                  _buildFileUploadCard(
+                    "Video Traffic Malam",
+                    formState.videoTrafficMalam?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'videoTrafficMalam'),
+                  ),
+                  _buildFileUploadCard(
+                    "Video 360 Siang",
+                    formState.video360Siang?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'video360Siang'),
+                  ),
+                  _buildFileUploadCard(
+                    "Video 360 Malam",
+                    formState.video360Malam?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'video360Malam'),
+                  ),
+                  _buildFileUploadCard(
+                    "Peta Coverage",
+                    formState.petaCoverage?.path.split('/').last,
+                    () => pickFile(formNotifier.onFilePicked, 'petaCoverage'),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: formState.status == KpltFormStatus.loading
+                        ? null
+                        : () async {
+                            final success = await formNotifier.saveDraft();
+                            if (success && mounted) {
+                              _showPopupAndNavigateBack(
+                                "Draft berhasil disimpan!",
+                                "assets/icons/draft.svg",
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primaryColor,
+                      side: const BorderSide(color: AppColors.primaryColor, width: 1.5),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Simpan Draft',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: formState.status == KpltFormStatus.loading
+                        ? null
+                        : () async {
+                            final success = await formNotifier.submitForm();
+                            if (success && mounted) {
+                              _showPopupAndNavigateBack(
+                                "Data Berhasil Disubmit!",
+                                "assets/icons/success.svg",
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: formState.status == KpltFormStatus.loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Submit KPLT',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
