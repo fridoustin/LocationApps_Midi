@@ -9,7 +9,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
-// import 'package:midi_location/features/lokasi/presentation/pages/kplt_edit_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/two_column_row.dart';
@@ -42,11 +41,44 @@ class KpltDetailScreen extends ConsumerWidget {
       ),
       body: kpltAsyncValue.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Gagal memuat data: $err')),
-        data: (kpltData) {
-          // Kirim data KPLT ke widget utama
-          return _KpltDetailView(kplt: kpltData);
-        },
+        error: (err, stack) => _buildErrorState(err.toString()),
+        data: (kpltData) => _KpltDetailView(kplt: kpltData),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Gagal memuat data',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -103,36 +135,72 @@ class _KpltDetailView extends StatelessWidget {
   }
 
   Color _getStatusColor(String status) {
-    // Diambil dari kplt_card
     switch (status) {
-      case 'In Progress': return AppColors.secondaryColor;
-      case 'OK': return AppColors.successColor;
-      case 'NOK': return AppColors.primaryColor;
-      case 'Waiting for Forum': return AppColors.secondaryColor;
-      default: return Colors.grey;
+      case 'In Progress':
+        return AppColors.secondaryColor;
+      case 'OK':
+        return AppColors.successColor;
+      case 'NOK':
+        return AppColors.primaryColor;
+      case 'Waiting for Forum':
+        return AppColors.secondaryColor;
+      default:
+        return Colors.grey;
     }
   }
-  
-  Widget _buildDocumentRow(BuildContext context, {required String label, required String? filePath}) {
+
+  Widget _buildFileRow(BuildContext context, String label, String? filePath) {
+    final hasFile = filePath != null && filePath.isNotEmpty;
+
     return InkWell(
-      onTap: filePath != null && filePath.isNotEmpty ? () => _openOrDownloadFile(context, filePath) : null,
+      onTap: hasFile ? () => _openOrDownloadFile(context, filePath) : null,
       borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: hasFile ? Colors.grey[50] : Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: hasFile ? Colors.grey[200]! : Colors.grey[300]!,
+          ),
+        ),
         child: Row(
           children: [
-            Icon(Icons.description, color: filePath != null && filePath.isNotEmpty ? AppColors.primaryColor : Colors.grey),
+            Icon(
+              Icons.description,
+              color: hasFile ? AppColors.primaryColor : Colors.grey,
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: filePath != null && filePath.isNotEmpty ? Colors.black87 : Colors.grey,
+                  color: hasFile ? Colors.black87 : Colors.grey[600],
                 ),
               ),
             ),
-            Icon(Icons.open_in_new_rounded, color: filePath != null && filePath.isNotEmpty ? Colors.grey : Colors.transparent),
+            if (hasFile)
+              Icon(Icons.open_in_new_rounded, color: Colors.grey[600], size: 18)
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Tidak Ada',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -159,112 +227,252 @@ class _KpltDetailView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Header Card (Style dari Ulok Detail)
+          // Header Card - Modern Design
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: Text(kplt.namaLokasi, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                      decoration: BoxDecoration(color: _getStatusColor(kplt.status), borderRadius: BorderRadius.circular(20)),
-                      child: Text(kplt.status, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.store,
+                        color: AppColors.primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            kplt.namaLokasi,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                              const SizedBox(width: 4),
+                              Text(
+                                "Dibuat $formattedDate",
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(kplt.status).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _getStatusColor(kplt.status).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        kplt.status,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: _getStatusColor(kplt.status),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(children: [
-                  SvgPicture.asset("assets/icons/time.svg", width: 14, height: 14, colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn)),
-                  const SizedBox(width: 4),
-                  Text("Dibuat Pada $formattedDate", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                ])
               ],
             ),
           ),
           const SizedBox(height: 16),
 
-          DetailSectionWidget(title: "Data Usulan Lokasi", iconPath: "assets/icons/location.svg", children: [
-            InfoRowWidget(label: "Alamat", value: fullAddress),
-            InfoRowWidget(label: "LatLong", value: kplt.latLong ?? "-"),
-            const SizedBox(height: 12),
-            InteractiveMapWidget(position: latLng),
-          ]),
+          // Data Usulan Lokasi
+          DetailSectionWidget(
+            title: "Data Usulan Lokasi",
+            iconPath: "assets/icons/location.svg",
+            children: [
+              InfoRowWidget(label: "Alamat", value: fullAddress),
+              InfoRowWidget(label: "LatLong", value: kplt.latLong ?? "-"),
+              const SizedBox(height: 12),
+              InteractiveMapWidget(position: latLng),
+            ],
+          ),
           const SizedBox(height: 16),
-          DetailSectionWidget(title: "Data Store", iconPath: "assets/icons/data_store.svg", children: [
-            TwoColumnRowWidget(label1: "Format Store", value1: kplt.formatStore ?? '-', label2: "Bentuk Objek", value2: kplt.bentukObjek ?? '-'),
-            TwoColumnRowWidget(label1: "Alas Hak", value1: kplt.alasHak ?? '-', label2: "Jumlah Lantai", value2: kplt.jumlahLantai?.toString() ?? '-'),
-            TwoColumnRowWidget(label1: "Lebar Depan (m)", value1: "${kplt.lebarDepan ?? '-'}", label2: "Panjang (m)", value2: "${kplt.panjang ?? '-'}",),
-            TwoColumnRowWidget(label1: "Luas (m2)", value1: "${kplt.luas ?? '-'}", label2: "Harga Sewa", value2: kplt.hargaSewa != null ? NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(kplt.hargaSewa) : '-',),
-          ]),
+
+          // Data Store
+          DetailSectionWidget(
+            title: "Data Store",
+            iconPath: "assets/icons/data_store.svg",
+            children: [
+              TwoColumnRowWidget(
+                label1: "Format Store",
+                value1: kplt.formatStore ?? '-',
+                label2: "Bentuk Objek",
+                value2: kplt.bentukObjek ?? '-',
+              ),
+              TwoColumnRowWidget(
+                label1: "Alas Hak",
+                value1: kplt.alasHak ?? '-',
+                label2: "Jumlah Lantai",
+                value2: kplt.jumlahLantai?.toString() ?? '-',
+              ),
+              TwoColumnRowWidget(
+                label1: "Lebar Depan",
+                value1: kplt.lebarDepan != null ? '${kplt.lebarDepan} m' : '-',
+                label2: "Panjang",
+                value2: kplt.panjang != null ? '${kplt.panjang} m' : '-',
+              ),
+              TwoColumnRowWidget(
+                label1: "Luas",
+                value1: kplt.luas != null ? '${kplt.luas} m²' : '-',
+                label2: "Harga Sewa",
+                value2: kplt.hargaSewa != null
+                    ? NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(kplt.hargaSewa)
+                    : '-',
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
-          DetailSectionWidget(title: "Data Pemilik", iconPath: "assets/icons/profile.svg", children: [
-            TwoColumnRowWidget(label1: "Nama Pemilik", value1: kplt.namaPemilik ?? '-', label2: "Kontak Pemilik", value2: kplt.kontakPemilik ?? '-'),
-          ]),
+
+          // Data Pemilik
+          DetailSectionWidget(
+            title: "Data Pemilik",
+            iconPath: "assets/icons/profile.svg",
+            children: [
+              TwoColumnRowWidget(
+                label1: "Nama Pemilik",
+                value1: kplt.namaPemilik ?? '-',
+                label2: "Kontak Pemilik",
+                value2: kplt.kontakPemilik ?? '-',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Form Ulok (jika ada)
           if (kplt.formUlok != null && kplt.formUlok!.isNotEmpty) ...[
-            const SizedBox(height: 16),
             DetailSectionWidget(
               title: "Form Ulok",
               iconPath: "assets/icons/lampiran.svg",
               children: [
-                InkWell(
-                  onTap: () => _openOrDownloadFile(context, kplt.formUlok),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            kplt.formUlok!.split('/').last.split('?').first,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black87),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildFileRow(context, "Form Ulok", kplt.formUlok),
               ],
             ),
+            const SizedBox(height: 16),
           ],
-          const SizedBox(height: 16),
-          DetailSectionWidget(title: "Analisa & FPL", iconPath: "assets/icons/analisis.svg", children: [
-            TwoColumnRowWidget(label1: "Karakter Lokasi", value1: kplt.karakterLokasi ?? '-', label2: "Sosial Ekonomi", value2: kplt.sosialEkonomi ?? '-'),
-            TwoColumnRowWidget(label1: "Skor FPL", value1: kplt.skorFpl?.toString() ?? '-', label2: "STD", value2: kplt.std?.toString() ?? '-'),
-            TwoColumnRowWidget(label1: "APC", value1: kplt.apc?.toString() ?? '-', label2: "SPD", value2: kplt.spd?.toString() ?? '-'),
-          ]),
-          const SizedBox(height: 16),
-          DetailSectionWidget(title: "Data PE", iconPath: "assets/icons/data_store.svg", children: [
-            TwoColumnRowWidget(label1: "PE Status", value1: kplt.peStatus ?? '-', label2: "PE RAB", value2: kplt.peRab != null ? NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(kplt.peRab) : '-',),
-          ]),
-          const SizedBox(height: 16),
-          DetailSectionWidget(title: "Dokumen KPLT", iconPath: "assets/icons/lampiran.svg", children: [
-            _buildDocumentRow(context, label: "PDF Foto", filePath: kplt.pdfFoto),
-            _buildDocumentRow(context, label: "Counting Kompetitor", filePath: kplt.countingKompetitor),
-            _buildDocumentRow(context, label: "PDF Pembanding", filePath: kplt.pdfPembanding),
-            _buildDocumentRow(context, label: "PDF KKS", filePath: kplt.pdfKks),
-            _buildDocumentRow(context, label: "Excel FPL", filePath: kplt.excelFpl),
-            _buildDocumentRow(context, label: "Excel PE", filePath: kplt.excelPe),
-            _buildDocumentRow(context, label: "Video Traffic Siang", filePath: kplt.videoTrafficSiang),
-            _buildDocumentRow(context, label: "Video Traffic Malam", filePath: kplt.videoTrafficMalam),
-            _buildDocumentRow(context, label: "Video 360 Siang", filePath: kplt.video360Siang),
-            _buildDocumentRow(context, label: "Video 360 Malam", filePath: kplt.video360Malam),
-            _buildDocumentRow(context, label: "Peta Coverage", filePath: kplt.petaCoverage),
-          ]),
 
+          // Analisa & FPL
+          DetailSectionWidget(
+            title: "Analisa & FPL",
+            iconPath: "assets/icons/analisis.svg",
+            children: [
+              TwoColumnRowWidget(
+                label1: "Karakter Lokasi",
+                value1: kplt.karakterLokasi ?? '-',
+                label2: "Sosial Ekonomi",
+                value2: kplt.sosialEkonomi ?? '-',
+              ),
+              TwoColumnRowWidget(
+                label1: "Skor FPL",
+                value1: kplt.skorFpl?.toString() ?? '-',
+                label2: "STD",
+                value2: kplt.std != null ? kplt.std!.toInt().toString() : '-',
+              ),
+              TwoColumnRowWidget(
+                label1: "APC",
+                value1: kplt.apc != null
+                    ? NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(kplt.apc)
+                    : '-',
+                label2: "SPD",
+                value2: kplt.spd != null
+                    ? NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(kplt.spd)
+                    : '-',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Data PE
+          DetailSectionWidget(
+            title: "Data PE",
+            iconPath: "assets/icons/data_store.svg",
+            children: [
+              TwoColumnRowWidget(
+                label1: "PE Status",
+                value1: kplt.peStatus ?? '-',
+                label2: "PE RAB",
+                value2: kplt.peRab != null
+                    ? NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(kplt.peRab)
+                    : '-',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Dokumen KPLT
+          DetailSectionWidget(
+            title: "Dokumen KPLT",
+            iconPath: "assets/icons/lampiran.svg",
+            children: [
+              _buildFileRow(context, "PDF Foto", kplt.pdfFoto),
+              _buildFileRow(context, "Counting Kompetitor", kplt.countingKompetitor),
+              _buildFileRow(context, "PDF Pembanding", kplt.pdfPembanding),
+              _buildFileRow(context, "PDF KKS", kplt.pdfKks),
+              _buildFileRow(context, "Excel FPL", kplt.excelFpl),
+              _buildFileRow(context, "Excel PE", kplt.excelPe),
+              _buildFileRow(context, "Video Traffic Siang", kplt.videoTrafficSiang),
+              _buildFileRow(context, "Video Traffic Malam", kplt.videoTrafficMalam),
+              _buildFileRow(context, "Video 360 Siang", kplt.video360Siang),
+              _buildFileRow(context, "Video 360 Malam", kplt.video360Malam),
+              _buildFileRow(context, "Peta Coverage", kplt.petaCoverage),
+            ],
+          ),
+
+          // Data Intip (jika ada)
           if (kplt.approvalIntip != null) ...[
             const SizedBox(height: 16),
             DetailSectionWidget(
@@ -279,114 +487,34 @@ class _KpltDetailView extends StatelessWidget {
                       ? DateFormat('dd MMMM yyyy').format(kplt.tanggalApprovalIntip!)
                       : '-',
                 ),
-                
                 if (kplt.fileIntip != null && kplt.fileIntip!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    "File Intip:", 
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Colors.black54
-                    )
-                  ),
                   const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => _openOrDownloadFile(context, kplt.fileIntip),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.description, color: AppColors.primaryColor),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              kplt.fileIntip!.split('/').last,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-                  ),
-                ]
+                  _buildFileRow(context, "File Intip", kplt.fileIntip),
+                ],
               ],
             ),
           ],
 
+          // Data Ukur (jika ada)
           if (kplt.formUkur != null && kplt.formUkur!.isNotEmpty) ...[
             const SizedBox(height: 16),
             DetailSectionWidget(
               title: "Data Ukur",
               iconPath: "assets/icons/lampiran.svg",
               children: [
-                InfoRowWidget(label: "Tanggal Ukur", value: kplt.tanggalUkur != null ? DateFormat('dd MMMM yyyy').format(kplt.tanggalUkur!) : '-'),
-                const SizedBox(height: 8),
-                const Text(
-                    "File Ukur:", 
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Colors.black54
-                    )
-                  ),
-                InkWell(
-                  onTap: () => _openOrDownloadFile(context, kplt.formUkur),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            kplt.formUkur!.split('/').last.split('?').first,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black87),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                      ],
-                    ),
-                  ),
+                InfoRowWidget(
+                  label: "Tanggal Ukur",
+                  value: kplt.tanggalUkur != null
+                      ? DateFormat('dd MMMM yyyy').format(kplt.tanggalUkur!)
+                      : '-',
                 ),
+                const SizedBox(height: 8),
+                _buildFileRow(context, "Form Ukur", kplt.formUkur),
               ],
             ),
           ],
-          
+
           const SizedBox(height: 24),
-
-          //Bisa di uncomment kalau semisal nanti mau diterapkan fitur untuk edit KPLT
-
-          // if (kplt.status == 'In Progress' || kplt.status == 'Waiting for Forum') ...[
-          //   SizedBox(
-          //     width: double.infinity,
-          //     child: ElevatedButton(
-          //       onPressed: () {
-          //         Navigator.push(
-          //           context,
-          //           MaterialPageRoute(
-          //             builder: (context) => KpltEditPage(kplt: kplt),
-          //           ),
-          //         );
-          //       },
-          //       style: ElevatedButton.styleFrom(
-          //         backgroundColor: AppColors.primaryColor,
-          //         foregroundColor: Colors.white,
-          //         padding: const EdgeInsets.symmetric(vertical: 14),
-          //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          //       ),
-          //       child: const Text("Edit Data KPLT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          //     ),
-          //   ),
-          //   const SizedBox(height: 24),
-          // ]
         ],
       ),
     );
