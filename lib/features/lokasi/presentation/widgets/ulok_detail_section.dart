@@ -23,10 +23,10 @@ class DetailSectionWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-          )
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -36,8 +36,8 @@ class DetailSectionWidget extends StatelessWidget {
             children: [
               SvgPicture.asset(
                 iconPath,
-                width: 18,
-                height: 18,
+                width: 20,
+                height: 20,
                 colorFilter: const ColorFilter.mode(
                   AppColors.primaryColor,
                   BlendMode.srcIn,
@@ -47,13 +47,16 @@ class DetailSectionWidget extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
                   fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
             ],
           ),
-          const Divider(thickness: 1, height: 24),
+          const SizedBox(height: 8),
+          const Divider(thickness: 1, height: 1),
+          const SizedBox(height: 8),
           ...children,
         ],
       ),

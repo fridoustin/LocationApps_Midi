@@ -13,8 +13,8 @@ import 'package:midi_location/features/lokasi/presentation/widgets/helpers/info_
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_detail_section.dart';
-import 'package:path_provider/path_provider.dart'; 
-import 'package:open_filex/open_filex.dart';  
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
@@ -24,17 +24,17 @@ class UlokDetailPage extends StatelessWidget {
   static const String route = '/ulok/detail';
 
   void _showLoadingDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => const Center(
-      child: CircularProgressIndicator(
-        backgroundColor: Colors.white,
-        color: AppColors.primaryColor,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          backgroundColor: Colors.white,
+          color: AppColors.primaryColor,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Future<void> _openOrDownloadFile(BuildContext context, String? pathOrUrl, String ulokId) async {
     if (pathOrUrl == null || pathOrUrl.isEmpty) {
@@ -51,37 +51,33 @@ class UlokDetailPage extends StatelessWidget {
         final bucketAndPath = pathOrUrl.substring(publicIndex);
         relativePath = bucketAndPath.substring(bucketAndPath.indexOf('/') + 1);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Format URL lama tidak valid.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Format URL lama tidak valid.')),
+        );
         return;
       }
     } else {
       relativePath = pathOrUrl;
     }
+
     final directory = await getApplicationDocumentsDirectory();
     final localFileName = relativePath.split('/').last;
     final localPath = '${directory.path}/$localFileName';
     final localFile = File(localPath);
 
     if (await localFile.exists()) {
-      print("Membuka file dari penyimpanan lokal: $localPath");
       await OpenFilex.open(localPath);
     } else {
-      print("File tidak ditemukan lokal, men-download dari: $relativePath");
       _showLoadingDialog(context);
-
       try {
         final supabase = Supabase.instance.client;
         final fileBytes = await supabase.storage.from('file_storage').download(relativePath);
         Navigator.of(context).pop();
 
         await localFile.writeAsBytes(fileBytes, flush: true);
-        print("File berhasil disimpan di: $localPath");
-
         await OpenFilex.open(localPath);
-
       } catch (e) {
         Navigator.of(context).pop();
-        print("Gagal mengunduh atau membuka file: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal mengunduh file: $e')),
         );
@@ -106,14 +102,127 @@ class UlokDetailPage extends StatelessWidget {
     if (filePath == null) return false;
     final lowercasedPath = filePath.toLowerCase();
     return lowercasedPath.endsWith('.png') ||
-            lowercasedPath.endsWith('.jpg') ||
-            lowercasedPath.endsWith('.jpeg');
+        lowercasedPath.endsWith('.jpg') ||
+        lowercasedPath.endsWith('.jpeg');
   }
 
   String _getPublicUrl(String filePath) {
-    return Supabase.instance.client.storage
-        .from('file_storage') 
-        .getPublicUrl(filePath);
+    return Supabase.instance.client.storage.from('file_storage').getPublicUrl(filePath);
+  }
+
+  Widget _buildFileRow(BuildContext context, String label, String? filePath, String ulokId) {
+    final hasFile = filePath != null && filePath.isNotEmpty;
+    final isImage = _isImageFile(filePath);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (isImage) ...[
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              _getPublicUrl(filePath!),
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 200,
+                  alignment: Alignment.center,
+                  child: const CircularProgressIndicator(
+                    backgroundColor: Colors.white,
+                    color: AppColors.primaryColor,
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.broken_image, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Gagal memuat gambar',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ] else ...[
+          InkWell(
+            onTap: hasFile ? () => _openOrDownloadFile(context, filePath, ulokId) : null,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: hasFile ? Colors.grey[50] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: hasFile ? Colors.grey[200]! : Colors.grey[300]!,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.description,
+                    color: hasFile ? AppColors.primaryColor : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: hasFile ? Colors.black87 : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  if (hasFile)
+                    Icon(Icons.open_in_new_rounded, color: Colors.grey[600], size: 18)
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Tidak Ada',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -124,7 +233,7 @@ class UlokDetailPage extends StatelessWidget {
       double.tryParse(latLngParts[0]) ?? 0.0,
       double.tryParse(latLngParts[1]) ?? 0.0,
     );
-    
+
     final fullAddress = [
       ulok.alamat,
       ulok.desaKelurahan,
@@ -136,7 +245,7 @@ class UlokDetailPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: CustomTopBar.general(
-        title: 'ULOK Detail',
+        title: 'Detail Usulan Lokasi',
         showNotificationButton: false,
         leadingWidget: IconButton(
           icon: SvgPicture.asset(
@@ -150,73 +259,94 @@ class UlokDetailPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Header Card
+            // Header Card - Modern Design
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(ulok.namaLokasi,
-                            style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold)),
-                      ),
-                      const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 4,
-                          horizontal: 12,
-                        ),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(ulok.status),
+                          color: AppColors.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: AppColors.primaryColor,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ulok.namaLokasi,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Dibuat $formattedDate",
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(ulok.status).withOpacity(0.15),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _getStatusColor(ulok.status).withOpacity(0.3),
+                          ),
                         ),
                         child: Text(
                           ulok.status,
-                          style: const TextStyle(
-                            fontSize: 12,
+                          style: TextStyle(
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: _getStatusColor(ulok.status),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      SvgPicture.asset(
-                        "assets/icons/time.svg",
-                        width: 14,
-                        height: 14,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.grey,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "Dibuat Pada $formattedDate",
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ]
-                  )
                 ],
               ),
             ),
             const SizedBox(height: 16),
 
+            // Data Usulan Lokasi
             DetailSectionWidget(
               title: "Data Usulan Lokasi",
               iconPath: "assets/icons/location.svg",
@@ -224,11 +354,12 @@ class UlokDetailPage extends StatelessWidget {
                 InfoRowWidget(label: "Alamat", value: fullAddress),
                 InfoRowWidget(label: "LatLong", value: ulok.latLong ?? "-"),
                 const SizedBox(height: 12),
-                InteractiveMapWidget(position: latLng,),
+                InteractiveMapWidget(position: latLng),
               ],
             ),
             const SizedBox(height: 16),
 
+            // Data Store
             DetailSectionWidget(
               title: "Data Store",
               iconPath: "assets/icons/data_store.svg",
@@ -246,14 +377,14 @@ class UlokDetailPage extends StatelessWidget {
                   value2: ulok.jumlahLantai?.toString() ?? '-',
                 ),
                 TwoColumnRowWidget(
-                  label1: "Lebar Depan (m)",
-                  value1: "${ulok.lebarDepan ?? '-'}",
-                  label2: "Panjang (m)",
-                  value2: "${ulok.panjang ?? '-'}",
+                  label1: "Lebar Depan",
+                  value1: ulok.lebarDepan != null ? '${ulok.lebarDepan} m' : '-',
+                  label2: "Panjang",
+                  value2: ulok.panjang != null ? '${ulok.panjang} m' : '-',
                 ),
                 TwoColumnRowWidget(
-                  label1: "Luas (m2)",
-                  value1: "${ulok.luas ?? '-'}",
+                  label1: "Luas",
+                  value1: ulok.luas != null ? '${ulok.luas} m²' : '-',
                   label2: "Harga Sewa",
                   value2: ulok.hargaSewa != null
                       ? NumberFormat.currency(
@@ -267,6 +398,7 @@ class UlokDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // Data Pemilik
             DetailSectionWidget(
               title: "Data Pemilik",
               iconPath: "assets/icons/profile.svg",
@@ -280,6 +412,7 @@ class UlokDetailPage extends StatelessWidget {
               ],
             ),
 
+            // Data Intip (jika ada)
             if (ulok.approvalIntip != null) ...[
               const SizedBox(height: 16),
               DetailSectionWidget(
@@ -294,121 +427,56 @@ class UlokDetailPage extends StatelessWidget {
                         ? DateFormat('dd MMMM yyyy').format(ulok.tanggalApprovalIntip!)
                         : '-',
                   ),
-                  
                   if (ulok.fileIntip != null && ulok.fileIntip!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      "File Intip:", 
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Colors.black54
-                      )
-                    ),
-                    const SizedBox(height: 8),
-
-                    _isImageFile(ulok.fileIntip)
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            _getPublicUrl(ulok.fileIntip!),
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(child: CircularProgressIndicator(
-                                backgroundColor: Color(0xFFFFFFFF),
-                                color: AppColors.primaryColor,
-                              ));
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(child: Text('Gagal memuat gambar.'));
-                            },
-                          ),
-                        )
-                      : InkWell(
-                          onTap: () => _openOrDownloadFile(context, ulok.fileIntip, ulok.id),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    ulok.fileIntip!.split('/').last,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                              ],
-                            ),
-                          ),
-                        ),
-                  ]
+                    const SizedBox(height: 12),
+                    _buildFileRow(context, "File Intip", ulok.fileIntip, ulok.id),
+                  ],
                 ],
               ),
             ],
 
+            // Form Ulok (jika ada)
             if (ulok.formUlok != null && ulok.formUlok!.isNotEmpty) ...[
               const SizedBox(height: 16),
               DetailSectionWidget(
                 title: "Form Ulok",
                 iconPath: "assets/icons/lampiran.svg",
                 children: [
-                  InkWell(
-                    onTap: () => _openOrDownloadFile(context, ulok.formUlok, ulok.id),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.picture_as_pdf, color: AppColors.primaryColor),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              ulok.formUlok!.split('/').last.split('?').first,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.open_in_new_rounded, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildFileRow(context, "Form Ulok", ulok.formUlok, ulok.id),
                 ],
               ),
             ],
+
             const SizedBox(height: 24),
-            
+
+            // Edit Button (jika status In Progress)
             if (ulok.status == 'In Progress') ...[
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: ElevatedButton.icon(
                   onPressed: () {
                     final initialState = UlokFormState.fromUsulanLokasi(ulok);
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => UlokFormPage(initialState: initialState)));
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UlokFormPage(initialState: initialState),
+                      ),
+                    );
                   },
+                  icon: const Icon(Icons.edit, size: 20),
+                  label: const Text(
+                    "Edit Data Usulan Lokasi",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    "Edit Data Ulok",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -421,4 +489,3 @@ class UlokDetailPage extends StatelessWidget {
     );
   }
 }
-
