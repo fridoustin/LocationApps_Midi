@@ -10,7 +10,7 @@ import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/helpers/info_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/info_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_detail_section.dart';
@@ -319,8 +319,8 @@ class _KpltDetailView extends StatelessWidget {
             title: "Data Usulan Lokasi",
             iconPath: "assets/icons/location.svg",
             children: [
-              InfoRowWidget(label: "Alamat", value: fullAddress),
-              InfoRowWidget(label: "LatLong", value: kplt.latLong ?? "-"),
+              InfoRow(label: "Alamat", value: fullAddress),
+              InfoRow(label: "LatLong", value: kplt.latLong ?? "-"),
               const SizedBox(height: 12),
               InteractiveMapWidget(position: latLng),
             ],
@@ -502,7 +502,7 @@ class _KpltDetailView extends StatelessWidget {
               title: "Data Ukur",
               iconPath: "assets/icons/lampiran.svg",
               children: [
-                InfoRowWidget(
+                InfoRow(
                   label: "Tanggal Ukur",
                   value: kplt.tanggalUkur != null
                       ? DateFormat('dd MMMM yyyy').format(kplt.tanggalUkur!)

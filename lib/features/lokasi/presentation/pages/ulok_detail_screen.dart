@@ -9,7 +9,8 @@ import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/ulok_form_state.dart';
 import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/ulok_form_page.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/helpers/info_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/info_row.dart';
+
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/ulok_detail_section.dart';
@@ -351,8 +352,8 @@ class UlokDetailPage extends StatelessWidget {
               title: "Data Usulan Lokasi",
               iconPath: "assets/icons/location.svg",
               children: [
-                InfoRowWidget(label: "Alamat", value: fullAddress),
-                InfoRowWidget(label: "LatLong", value: ulok.latLong ?? "-"),
+                InfoRow(label: "Alamat", value: fullAddress),
+                InfoRow(label: "LatLong", value: ulok.latLong ?? "-"),
                 const SizedBox(height: 12),
                 InteractiveMapWidget(position: latLng),
               ],

@@ -15,8 +15,8 @@ import 'package:midi_location/features/lokasi/presentation/providers/kplt_form_p
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_provider.dart';
 import 'package:midi_location/core/widgets/file_upload.dart';
 import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/info_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/dropdown.dart';
-import 'package:midi_location/features/lokasi/presentation/widgets/helpers/info_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/helpers/two_column_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/map_detail.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/text_field.dart';
@@ -511,8 +511,8 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage> {
                 title: "Data Usulan Lokasi",
                 iconPath: "assets/icons/location.svg",
                 children: [
-                  InfoRowWidget(label: "Alamat", value: fullAddress),
-                  InfoRowWidget(label: "LatLong", value: widget.ulok.latLong ?? "-"),
+                  InfoRow(label: "Alamat", value: fullAddress),
+                  InfoRow(label: "LatLong", value: widget.ulok.latLong ?? "-"),
                   const SizedBox(height: 12),
                   InteractiveMapWidget(position: latLng),
                 ],
