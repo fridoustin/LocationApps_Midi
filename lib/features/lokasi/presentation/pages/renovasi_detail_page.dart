@@ -1,20 +1,21 @@
-// lib/features/lokasi/presentation/pages/renovasi_detail_page.dart
-
-// ignore_for_file: deprecated_member_use
-
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/services/file_service.dart';
+import 'package:midi_location/core/utils/date_formatter.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/renovasi.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/history_renovasi_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/detail_header_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/detail_section_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/empty_state.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/error_state.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/file_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/info_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/progress_tracking_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/status_badge.dart';
 
 class RenovasiDetailPage extends ConsumerWidget {
   final String progressKpltId;
@@ -44,202 +45,169 @@ class RenovasiDetailPage extends ConsumerWidget {
         ),
       ),
       body: renovasiAsync.when(
-        data: (renovasi) {
-          if (renovasi == null) {
-            return _buildEmptyState();
-          }
-          return _buildContent(context, renovasi);
-        },
+        data: (renovasi) => renovasi == null
+            ? const EmptyState(
+                title: 'Data Renovasi Belum Tersedia',
+                message: 'Belum ada data Renovasi untuk KPLT ini',
+              )
+            : _RenovasiContent(
+                renovasi: renovasi,
+                kpltName: kpltName,
+              ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => _buildErrorState(err.toString(), ref),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.description_outlined,
-                size: 64,
-                color: Colors.grey[400],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Data Renovasi Belum Tersedia',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Belum ada data Renovasi untuk KPLT ini',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
+        error: (err, stack) => ErrorState(
+          error: err.toString(),
+          onRetry: () => ref.invalidate(renovasiDataProvider(progressKpltId)),
         ),
       ),
     );
   }
+}
 
-  Widget _buildErrorState(String error, WidgetRef ref) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Gagal memuat data',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => ref.invalidate(renovasiDataProvider(progressKpltId)),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Coba Lagi'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+class _RenovasiContent extends StatelessWidget {
+  final Renovasi renovasi;
+  final String kpltName;
+
+  const _RenovasiContent({
+    required this.renovasi,
+    required this.kpltName,
+  });
+
+  bool get _hasProgressData {
+    return renovasi.planRenov != null ||
+        renovasi.prosesRenov != null ||
+        renovasi.deviasi != null;
   }
 
-  Widget _buildContent(BuildContext context, Renovasi data) {
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Card
-          _buildHeaderCard(context, data),
+          DetailHeaderCard(
+            title: kpltName,
+            subtitle: 'Renovasi',
+            icon: Icons.construction,
+            statusBadge: StatusBadge(isCompleted: renovasi.isCompleted),
+            onHistoryTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HistoryRenovasiPage(
+                    renovasiId: renovasi.id,
+                    kpltName: kpltName,
+                  ),
+                ),
+              );
+            },
+            historyLabel: 'Lihat History Renovasi',
+          ),
           const SizedBox(height: 16),
 
-          // Progress Tracking Card - ALWAYS SHOW if data exists
-          if (data.planRenov != null || data.prosesRenov != null || data.deviasi != null)
-            _buildProgressTrackingCard(data),
-          if (data.planRenov != null || data.prosesRenov != null || data.deviasi != null)
+          // Progress Tracking Card (if data exists)
+          if (_hasProgressData) ...[
+            ProgressTrackingCard(
+              planPercentage: renovasi.planRenov,
+              prosesPercentage: renovasi.prosesRenov,
+              deviasi: renovasi.deviasi,
+              progressStatus: renovasi.progressStatus,
+              deviasiStatus: renovasi.deviasiStatus,
+              progressColor: renovasi.progressColor,
+            ),
             const SizedBox(height: 16),
+          ],
 
-          // Informasi Store
-          _buildSectionCard(
+          // Informasi Store Section
+          DetailSectionCard(
             title: 'Informasi Store',
             icon: Icons.store,
             children: [
-              _buildInfoRow('Kode Store', data.kodeStore ?? '-'),
+              InfoRow(
+                label: 'Kode Store',
+                value: renovasi.kodeStore ?? '-',
+              ),
               const SizedBox(height: 12),
-              _buildInfoRow('Tipe Toko', data.tipeToko ?? '-'),
+              InfoRow(
+                label: 'Tipe Toko',
+                value: renovasi.tipeToko ?? '-',
+              ),
               const SizedBox(height: 12),
-              _buildInfoRow('Bentuk Objek', data.bentukObjek ?? '-'),
+              InfoRow(
+                label: 'Bentuk Objek',
+                value: renovasi.bentukObjek ?? '-',
+              ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Rekomendasi Renovasi
-          _buildSectionCard(
+          // Rekomendasi Renovasi Section
+          DetailSectionCard(
             title: 'Rekomendasi Renovasi',
             icon: Icons.recommend,
             children: [
-              _buildInfoRow('Rekomendasi', data.rekomRenovasi ?? '-'),
-              const SizedBox(height: 12),
-              _buildInfoRow(
-                'Tanggal Rekomendasi',
-                data.tglRekomRenovasi != null
-                    ? DateFormat('dd MMMM yyyy').format(data.tglRekomRenovasi!)
-                    : '-',
+              InfoRow(
+                label: 'Rekomendasi',
+                value: renovasi.rekomRenovasi ?? '-',
               ),
-              if (data.fileRekomRenovasi != null) ...[
+              const SizedBox(height: 12),
+              InfoRow(
+                label: 'Tanggal Rekomendasi',
+                value: DateFormatter.formatDate(renovasi.tglRekomRenovasi),
+              ),
+              if (renovasi.fileRekomRenovasi != null) ...[
                 const SizedBox(height: 12),
-                _buildFileRow(context, 'File Rekomendasi', data.fileRekomRenovasi!),
+                FileRow(
+                  label: 'File Rekomendasi',
+                  filePath: renovasi.fileRekomRenovasi!,
+                  onTap: () => FileService.openOrDownloadFile(
+                    context,
+                    renovasi.fileRekomRenovasi,
+                  ),
+                ),
               ],
             ],
           ),
           const SizedBox(height: 16),
 
-          // SPK Renovasi
-          _buildSectionCard(
+          // SPK Renovasi Section
+          DetailSectionCard(
             title: 'SPK Renovasi',
             icon: Icons.assignment,
             children: [
-              _buildInfoRow(
-                'Start SPK',
-                data.startSpkRenov != null
-                    ? DateFormat('dd MMMM yyyy').format(data.startSpkRenov!)
-                    : '-',
+              InfoRow(
+                label: 'Start SPK',
+                value: DateFormatter.formatDate(renovasi.startSpkRenov),
               ),
               const SizedBox(height: 12),
-              _buildInfoRow(
-                'End SPK',
-                data.endSpkRenov != null
-                    ? DateFormat('dd MMMM yyyy').format(data.endSpkRenov!)
-                    : '-',
+              InfoRow(
+                label: 'End SPK',
+                value: DateFormatter.formatDate(renovasi.endSpkRenov),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Informasi Tambahan
-          _buildSectionCard(
+          // Informasi Tambahan Section
+          DetailSectionCard(
             title: 'Informasi Tambahan',
             icon: Icons.info_outline,
             children: [
-              _buildInfoRow(
-                'Tanggal Serah Terima',
-                data.tglSerahTerima != null
-                    ? DateFormat('dd MMMM yyyy').format(data.tglSerahTerima!)
-                    : '-',
+              InfoRow(
+                label: 'Tanggal Serah Terima',
+                value: DateFormatter.formatDate(renovasi.tglSerahTerima),
               ),
               const SizedBox(height: 12),
-              _buildInfoRow(
-                'Terakhir Diupdate',
-                DateFormat('dd MMMM yyyy, HH:mm').format(data.updatedAt),
+              InfoRow(
+                label: 'Terakhir Diupdate',
+                value: DateFormatter.formatDateTime(renovasi.updatedAt),
               ),
-              if (data.tglSelesaiRenov != null) ...[
+              if (renovasi.tglSelesaiRenov != null) ...[
                 const SizedBox(height: 12),
-                _buildInfoRow(
-                  'Tanggal Selesai',
-                  DateFormat('dd MMMM yyyy').format(data.tglSelesaiRenov!),
+                InfoRow(
+                  label: 'Tanggal Selesai',
+                  value: DateFormatter.formatDate(renovasi.tglSelesaiRenov),
                 ),
               ],
             ],
@@ -248,491 +216,5 @@ class RenovasiDetailPage extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  Widget _buildHeaderCard(BuildContext context, Renovasi data) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.construction,
-                  color: AppColors.primaryColor,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      kpltName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Renovasi',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildStatusBadge(data),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Tombol History
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HistoryRenovasiPage(
-                      renovasiId: data.id,
-                      kpltName: kpltName,
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.history, size: 18),
-              label: const Text('Lihat History Renovasi'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryColor,
-                side: BorderSide(color: AppColors.primaryColor),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(Renovasi data) {
-    final isCompleted = data.isCompleted;
-    final statusColor = isCompleted ? AppColors.successColor : Colors.orange;
-    final statusText = isCompleted ? 'Selesai' : 'Dalam Proses';
-    final statusIcon = isCompleted ? Icons.check_circle : Icons.pending;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            statusColor.withOpacity(0.1),
-            statusColor.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: statusColor.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(statusIcon, color: statusColor, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            statusText,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: statusColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressTrackingCard(Renovasi data) {
-    final prosesPercentage = data.prosesRenov ?? 0;
-    final progressColor = data.progressColor;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.track_changes, color: AppColors.primaryColor, size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                'Progress Tracking Renovasi',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Progress Bar dengan Status
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  progressColor.withOpacity(0.1),
-                  progressColor.withOpacity(0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: progressColor.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Progress Aktual',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          data.progressStatus,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: progressColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '${prosesPercentage.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: progressColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: prosesPercentage / 100,
-                    minHeight: 10,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1),
-          const SizedBox(height: 16),
-          
-          // Detail Progress
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _buildProgressItem(
-                    'Plan',
-                    data.planRenov != null ? '${data.planRenov!.toStringAsFixed(1)}%' : '-',
-                    Icons.flag,
-                    Colors.blue,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildProgressItem(
-                    'Proses',
-                    data.prosesRenov != null ? '${data.prosesRenov!.toStringAsFixed(1)}%' : '-',
-                    Icons.trending_up,
-                    progressColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildProgressItem(
-                    'Deviasi',
-                    data.deviasi != null 
-                        ? '${data.deviasi! >= 0 ? '+' : ''}${data.deviasi!.toStringAsFixed(1)}%' 
-                        : '-',
-                    Icons.analytics,
-                    data.deviasi != null 
-                        ? (data.deviasi! >= 0 ? Colors.green : Colors.red)
-                        : Colors.grey,
-                    subtitle: data.deviasiStatus,
-                  ),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressItem(String label, String value, IconData icon, Color color, {String? subtitle}) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 9,
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.primaryColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Divider(thickness: 1, height: 1),
-          const SizedBox(height: 8),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFileRow(BuildContext context, String label, String filePath) {
-    return InkWell(
-      onTap: () => _openOrDownloadFile(context, filePath),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.description, color: AppColors.primaryColor, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    filePath.split('/').last,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.open_in_new_rounded, color: Colors.grey[600], size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(
-          backgroundColor: Colors.white,
-          color: AppColors.primaryColor,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openOrDownloadFile(BuildContext context, String? pathOrUrl) async {
-    if (pathOrUrl == null || pathOrUrl.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dokumen tidak tersedia.')),
-      );
-      return;
-    }
-
-    final directory = await getApplicationDocumentsDirectory();
-    final localFileName = pathOrUrl.split('/').last;
-    final localPath = '${directory.path}/$localFileName';
-    final localFile = File(localPath);
-
-    if (await localFile.exists()) {
-      await OpenFilex.open(localPath);
-    } else {
-      _showLoadingDialog(context);
-      try {
-        final supabase = Supabase.instance.client;
-        final fileBytes = await supabase.storage.from('file_storage').download(pathOrUrl);
-        Navigator.of(context).pop();
-
-        await localFile.writeAsBytes(fileBytes, flush: true);
-        await OpenFilex.open(localPath);
-      } catch (e) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengunduh file: $e')),
-        );
-      }
-    }
   }
 }

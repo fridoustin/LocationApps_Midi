@@ -1,18 +1,20 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
-
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/services/file_service.dart';
+import 'package:midi_location/core/utils/date_formatter.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/notaris.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/history_notaris_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/detail_header_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/detail_section_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/empty_state.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/error_state.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/file_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/info_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/status_badge.dart';
 
 class NotarisDetailPage extends ConsumerWidget {
   final String progressKpltId;
@@ -42,207 +44,158 @@ class NotarisDetailPage extends ConsumerWidget {
         ),
       ),
       body: notarisAsync.when(
-        data: (notaris) {
-          if (notaris == null) {
-            return _buildEmptyState();
-          }
-          return _buildContent(context, notaris);
-        },
-        loading: () => const Center(child: CircularProgressIndicator(
-          backgroundColor: Colors.white,
-          color: AppColors.primaryColor,
-        )),
-        error: (err, stack) => _buildErrorState(err.toString(), ref),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                shape: BoxShape.circle,
+        data: (notaris) => notaris == null
+            ? const EmptyState(
+                title: 'Data Notaris Belum Tersedia',
+                message: 'Belum ada data Notaris untuk KPLT ini',
+              )
+            : _NotarisContent(
+                notaris: notaris,
+                kpltName: kpltName,
               ),
-              child: Icon(
-                Icons.description_outlined,
-                size: 64,
-                color: Colors.grey[400],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Data Notaris Belum Tersedia',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Belum ada data Notaris untuk KPLT ini',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+            backgroundColor: Colors.white,
+            color: AppColors.primaryColor,
+          ),
+        ),
+        error: (err, stack) => ErrorState(
+          error: err.toString(),
+          onRetry: () => ref.invalidate(notarisDataProvider(progressKpltId)),
         ),
       ),
     );
   }
+}
 
-  Widget _buildErrorState(String error, WidgetRef ref) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Gagal memuat data',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => ref.invalidate(notarisDataProvider(progressKpltId)),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Coba Lagi'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+class _NotarisContent extends StatelessWidget {
+  final Notaris notaris;
+  final String kpltName;
 
-  Widget _buildContent(BuildContext context, Notaris data) {
+  const _NotarisContent({
+    required this.notaris,
+    required this.kpltName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Card
-          _buildHeaderCard(context, data),
+          // Header Card with History Button
+          DetailHeaderCard(
+            title: kpltName,
+            subtitle: 'Notaris',
+            icon: Icons.account_balance,
+            statusBadge: StatusBadge(isCompleted: notaris.isCompleted),
+            onHistoryTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HistoryNotarisPage(
+                    notarisId: notaris.id,
+                    kpltName: kpltName,
+                  ),
+                ),
+              );
+            },
+            historyLabel: 'Lihat History Notaris',
+          ),
           const SizedBox(height: 16),
 
-          // PAR
-          _buildSectionCard(
+          // PAR Section
+          DetailSectionCard(
             title: 'PAR',
             icon: Icons.description_outlined,
             children: [
-              _buildInfoRow(
-                'Tanggal PAR',
-                data.tglPar != null
-                    ? DateFormat('dd MMMM yyyy').format(data.tglPar!)
-                    : '-',
+              InfoRow(
+                label: 'Tanggal PAR',
+                value: DateFormatter.formatDate(notaris.tglPar),
               ),
-              if (data.filePar != null) ...[
+              if (notaris.filePar != null) ...[
                 const SizedBox(height: 12),
-                _buildFileRow(context, 'File PAR', data.filePar!),
+                FileRow(
+                  label: 'File PAR',
+                  filePath: notaris.filePar!,
+                  onTap: () => FileService.openOrDownloadFile(
+                    context,
+                    notaris.filePar,
+                  ),
+                ),
               ],
             ],
           ),
           const SizedBox(height: 16),
 
-          // Status Legal
-          _buildSectionCard(
+          // Status Legal Section
+          DetailSectionCard(
             title: 'Status Legal',
             icon: Icons.gavel,
             children: [
-              _buildInfoRow('Validasi Legal', data.validasiLegal ?? '-'),
+              InfoRow(
+                label: 'Validasi Legal',
+                value: notaris.validasiLegal ?? '-',
+              ),
               const SizedBox(height: 12),
-              _buildInfoRow(
-                'Tanggal Validasi Legal',
-                data.tglValidasiLegal != null
-                    ? DateFormat('dd MMMM yyyy').format(data.tglValidasiLegal!)
-                    : '-',
+              InfoRow(
+                label: 'Tanggal Validasi Legal',
+                value: DateFormatter.formatDate(notaris.tglValidasiLegal),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Notaris
-          _buildSectionCard(
+          // Notaris Section
+          DetailSectionCard(
             title: 'Notaris',
             icon: Icons.assignment_ind,
             children: [
-              _buildInfoRow('Status Notaris', data.statusNotaris ?? '-'),
-              const SizedBox(height: 12),
-              _buildInfoRow(
-                'Tanggal Plan Notaris',
-                data.tglPlanNotaris != null
-                    ? DateFormat('dd MMMM yyyy').format(data.tglPlanNotaris!)
-                    : '-',
+              InfoRow(
+                label: 'Status Notaris',
+                value: notaris.statusNotaris ?? '-',
               ),
               const SizedBox(height: 12),
-              _buildInfoRow(
-                'Tanggal Notaris',
-                data.tglNotaris != null
-                    ? DateFormat('dd MMMM yyyy').format(data.tglNotaris!)
-                    : '-',
+              InfoRow(
+                label: 'Tanggal Plan Notaris',
+                value: DateFormatter.formatDate(notaris.tglPlanNotaris),
+              ),
+              const SizedBox(height: 12),
+              InfoRow(
+                label: 'Tanggal Notaris',
+                value: DateFormatter.formatDate(notaris.tglNotaris),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Status Pembayaran
-          _buildSectionCard(
+          // Status Pembayaran Section
+          DetailSectionCard(
             title: 'Status Pembayaran',
             icon: Icons.payment,
             children: [
-              _buildInfoRow('Status Pembayaran', data.statusPembayaran ?? '-'),
+              InfoRow(
+                label: 'Status Pembayaran',
+                value: notaris.statusPembayaran ?? '-',
+              ),
               const SizedBox(height: 12),
-              _buildInfoRow(
-                'Tanggal Pembayaran',
-                data.tglPembayaran != null
-                    ? DateFormat('dd MMMM yyyy').format(data.tglPembayaran!)
-                    : '-',
+              InfoRow(
+                label: 'Tanggal Pembayaran',
+                value: DateFormatter.formatDate(notaris.tglPembayaran),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Informasi Tambahan
-          _buildSectionCard(
+          // Informasi Tambahan Section
+          DetailSectionCard(
             title: 'Informasi Tambahan',
             icon: Icons.info_outline,
             children: [
-              if (data.tglSelesaiNotaris != null)
-                _buildInfoRow(
-                  'Tanggal Selesai',
-                  DateFormat('dd MMMM yyyy').format(data.tglSelesaiNotaris!),
+              if (notaris.tglSelesaiNotaris != null)
+                InfoRow(
+                  label: 'Tanggal Selesai',
+                  value: DateFormatter.formatDate(notaris.tglSelesaiNotaris),
                 ),
             ],
           ),
@@ -250,295 +203,5 @@ class NotarisDetailPage extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  Widget _buildHeaderCard(BuildContext context, Notaris data) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.account_balance,
-                  color: AppColors.primaryColor,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      kpltName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Notaris',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildStatusBadge(data),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Tombol History
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HistoryNotarisPage(
-                      notarisId: data.id,
-                      kpltName: kpltName,
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.history, size: 18),
-              label: const Text('Lihat History Notaris'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryColor,
-                side: BorderSide(color: AppColors.primaryColor),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(Notaris data) {
-    final isCompleted = data.isCompleted;
-    final statusColor = isCompleted ? AppColors.successColor : Colors.orange;
-    final statusText = isCompleted ? 'Selesai' : 'Dalam Proses';
-    final statusIcon = isCompleted ? Icons.check_circle : Icons.pending;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            statusColor.withOpacity(0.1),
-            statusColor.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: statusColor.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(statusIcon, color: statusColor, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            statusText,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: statusColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.primaryColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Divider(thickness: 1, height: 1),
-          const SizedBox(height: 8),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFileRow(BuildContext context, String label, String filePath) {
-    return InkWell(
-      onTap: () => _openOrDownloadFile(context, filePath),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.description, color: AppColors.primaryColor, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    filePath.split('/').last,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.open_in_new_rounded, color: Colors.grey[600], size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(
-          backgroundColor: Colors.white,
-          color: AppColors.primaryColor,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openOrDownloadFile(BuildContext context, String? pathOrUrl) async {
-    if (pathOrUrl == null || pathOrUrl.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dokumen tidak tersedia.')),
-      );
-      return;
-    }
-
-    final directory = await getApplicationDocumentsDirectory();
-    final localFileName = pathOrUrl.split('/').last;
-    final localPath = '${directory.path}/$localFileName';
-    final localFile = File(localPath);
-
-    if (await localFile.exists()) {
-      await OpenFilex.open(localPath);
-    } else {
-      _showLoadingDialog(context);
-      try {
-        final supabase = Supabase.instance.client;
-        final fileBytes = await supabase.storage.from('file_storage').download(pathOrUrl);
-        Navigator.of(context).pop();
-
-        await localFile.writeAsBytes(fileBytes, flush: true);
-        await OpenFilex.open(localPath);
-      } catch (e) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengunduh file: $e')),
-        );
-      }
-    }
   }
 }
