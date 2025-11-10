@@ -13,6 +13,7 @@ import 'package:midi_location/features/lokasi/presentation/widgets/detail/empty_
 import 'package:midi_location/features/lokasi/presentation/widgets/detail/error_state.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/detail/file_row.dart';
 import 'package:midi_location/features/lokasi/presentation/widgets/detail/info_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/status_badge.dart';
 
 class IzinTetanggaDetailPage extends ConsumerWidget {
   final String progressKpltId;
@@ -82,7 +83,8 @@ class _IzinTetanggaContent extends StatelessWidget {
           DetailHeaderCard(
             title: kpltName, 
             subtitle: 'Izin Tetangga', 
-            icon: Icons.people
+            icon: Icons.people,
+            statusBadge: StatusBadge(isCompleted: data.isCompleted),
           ),
           const SizedBox(height: 16),
           DetailSectionCard(
