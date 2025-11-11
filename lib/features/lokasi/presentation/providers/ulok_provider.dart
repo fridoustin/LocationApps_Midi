@@ -46,3 +46,10 @@ final ulokByIdProvider =
 });
 
 final ulokFilterProvider = StateProvider<UlokFilter>((ref) => UlokFilter());
+
+final ulokDetailProvider = FutureProvider.family<UsulanLokasi, String>(
+  (ref, ulokId) async {
+    final repository = ref.watch(ulokRepositoryProvider);
+    return await repository.getUlokById(ulokId);
+  },
+);

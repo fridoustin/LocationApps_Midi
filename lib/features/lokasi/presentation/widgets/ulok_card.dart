@@ -48,7 +48,7 @@ class UlokCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => UlokDetailPage(ulok: ulok)),
+          MaterialPageRoute(builder: (_) => UlokDetailPage(ulokId: ulok.id)),
         );
       },
       child: Card(

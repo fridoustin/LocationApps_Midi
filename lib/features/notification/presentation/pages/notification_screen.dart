@@ -69,7 +69,7 @@ class NotificationScreen extends ConsumerWidget {
                         final ulokDetails = await ref.read(ulokByIdProvider(notification.ulokId!).future);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => UlokDetailPage(ulok: ulokDetails)),
+                          MaterialPageRoute(builder: (context) => UlokDetailPage(ulokId: ulokDetails.id)),
                         );
                       } 
                       else if (notification.ulokStatus == 'OK') {
