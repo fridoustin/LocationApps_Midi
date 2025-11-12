@@ -19,6 +19,7 @@ class HistoryKpltView extends ConsumerWidget {
           return const Center(child: Text('Tidak ada data riwayat KPLT.'));
         }
         return RefreshIndicator(
+          backgroundColor: AppColors.white,
           color: AppColors.primaryColor,
           onRefresh: () async => ref.invalidate(kpltHistoryProvider),
           child: ListView.builder(
