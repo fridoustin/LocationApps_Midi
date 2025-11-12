@@ -161,67 +161,73 @@ class KpltProgressRemoteDatasource {
       // Check MOU
       final mou = await client
           .from('mou')
-          .select('tgl_selesai_mou')
+          .select('created_at, tgl_selesai_mou')
           .eq('progress_kplt_id', progressId)
           .maybeSingle();
       results['mou'] = {
         'completed': mou?['tgl_selesai_mou'] != null,
         'date': mou?['tgl_selesai_mou'],
+        'created_date': mou?['created_at']
       };
 
       // Check Izin Tetangga
       final izinTetangga = await client
           .from('izin_tetangga')
-          .select('tgl_selesai_izintetangga')
+          .select('created_at, tgl_selesai_izintetangga')
           .eq('progress_kplt_id', progressId)
           .maybeSingle();
       results['izin_tetangga'] = {
         'completed': izinTetangga?['tgl_selesai_izintetangga'] != null,
         'date': izinTetangga?['tgl_selesai_izintetangga'],
+        'created_date': izinTetangga?['created_at']
       };
 
       // Check Perizinan
       final perizinan = await client
           .from('perizinan')
-          .select('tgl_selesai_perizinan')
+          .select('created_at, tgl_selesai_perizinan')
           .eq('progress_kplt_id', progressId)
           .maybeSingle();
       results['perizinan'] = {
         'completed': perizinan?['tgl_selesai_perizinan'] != null,
         'date': perizinan?['tgl_selesai_perizinan'],
+        'created_date': perizinan?['created_at']
       };
 
       // Check Notaris
       final notaris = await client
           .from('notaris')
-          .select('tgl_selesai_notaris')
+          .select('created_at, tgl_selesai_notaris')
           .eq('progress_kplt_id', progressId)
           .maybeSingle();
       results['notaris'] = {
         'completed': notaris?['tgl_selesai_notaris'] != null,
         'date': notaris?['tgl_selesai_notaris'],
+        'created_date': notaris?['created_at']
       };
 
       // Check Renovasi
       final renovasi = await client
           .from('renovasi')
-          .select('tgl_selesai_renov')
+          .select('created_at, tgl_selesai_renov')
           .eq('progress_kplt_id', progressId)
           .maybeSingle();
       results['renovasi'] = {
         'completed': renovasi?['tgl_selesai_renov'] != null,
         'date': renovasi?['tgl_selesai_renov'],
+        'created_date': renovasi?['created_at']
       };
 
       // Check Grand Opening
       final grandOpening = await client
           .from('grand_opening')
-          .select('tgl_selesai_go')
+          .select('created_at, tgl_selesai_go')
           .eq('progress_kplt_id', progressId)
           .maybeSingle();
       results['grand_opening'] = {
         'completed': grandOpening?['tgl_selesai_go'] != null,
         'date': grandOpening?['tgl_selesai_go'],
+        'created_date': grandOpening?['created_at']
       };
 
       return results;
