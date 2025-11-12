@@ -27,12 +27,8 @@ final kpltProgressRepositoryProvider = Provider<KpltProgressRepository>((ref) {
 Future<ProgressKplt> _enrichProgress(KpltProgressRepository repo, ProgressKplt progress) async {
   final completionData = await repo.getCompletionStatus(progress.id);
   final percentage = ProgressCalculator.calculatePercentage(completionData);
-  final currentStatusString = ProgressCalculator.determineCurrentStatus(completionData);
-  final currentStatus = ProgressKpltStatus.fromString(currentStatusString);
-  
   return progress.copyWith(
     computedPercentage: percentage,
-    status: currentStatus,
   );
 }
 
