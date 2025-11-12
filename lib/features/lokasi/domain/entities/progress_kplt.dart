@@ -10,37 +10,37 @@ enum ProgressKpltStatus {
   String get value {
     switch (this) {
       case ProgressKpltStatus.notStarted:
-        return 'not_started';
+        return 'Not Started';
       case ProgressKpltStatus.mou:
-        return 'mou';
+        return 'Mou';
       case ProgressKpltStatus.izinTetangga:
-        return 'izin_tetangga';
+        return 'Izin Tetangga';
       case ProgressKpltStatus.perizinan:
-        return 'perizinan';
+        return 'Perizinan';
       case ProgressKpltStatus.notaris:
-        return 'notaris';
+        return 'Notaris';
       case ProgressKpltStatus.renovasi:
-        return 'renovasi';
+        return 'Renovasi';
       case ProgressKpltStatus.grandOpening:
-        return 'grand_opening';
+        return 'Grand Opening';
     }
   }
 
   static ProgressKpltStatus fromString(String value) {
     switch (value) {
-      case 'not_started':
+      case 'Not Started':
         return ProgressKpltStatus.notStarted;
-      case 'mou':
+      case 'Mou':
         return ProgressKpltStatus.mou;
-      case 'izin_tetangga':
+      case 'Izin Tetangga':
         return ProgressKpltStatus.izinTetangga;
-      case 'perizinan':
+      case 'Perizinan':
         return ProgressKpltStatus.perizinan;
-      case 'notaris':
+      case 'Notaris':
         return ProgressKpltStatus.notaris;
-      case 'renovasi':
+      case 'Renovasi':
         return ProgressKpltStatus.renovasi;
-      case 'grand_opening':
+      case 'Grand Opening':
         return ProgressKpltStatus.grandOpening;
       default:
         return ProgressKpltStatus.notStarted;
@@ -79,7 +79,7 @@ class ProgressKplt {
 
   factory ProgressKplt.fromMap(Map<String, dynamic> map) {
     final kpltData = map['kplt'] as Map<String, dynamic>?;
-    
+    final statusString = map['status'] as String? ?? 'Not Started';
     return ProgressKplt(
       id: map['id'] as String,
       kpltId: map['kplt_id'] as String,
@@ -87,9 +87,7 @@ class ProgressKplt {
       updatedAt: map['updated_at'] != null 
           ? DateTime.parse(map['updated_at'] as String) 
           : null,
-      status: ProgressKpltStatus.fromString(
-        map['status'] as String? ?? 'not_started'
-      ),
+      status: ProgressKpltStatus.fromString(statusString),
       kpltNama: kpltData?['nama_kplt'] as String?,
       kpltAlamat: kpltData?['alamat'] as String?,
       kpltKecamatan: kpltData?['kecamatan'] as String?,
@@ -158,7 +156,7 @@ extension ProgressKpltExtension on ProgressKplt {
       case ProgressKpltStatus.mou:
         return 'Proses MOU';
       case ProgressKpltStatus.izinTetangga:
-        return 'Proses Izin Tetangga';
+        return 'Proses Perizinan';
       case ProgressKpltStatus.perizinan:
         return 'Proses Perizinan';
       case ProgressKpltStatus.notaris:
@@ -191,31 +189,5 @@ class ProgressCalculator {
     if (completionData['grand_opening']?['completed'] == true) completed++;
     
     return ((completed / total) * 100).round();
-  }
-  
-  static String determineCurrentStatus(Map<String, dynamic> completionData) {
-    if (completionData['grand_opening']?['completed'] == true) {
-      return 'grand_opening';
-    }
-    if (completionData['renovasi']?['completed'] == true) {
-      return 'renovasi';
-    }
-    if (completionData['notaris']?['completed'] == true) {
-      return 'notaris';
-    }
-    final izinCompleted = completionData['izin_tetangga']?['completed'] == true;
-    final perizinanCompleted = completionData['perizinan']?['completed'] == true;
-    
-    if (izinCompleted && perizinanCompleted) {
-      return 'perizinan'; 
-    } else if (izinCompleted || perizinanCompleted) {
-      return 'perizinan'; 
-    }
-    
-    if (completionData['mou']?['completed'] == true) {
-      return 'mou';
-    }
-    
-    return 'not_started';
   }
 }

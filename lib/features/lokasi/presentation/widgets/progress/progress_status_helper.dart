@@ -3,16 +3,16 @@ import 'package:midi_location/core/constants/color.dart';
 
 class ProgressStatusHelper {
   static Color getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'grand_opening':
+    switch (status) {
+      case 'Grand Opening':
         return AppColors.successColor;
-      case 'in_progress':
-      case 'mou':
-      case 'perizinan':
-      case 'notaris':
-      case 'renovasi':
+      case 'Mou':
+      case 'Izin Tetangga':
+      case 'Perizinan':
+      case 'Notaris':
+      case 'Renovasi':
         return Colors.orange;
-      case 'not_started':
+      case 'Not Started':
         return Colors.grey;
       default:
         return AppColors.primaryColor;
@@ -20,23 +20,19 @@ class ProgressStatusHelper {
   }
 
   static String getStatusLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'done':
-        return 'Selesai';
-      case 'in_progress':
-        return 'Dalam Progress';
-      case 'mou':
-        return 'Tahap MOU';
-      case 'perizinan':
-        return 'Tahap Perizinan';
-      case 'notaris':
-        return 'Tahap Notaris';
-      case 'renovasi':
-        return 'Tahap Renovasi';
-      case 'grand_opening':
+    switch (status) {
+      case 'Grand Opening':
         return 'Grand Opening';
-      case 'not_started':
+      case 'Mou':
+        return 'Tahap MOU';
+      case 'Izin Tetangga':
+      case 'Perizinan':
+        return 'Tahap Perizinan';
+      case 'Notaris':
+        return 'Tahap Notaris';
+      case 'Renovasi':
+        return 'Tahap Renovasi';
+      case 'Not Started':
         return 'Belum Dimulai';
       default:
         return status;
@@ -44,20 +40,32 @@ class ProgressStatusHelper {
   }
 
   static bool isActiveStep(String stepKey, String currentStatus) {
-    if (currentStatus == 'not_started') return stepKey == 'mou';
-    if (currentStatus == 'mou') return stepKey == 'izin_tetangga' || stepKey == 'perizinan';
-    if (currentStatus == 'perizinan') return stepKey == 'notaris';
-    if (currentStatus == 'notaris') return stepKey == 'renovasi';
-    if (currentStatus == 'renovasi') return stepKey == 'grand_opening';
-    return false;
+    if (currentStatus == 'Perizinan' || currentStatus == 'Izin Tetangga') {
+      if (stepKey == 'izin_tetangga' || stepKey == 'perizinan') {
+        return true;
+      }
+    }
+    final currentStepKey = getCurrentActiveStep(currentStatus);
+    return stepKey == currentStepKey;
   }
 
   static String getCurrentActiveStep(String status) {
-    if (status == 'mou') return 'mou';
-    if (status == 'perizinan' || status == 'izin_tetangga') return 'perizinan';
-    if (status == 'notaris') return 'notaris';
-    if (status == 'renovasi') return 'renovasi';
-    if (status == 'grand_opening') return 'grand_opening';
-    return 'mou';
+    switch (status) {
+      case 'Mou':
+        return 'mou';
+      case 'Izin Tetangga':
+        return 'izin_tetangga';
+      case 'Perizinan':
+        return 'perizinan';
+      case 'Notaris':
+        return 'notaris';
+      case 'Renovasi':
+        return 'renovasi';
+      case 'Grand Opening':
+        return 'grand_opening';
+      case 'Not Started':
+      default:
+        return 'mou';
+    }
   }
 }
