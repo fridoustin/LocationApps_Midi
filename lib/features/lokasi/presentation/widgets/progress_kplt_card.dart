@@ -149,7 +149,7 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
                               color: Colors.grey[600],
                               height: 1.3,
                             ),
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -319,7 +319,7 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
     // 1. MOU
     final mouCompleted = completionData['mou']?['completed'] == true;
     steps.add({
-      'title': 'MOU Process',
+      'title': 'MOU',
       'completed': mouCompleted,
       'date': completionData['mou']?['date'] != null
           ? DateTime.parse(completionData['mou']['date'])
@@ -363,7 +363,7 @@ class _ProgressKpltCardState extends ConsumerState<ProgressKpltCard>
     // 4. Notaris
     final notarisCompleted = completionData['notaris']?['completed'] == true;
     steps.add({
-      'title': 'Notaris Process',
+      'title': 'Notaris',
       'completed': notarisCompleted,
       'date': completionData['notaris']?['date'] != null
           ? DateTime.parse(completionData['notaris']['date'])
