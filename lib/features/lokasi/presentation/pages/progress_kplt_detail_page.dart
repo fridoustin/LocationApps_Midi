@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
@@ -14,6 +14,13 @@ import 'package:midi_location/features/lokasi/presentation/pages/notaris_detail_
 import 'package:midi_location/features/lokasi/presentation/pages/perizinan_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/renovasi_detail_page.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_progress_provider.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/detail/error_state.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/progress/progress_header_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/progress/progress_info_row.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/progress/progress_location_card.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/progress/progress_status_helper.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/progress/progress_step_config.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/progress/progress_timeline_node.dart';
 
 class ProgressKpltDetailPage extends ConsumerStatefulWidget {
   final ProgressKplt progress;
@@ -24,22 +31,25 @@ class ProgressKpltDetailPage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ProgressKpltDetailPage> createState() => _ProgressKpltDetailPageState();
+  ConsumerState<ProgressKpltDetailPage> createState() =>
+      _ProgressKpltDetailPageState();
 }
 
-class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage> {
+class _ProgressKpltDetailPageState
+    extends ConsumerState<ProgressKpltDetailPage> {
   String? _selectedStep;
 
   String _formatDateSafe(String? dateStr) {
-  if (dateStr == null) return '-';
-  final dt = DateTime.tryParse(dateStr);
-  if (dt == null) return '-';
-  return DateFormat('dd MMMM yyyy').format(dt.toLocal());
-}
+    if (dateStr == null) return '-';
+    final dt = DateTime.tryParse(dateStr);
+    if (dt == null) return '-';
+    return DateFormat('dd MMMM yyyy').format(dt.toLocal());
+  }
 
   @override
   Widget build(BuildContext context) {
-    final completionAsync = ref.watch(completionStatusProvider(widget.progress.id));
+    final completionAsync =
+        ref.watch(completionStatusProvider(widget.progress.id));
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -49,165 +59,133 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         leadingWidget: IconButton(
           icon: SvgPicture.asset(
             "assets/icons/left_arrow.svg",
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            colorFilter:
+                const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: completionAsync.when(
-        data: (completionData) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Card - Modern Style
-                _buildHeaderCard(),
-
-                const SizedBox(height: 16),
-
-                // Location Info Card
-                _buildLocationCard(),
-
-                const SizedBox(height: 16),
-
-                // Timeline Progress Card
-                _buildTimelineCard(completionData),
-
-                const SizedBox(height: 16),
-
-                // Detail Card - Show selected step or current active
-                _buildDetailCard(completionData),
-
-                const SizedBox(height: 24),
-              ],
-            ),
-          );
-        },
+        data: (completionData) => _ProgressContent(
+          progress: widget.progress,
+          completionData: completionData,
+          selectedStep: _selectedStep,
+          onStepSelected: (step) {
+            setState(() {
+              _selectedStep = (_selectedStep == step) ? null : step;
+            });
+          },
+          formatDate: _formatDateSafe,
+          onRefresh: () async {
+            ref.invalidate(progressByKpltIdProvider(widget.progress.id));
+          },
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Gagal memuat data',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$err',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(completionStatusProvider(widget.progress.id)),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Coba Lagi'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        error: (err, stack) => ErrorState(
+          error: err.toString(),
+          onRetry: () =>
+              ref.invalidate(completionStatusProvider(widget.progress.id)),
         ),
       ),
     );
   }
+}
 
-  Widget _buildHeaderCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.store,
-                  color: AppColors.primaryColor,
-                  size: 28,
-                ),
+class _ProgressContent extends StatelessWidget {
+  final ProgressKplt progress;
+  final Map<String, dynamic> completionData;
+  final String? selectedStep;
+  final Function(String) onStepSelected;
+  final String Function(String?) formatDate;
+  final Future<void> Function() onRefresh;
+
+  const _ProgressContent({
+    required this.progress,
+    required this.completionData,
+    required this.selectedStep,
+    required this.onStepSelected,
+    required this.formatDate,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      backgroundColor: AppColors.white,
+      color: AppColors.primaryColor,
+      onRefresh: onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Card
+            ProgressHeaderCard(
+              title: progress.kpltNama ?? 'Nama KPLT',
+              status: progress.status.value,
+              statusColor: ProgressStatusHelper.getStatusColor(
+                progress.status.value,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.progress.kpltNama ?? 'Nama KPLT',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(widget.progress.status.value).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _getStatusLabel(widget.progress.status.value),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: _getStatusColor(widget.progress.status.value),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              statusLabel: ProgressStatusHelper.getStatusLabel(
+                progress.status.value,
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Location Card
+            ProgressLocationCard(
+              provinsi: progress.kpltProvinsi,
+              kabupaten: progress.kpltKabupaten,
+              kecamatan: progress.kpltKecamatan,
+              kelurahan: progress.kpltKelurahan,
+              alamat: progress.kpltAlamat,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Timeline Card
+            _TimelineCard(
+              completionData: completionData,
+              currentStatus: progress.status.value,
+              selectedStep: selectedStep,
+              onStepSelected: onStepSelected,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Detail Card
+            _StepDetailCard(
+              progress: progress,
+              completionData: completionData,
+              selectedStep: selectedStep,
+              formatDate: formatDate,
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      )
     );
   }
+}
 
-  Widget _buildLocationCard() {
+class _TimelineCard extends StatelessWidget {
+  final Map<String, dynamic> completionData;
+  final String currentStatus;
+  final String? selectedStep;
+  final Function(String) onStepSelected;
+
+  const _TimelineCard({
+    required this.completionData,
+    required this.currentStatus,
+    required this.selectedStep,
+    required this.onStepSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -226,126 +204,8 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
         children: [
           Row(
             children: [
-              SvgPicture.asset(
-                "assets/icons/location.svg",
-                width: 20,
-                height: 20,
-                colorFilter: ColorFilter.mode(AppColors.primaryColor, BlendMode.srcIn),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Lokasi KPLT',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildLocationRow('Provinsi', widget.progress.kpltProvinsi ?? '-'),
-          const SizedBox(height: 12),
-          _buildLocationRow('Kabupaten/Kota', widget.progress.kpltKabupaten ?? '-'),
-          const SizedBox(height: 12),
-          _buildLocationRow('Kecamatan', widget.progress.kpltKecamatan ?? '-'),
-          const SizedBox(height: 12),
-          _buildLocationRow('Kelurahan/Desa', widget.progress.kpltKelurahan ?? '-'),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.place_outlined, size: 20, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Alamat Lengkap',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.progress.kpltAlamat ?? '-',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLocationRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 120,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const Text(
-          ': ',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.black54,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimelineCard(Map<String, dynamic> completionData) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.timeline, color: AppColors.primaryColor, size: 20),
+              const Icon(Icons.timeline,
+                  color: AppColors.primaryColor, size: 20),
               const SizedBox(width: 8),
               const Text(
                 'Timeline Progress',
@@ -358,42 +218,37 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
             ],
           ),
           const SizedBox(height: 20),
-          _buildHorizontalTimeline(completionData),
+          _buildHorizontalTimeline(),
         ],
       ),
     );
   }
 
-  Widget _buildHorizontalTimeline(Map<String, dynamic> completionData) {
-    final steps = [
-      {'key': 'mou', 'label': 'MOU', 'icon': Icons.handshake},
-      {'key': 'izin_tetangga', 'label': 'Izin\nTetangga', 'icon': Icons.people},
-      {'key': 'perizinan', 'label': 'Perizinan', 'icon': Icons.description},
-      {'key': 'notaris', 'label': 'Notaris', 'icon': Icons.account_balance},
-      {'key': 'renovasi', 'label': 'Renovasi', 'icon': Icons.construction},
-      {'key': 'grand_opening', 'label': 'Grand\nOpening', 'icon': Icons.celebration_rounded},
-    ];
-
+  Widget _buildHorizontalTimeline() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: List.generate(steps.length, (index) {
-          final step = steps[index];
-          final stepKey = step['key'] as String;
-          final stepLabel = step['label'] as String;
-          final stepIcon = step['icon'] as IconData;
-          final isCompleted = completionData[stepKey]?['completed'] == true;
-          final isLast = index == steps.length - 1;
-          final isSelected = _selectedStep == stepKey;
+        children: List.generate(ProgressStepConfig.steps.length, (index) {
+          final step = ProgressStepConfig.steps[index];
+          final isCompleted =
+              completionData[step.key]?['completed'] == true;
+          final isActive = ProgressStatusHelper.isActiveStep(
+            step.key,
+            currentStatus,
+          );
+          final isLast = index == ProgressStepConfig.steps.length - 1;
+          final isSelected = selectedStep == step.key;
 
           return Row(
             children: [
-              _buildTimelineNode(
-                stepLabel,
-                stepKey,
-                stepIcon,
-                isCompleted,
-                isSelected,
+              ProgressTimelineNode(
+                label: step.label,
+                stepKey: step.key,
+                iconData: step.icon,
+                isCompleted: isCompleted,
+                isActive: isActive,
+                isSelected: isSelected,
+                onTap: () => onStepSelected(step.key),
               ),
               if (!isLast)
                 Container(
@@ -418,150 +273,32 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
       ),
     );
   }
+}
 
-  Widget _buildTimelineNode(String label, String key, IconData iconData, bool isCompleted, bool isSelected) {
-    final isActive = _isActiveStep(key);
-    
-    Color backgroundColor;
-    Color iconColor;
-    IconData displayIcon;
+class _StepDetailCard extends StatelessWidget {
+  final ProgressKplt progress;
+  final Map<String, dynamic> completionData;
+  final String? selectedStep;
+  final String Function(String?) formatDate;
 
-    if (isCompleted) {
-      backgroundColor = AppColors.successColor;
-      iconColor = Colors.white;
-      displayIcon = Icons.check_circle;
-    } else if (isActive) {
-      backgroundColor = Colors.orange;
-      iconColor = Colors.white;
-      displayIcon = iconData;
-    } else {
-      backgroundColor = Colors.grey[300]!;
-      iconColor = Colors.grey[600]!;
-      displayIcon = iconData;
-    }
+  const _StepDetailCard({
+    required this.progress,
+    required this.completionData,
+    required this.selectedStep,
+    required this.formatDate,
+  });
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedStep = (_selectedStep == key) ? null : key;
-        });
-      },
-      child: Container(
-        width: 90,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryColor.withOpacity(0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected 
-              ? Border.all(color: AppColors.primaryColor, width: 1)
-              : null,
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: backgroundColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: backgroundColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                displayIcon,
-                color: iconColor,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 32,
-              child: Center(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected ? AppColors.primaryColor : Colors.black87,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  bool _isActiveStep(String key) {
-    final currentStatus = widget.progress.status.value;
-    
-    if (currentStatus == 'not_started') return key == 'mou';
-    if (currentStatus == 'mou') return key == 'izin_tetangga' || key == 'perizinan';
-    if (currentStatus == 'perizinan') return key == 'notaris';
-    if (currentStatus == 'notaris') return key == 'renovasi';
-    if (currentStatus == 'renovasi') return key == 'grand_opening';
-    
-    return false;
-  }
-
-  Widget _buildDetailCard(Map<String, dynamic> completionData) {
-    final stepKey = _selectedStep ?? _getCurrentActiveStep();
+  @override
+  Widget build(BuildContext context) {
+    final stepKey = selectedStep ??
+        ProgressStatusHelper.getCurrentActiveStep(progress.status.value);
+    final stepConfig = ProgressStepConfig.getStep(stepKey);
     final stepData = completionData[stepKey];
     final isCompleted = stepData?['completed'] == true;
-    final isActive = _isActiveStep(stepKey);
+    final isActive =
+        ProgressStatusHelper.isActiveStep(stepKey, progress.status.value);
     final completedDate = stepData?['date'] as String?;
     final createdDate = stepData?['created_date'] as String?;
-
-    String title;
-    String description;
-    IconData stepIcon;
-    
-    switch (stepKey) {
-      case 'mou':
-        title = 'MOU';
-        description = 'Tahap pembuatan dan penandatanganan kesepakatan awal';
-        stepIcon = Icons.handshake;
-        break;
-      case 'izin_tetangga':
-        title = 'Izin Tetangga';
-        description = 'Proses mendapatkan persetujuan dari tetangga sekitar';
-        stepIcon = Icons.people;
-        break;
-      case 'perizinan':
-        title = 'Perizinan';
-        description = 'Pengurusan dokumen dan izin resmi dari instansi terkait';
-        stepIcon = Icons.description;
-        break;
-      case 'notaris':
-        title = 'Notaris';
-        description = 'Proses legalisasi dokumen melalui notaris';
-        stepIcon = Icons.account_balance;
-        break;
-      case 'renovasi':
-        title = 'Renovasi';
-        description = 'Tahap perbaikan dan penataan lokasi';
-        stepIcon = Icons.construction;
-        break;
-      case 'grand_opening':
-        title = 'Grand Opening';
-        description = 'Peresmian dan pembukaan lokasi';
-        stepIcon = Icons.celebration;
-        break;
-      default:
-        title = 'Progress';
-        description = 'Detail tahapan progress';
-        stepIcon = Icons.info;
-    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -579,12 +316,13 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isCompleted 
+                  color: isCompleted
                       ? AppColors.successColor.withOpacity(0.15)
                       : isActive
                           ? Colors.orange.withOpacity(0.15)
@@ -592,9 +330,9 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  stepIcon,
-                  color: isCompleted 
-                      ? AppColors.successColor 
+                  stepConfig.icon,
+                  color: isCompleted
+                      ? AppColors.successColor
                       : isActive
                           ? Colors.orange
                           : Colors.grey[600],
@@ -607,7 +345,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      stepConfig.title,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -616,7 +354,7 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      description,
+                      stepConfig.description,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -627,69 +365,15 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
           const Divider(height: 1),
           const SizedBox(height: 20),
-          
+
           // Status Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isCompleted 
-                    ? [AppColors.successColor.withOpacity(0.1), AppColors.successColor.withOpacity(0.05)]
-                    : isActive
-                        ? [Colors.orange.withOpacity(0.1), Colors.orange.withOpacity(0.05)]
-                        : [Colors.grey.withOpacity(0.1), Colors.grey.withOpacity(0.05)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isCompleted 
-                    ? AppColors.successColor.withOpacity(0.3)
-                    : isActive
-                        ? Colors.orange.withOpacity(0.3)
-                        : Colors.grey.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isCompleted 
-                      ? Icons.check_circle 
-                      : isActive
-                          ? Icons.schedule
-                          : Icons.lock_outline,
-                  size: 20,
-                  color: isCompleted 
-                      ? AppColors.successColor 
-                      : isActive
-                          ? Colors.orange
-                          : Colors.grey[600],
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isCompleted 
-                      ? 'Selesai' 
-                      : isActive
-                          ? 'Dalam Pengerjaan'
-                          : 'Belum Dimulai',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isCompleted 
-                        ? AppColors.successColor 
-                        : isActive
-                            ? Colors.orange
-                            : Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
+          _StatusBadge(isCompleted: isCompleted, isActive: isActive),
+
+          // Date Info or Status Message
           if (isCompleted && completedDate != null) ...[
             const SizedBox(height: 20),
             Container(
@@ -701,16 +385,16 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
               ),
               child: Column(
                 children: [
-                  _buildInfoRow(
+                  ProgressInfoRow(
                     icon: Icons.calendar_today,
                     label: 'Tanggal Mulai',
-                    value: _formatDateSafe(createdDate),
+                    value: formatDate(createdDate),
                   ),
                   const SizedBox(height: 12),
-                  _buildInfoRow(
+                  ProgressInfoRow(
                     icon: Icons.event_available,
                     label: 'Tanggal Selesai',
-                    value: _formatDateSafe(completedDate),
+                    value: formatDate(completedDate),
                   ),
                 ],
               ),
@@ -718,155 +402,199 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
             const SizedBox(height: 16),
           ] else if (isActive) ...[
             const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange[200]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Tahapan ini sedang dalam proses pengerjaan',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.orange[900],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _StatusMessage(
+              type: StatusType.warning,
+              icon: Icons.info_outline,
+              message: 'Tahapan ini sedang dalam proses pengerjaan',
+            )
           ] else ...[
             const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.lock_outline, color: Colors.grey[600], size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Tahapan ini belum dapat dimulai. Selesaikan tahapan sebelumnya terlebih dahulu.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _StatusMessage(
+              type: StatusType.info,
+              icon: Icons.lock_outline,
+              message: 'Tahapan ini belum dapat dimulai.',
+            )
           ],
+
+          // View Detail Button
           if (isCompleted || isActive) ...[
             const SizedBox(height: 16),
-            _buildViewDetailButton(context, stepKey),
+            _ViewDetailButton(
+              progressId: progress.id,
+              kpltName: progress.kpltNama ?? 'KPLT',
+              stepKey: stepKey,
+            ),
           ],
         ],
       ),
     );
   }
+}
 
-  Widget _buildInfoRow({required IconData icon, required String label, required String value}) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Colors.grey[600]),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
+class _StatusBadge extends StatelessWidget {
+  final bool isCompleted;
+  final bool isActive;
+
+  const _StatusBadge({
+    required this.isCompleted,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color badgeColor;
+    IconData badgeIcon;
+    String badgeText;
+
+    if (isCompleted) {
+      badgeColor = AppColors.successColor;
+      badgeIcon = Icons.check_circle;
+      badgeText = 'Selesai';
+    } else if (isActive) {
+      badgeColor = Colors.orange;
+      badgeIcon = Icons.schedule;
+      badgeText = 'Dalam Pengerjaan';
+    } else {
+      badgeColor = Colors.grey;
+      badgeIcon = Icons.lock_outline;
+      badgeText = 'Belum Dimulai';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            badgeColor.withOpacity(0.1),
+            badgeColor.withOpacity(0.05),
+          ],
         ),
-      ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: badgeColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(badgeIcon, size: 20, color: badgeColor),
+          const SizedBox(width: 8),
+          Text(
+            badgeText,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: badgeColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  String _getCurrentActiveStep() {
-    final status = widget.progress.status.value;
-    if (status == 'mou') return 'mou';
-    if (status == 'perizinan' || status == 'izin_tetangga') return 'perizinan';
-    if (status == 'notaris') return 'notaris';
-    if (status == 'renovasi') return 'renovasi';
-    if (status == 'grand_opening') return 'grand_opening';
-    return 'mou';
-  }
+class _StatusMessage extends StatelessWidget {
+  final StatusType type; // enum: warning, error, info
+  final IconData icon;
+  final String message;
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'grand_opening':
-        return AppColors.successColor;
-      case 'in_progress':
-      case 'mou':
-      case 'perizinan':
-      case 'notaris':
-      case 'renovasi':
-        return Colors.orange;
-      case 'not_started':
-        return Colors.grey;
-      default:
-        return AppColors.primaryColor;
+  const _StatusMessage({
+    required this.type,
+    required this.icon,
+    required this.message,
+  });
+
+  ColorScheme _getColorScheme() {
+    switch (type) {
+      case StatusType.warning:
+        return ColorScheme(
+          background: Colors.orange[50]!,
+          border: Colors.orange[200]!,
+          icon: Colors.orange[700]!,
+          text: Colors.orange[900]!,
+        );
+      case StatusType.error:
+        return ColorScheme(
+          background: Colors.red[50]!,
+          border: Colors.red[200]!,
+          icon: Colors.red[700]!,
+          text: Colors.red[900]!,
+        );
+      case StatusType.info:
+      return ColorScheme(
+          background: Colors.grey[100]!,
+          border: Colors.grey[300]!,
+          icon: Colors.grey[600]!,
+          text: Colors.grey[700]!,
+        );
     }
   }
 
-  String _getStatusLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'done':
-        return 'Selesai';
-      case 'in_progress':
-        return 'Dalam Progress';
-      case 'mou':
-        return 'Tahap MOU';
-      case 'perizinan':
-        return 'Tahap Perizinan';
-      case 'notaris':
-        return 'Tahap Notaris';
-      case 'renovasi':
-        return 'Tahap Renovasi';
-      case 'grand_opening':
-        return 'Grand Opening';
-      case 'not_started':
-        return 'Belum Dimulai';
-      default:
-        return status;
-    }
+  @override
+  Widget build(BuildContext context) {
+    final colors = _getColorScheme();
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: colors.icon, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                color: colors.text,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+}
 
-  Widget _buildViewDetailButton(BuildContext context, String stepKey) {
+class ColorScheme {
+  final Color background;
+  final Color border;
+  final Color icon;
+  final Color text;
+
+  ColorScheme({
+    required this.background,
+    required this.border,
+    required this.icon,
+    required this.text,
+  });
+}
+
+enum StatusType { warning, error, info }
+
+class _ViewDetailButton extends StatelessWidget {
+  final String progressId;
+  final String kpltName;
+  final String stepKey;
+
+  const _ViewDetailButton({
+    required this.progressId,
+    required this.kpltName,
+    required this.stepKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: () => _navigateToStepDetail(context, stepKey),
+        onPressed: () => _navigateToStepDetail(context),
         icon: const Icon(Icons.visibility, size: 20),
         label: const Text('Lihat Detail'),
         style: ElevatedButton.styleFrom(
@@ -881,74 +609,53 @@ class _ProgressKpltDetailPageState extends ConsumerState<ProgressKpltDetailPage>
     );
   }
 
-  void _navigateToStepDetail(BuildContext context, String stepKey) {
+  void _navigateToStepDetail(BuildContext context) {
+    Widget? page;
+
     switch (stepKey) {
       case 'mou':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MouDetailPage(
-              progressKpltId: widget.progress.id,
-              kpltName: widget.progress.kpltNama ?? 'KPLT',
-            ),
-          ),
+        page = MouDetailPage(
+          progressKpltId: progressId,
+          kpltName: kpltName,
         );
         break;
       case 'izin_tetangga':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => IzinTetanggaDetailPage(
-              progressKpltId: widget.progress.id,
-              kpltName: widget.progress.kpltNama ?? 'KPLT',
-            ),
-          ),
+        page = IzinTetanggaDetailPage(
+          progressKpltId: progressId,
+          kpltName: kpltName,
         );
         break;
       case 'perizinan':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PerizinanDetailPage(
-              progressKpltId: widget.progress.id,
-              kpltName: widget.progress.kpltNama ?? 'KPLT',
-            ),
-          ),
+        page = PerizinanDetailPage(
+          progressKpltId: progressId,
+          kpltName: kpltName,
         );
         break;
       case 'notaris':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => NotarisDetailPage(
-              progressKpltId: widget.progress.id,
-              kpltName: widget.progress.kpltNama ?? 'KPLT',
-            ),
-          ),
+        page = NotarisDetailPage(
+          progressKpltId: progressId,
+          kpltName: kpltName,
         );
         break;
       case 'renovasi':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RenovasiDetailPage(
-              progressKpltId: widget.progress.id,
-              kpltName: widget.progress.kpltNama ?? 'KPLT',
-            ),
-          ),
+        page = RenovasiDetailPage(
+          progressKpltId: progressId,
+          kpltName: kpltName,
         );
         break;
       case 'grand_opening':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => GrandOpeningDetailPage(
-              progressKpltId: widget.progress.id,
-              kpltName: widget.progress.kpltNama ?? 'KPLT',
-            ),
-          ),
+        page = GrandOpeningDetailPage(
+          progressKpltId: progressId,
+          kpltName: kpltName,
         );
         break;
+    }
+
+    if (page != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => page!),
+      );
     }
   }
 }
