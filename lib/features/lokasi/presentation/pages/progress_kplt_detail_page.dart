@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/utils/date_formatter.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/progress_kplt.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/grand_opening_detail_page.dart';
@@ -39,13 +39,6 @@ class _ProgressKpltDetailPageState
     extends ConsumerState<ProgressKpltDetailPage> {
   String? _selectedStep;
 
-  String _formatDateSafe(String? dateStr) {
-    if (dateStr == null) return '-';
-    final dt = DateTime.tryParse(dateStr);
-    if (dt == null) return '-';
-    return DateFormat('dd MMMM yyyy').format(dt.toLocal());
-  }
-
   @override
   Widget build(BuildContext context) {
     final completionAsync =
@@ -75,7 +68,6 @@ class _ProgressKpltDetailPageState
               _selectedStep = (_selectedStep == step) ? null : step;
             });
           },
-          formatDate: _formatDateSafe,
           onRefresh: () async {
             ref.invalidate(progressByKpltIdProvider(widget.progress.id));
           },
@@ -96,7 +88,6 @@ class _ProgressContent extends StatelessWidget {
   final Map<String, dynamic> completionData;
   final String? selectedStep;
   final Function(String) onStepSelected;
-  final String Function(String?) formatDate;
   final Future<void> Function() onRefresh;
 
   const _ProgressContent({
@@ -104,7 +95,6 @@ class _ProgressContent extends StatelessWidget {
     required this.completionData,
     required this.selectedStep,
     required this.onStepSelected,
-    required this.formatDate,
     required this.onRefresh,
   });
 
@@ -160,7 +150,6 @@ class _ProgressContent extends StatelessWidget {
               progress: progress,
               completionData: completionData,
               selectedStep: selectedStep,
-              formatDate: formatDate,
             ),
 
             const SizedBox(height: 24),
@@ -230,8 +219,7 @@ class _TimelineCard extends StatelessWidget {
       child: Row(
         children: List.generate(ProgressStepConfig.steps.length, (index) {
           final step = ProgressStepConfig.steps[index];
-          final isCompleted =
-              completionData[step.key]?['completed'] == true;
+          final isCompleted = completionData[step.key]?['completed'] == true;
           final isActive = ProgressStatusHelper.isActiveStep(
             step.key,
             currentStatus,
@@ -279,14 +267,17 @@ class _StepDetailCard extends StatelessWidget {
   final ProgressKplt progress;
   final Map<String, dynamic> completionData;
   final String? selectedStep;
-  final String Function(String?) formatDate;
 
   const _StepDetailCard({
     required this.progress,
     required this.completionData,
     required this.selectedStep,
-    required this.formatDate,
   });
+
+  DateTime? _parseDate(String? dateStr) {
+    if (dateStr == null) return null;
+    return DateTime.tryParse(dateStr);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -295,10 +286,14 @@ class _StepDetailCard extends StatelessWidget {
     final stepConfig = ProgressStepConfig.getStep(stepKey);
     final stepData = completionData[stepKey];
     final isCompleted = stepData?['completed'] == true;
-    final isActive =
-        ProgressStatusHelper.isActiveStep(stepKey, progress.status.value);
+    final isActive = ProgressStatusHelper.isActiveStep(
+      stepKey, 
+      progress.status.value,
+    );
     final completedDate = stepData?['date'] as String?;
     final createdDate = stepData?['created_date'] as String?;
+    final DateTime? dtCreated = _parseDate(createdDate);
+    final DateTime? dtCompleted = _parseDate(completedDate);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -388,13 +383,13 @@ class _StepDetailCard extends StatelessWidget {
                   ProgressInfoRow(
                     icon: Icons.calendar_today,
                     label: 'Tanggal Mulai',
-                    value: formatDate(createdDate),
+                    value: DateFormatter.formatDate(dtCreated),
                   ),
                   const SizedBox(height: 12),
                   ProgressInfoRow(
                     icon: Icons.event_available,
                     label: 'Tanggal Selesai',
-                    value: formatDate(completedDate),
+                    value: DateFormatter.formatDate(dtCompleted),
                   ),
                 ],
               ),
@@ -495,7 +490,7 @@ class _StatusBadge extends StatelessWidget {
 }
 
 class _StatusMessage extends StatelessWidget {
-  final StatusType type; // enum: warning, error, info
+  final StatusType type;
   final IconData icon;
   final String message;
 
