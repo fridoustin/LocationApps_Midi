@@ -118,7 +118,6 @@ class HistoryPerizinan {
   final DateTime? tglRekomNotaris;
   final String? fileRekomNotaris;
   final DateTime createdAt;
-  final DateTime updatedAt;
 
   HistoryPerizinan({
     required this.id,
@@ -141,7 +140,6 @@ class HistoryPerizinan {
     this.tglRekomNotaris,
     this.fileRekomNotaris,
     required this.createdAt,
-    required this.updatedAt,
   });
 
   factory HistoryPerizinan.fromMap(Map<String, dynamic> map) {
@@ -180,7 +178,6 @@ class HistoryPerizinan {
           : null,
       fileRekomNotaris: map['file_rekom_notaris'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
     );
   }
 }
