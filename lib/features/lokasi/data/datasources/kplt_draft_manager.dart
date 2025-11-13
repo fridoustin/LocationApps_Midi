@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:midi_location/core/utils/file_utils.dart';
 import 'package:midi_location/features/lokasi/domain/entities/form_kplt_state.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -8,8 +9,6 @@ class KpltDraftManager {
   Future<Directory> _getDraftsDirectory() async {
     final directory = await getApplicationDocumentsDirectory();
     final draftsDirectory = Directory('${directory.path}/kplt_drafts');
-    
-    // Jika direktori belum ada, buat
     if (!await draftsDirectory.exists()) {
       await draftsDirectory.create(recursive: true);
     }
@@ -23,31 +22,27 @@ class KpltDraftManager {
 
   Future<void> saveDraft(KpltFormState state) async {
     final file = await _getDraftFile(state.ulokId);
-    final jsonString = jsonEncode(state.toJson());
-    debugPrint("--- SAVING DRAFT ---");
-    debugPrint("File path: ${file.path}");
-    await file.writeAsString(jsonString);
+    final sanitized = state.copyWith(
+      lastEdited: DateTime.now(),
+    );
+    await file.writeAsString(jsonEncode(sanitized.toJson()));
   }
 
-  // Fungsi untuk memuat state dari file JSON
   Future<KpltFormState?> loadDraft(String ulokId) async {
     try {
       final file = await _getDraftFile(ulokId);
-      if (await file.exists()) {
-        final jsonString = await file.readAsString();
-        if (jsonString.isNotEmpty) {
-          final jsonMap = jsonDecode(jsonString);
-          return KpltFormState.fromJson(jsonMap);
-        }
-        return null;
-      }
-      return null; 
+      if (!await file.exists()) return null;
+      final jsonString = await file.readAsString();
+      if (jsonString.isEmpty) return null;
+      final json = jsonDecode(jsonString);
+      _sanitizeFilePaths(json);
+      return KpltFormState.fromJson(json);
     } catch (e) {
       debugPrint("Error loading KPLT draft: $e");
-      return null; 
+      return null;
     }
   }
-  
+
   Future<void> deleteDraft(String ulokId) async {
     final file = await _getDraftFile(ulokId);
     if (await file.exists()) {
@@ -56,25 +51,54 @@ class KpltDraftManager {
   }
 
   Future<List<KpltFormState>> getAllDrafts() async {
-    final draftsDirectory = await _getDraftsDirectory();
+    final directory = await _getDraftsDirectory();
     final List<KpltFormState> drafts = [];
 
     try {
-      final List<FileSystemEntity> files = draftsDirectory.listSync();
-      
-      for (var file in files) {
-        if (file is File && file.path.endsWith('.json')) {
+      final entries = directory.listSync();
+      for (var file in entries) {
+        if (file is! File || !file.path.endsWith(".json")) continue;
+        try {
           final content = await file.readAsString();
-          if (content.isNotEmpty) {
-            final json = jsonDecode(content) as Map<String, dynamic>;
-            drafts.add(KpltFormState.fromJson(json));
-          }
+          if (content.isEmpty) continue;
+          final json = jsonDecode(content);
+          _sanitizeFilePaths(json);
+          drafts.add(KpltFormState.fromJson(json));
+        } catch (e) {
+          debugPrint("Skip corrupt KPLT draft: $e");
         }
       }
+      drafts.sort((a, b) {
+        final aTime = a.lastEdited?.millisecondsSinceEpoch ?? 0;
+        final bTime = b.lastEdited?.millisecondsSinceEpoch ?? 0;
+        return bTime.compareTo(aTime);
+      });
     } catch (e) {
-      debugPrint('Error reading all KPLT drafts: $e');
+      debugPrint("Error listing KPLT drafts: $e");
     }
-    
+
     return drafts;
+  }
+
+  void _sanitizeFilePaths(Map<String, dynamic> json) {
+    final keys = [
+      'pdfFotoPath',
+      'countingKompetitorPath',
+      'pdfPembandingPath',
+      'pdfKksPath',
+      'excelFplPath',
+      'excelPePath',
+      'videoTrafficSiangPath',
+      'videoTrafficMalamPath',
+      'video360SiangPath',
+      'video360MalamPath',
+      'petaCoveragePath',
+    ];
+
+    for (final key in keys) {
+      if (json[key] != null) {
+        json[key] = safeFile(json[key])?.path;
+      }
+    }
   }
 }
