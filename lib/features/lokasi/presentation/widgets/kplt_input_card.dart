@@ -179,7 +179,7 @@ class KpltNeedInputCard extends ConsumerWidget {
                             kabupaten: kplt.kabupaten,
                             provinsi: kplt.provinsi,
                             status: kplt.status,
-                            tanggal: kplt.tanggal,
+                            createdAt: kplt.tanggal,
                             latLong: kplt.latLong,
                             formatStore: kplt.formatStore,
                             bentukObjek: kplt.bentukObjek,

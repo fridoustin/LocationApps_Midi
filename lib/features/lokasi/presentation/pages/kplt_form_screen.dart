@@ -147,7 +147,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage>
   @override
   Widget build(BuildContext context) {
     final formattedDate =
-        DateFormat("dd MMMM yyyy").format(widget.ulok.tanggal);
+        DateFormat("dd MMMM yyyy").format(widget.ulok.createdAt);
     final latLngParts = widget.ulok.latLong?.split(',') ?? ['0', '0'];
     final latLng = LatLng(
       double.tryParse(latLngParts[0]) ?? 0.0,
