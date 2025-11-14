@@ -10,7 +10,7 @@ import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/lokasi/domain/entities/form_kplt.dart';
 import 'package:midi_location/features/lokasi/presentation/pages/kplt_form_screen.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_form_provider.dart';
-import 'package:midi_location/features/lokasi/domain/entities/usulan_lokasi.dart';
+import 'package:midi_location/features/lokasi/presentation/providers/ulok_provider.dart';
 
 class KpltNeedInputCard extends ConsumerWidget {
   final FormKPLT kplt;
@@ -142,7 +142,6 @@ class KpltNeedInputCard extends ConsumerWidget {
                     ],
                   ),
 
-                  // --- TAMBAHAN: TAMPILKAN LAST EDITED JIKA ADA DRAFT ---
                   if (hasDraft) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -163,46 +162,25 @@ class KpltNeedInputCard extends ConsumerWidget {
                       ],
                     ),
                   ],
-                  // --- BATAS TAMBAHAN ---
 
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        final ulokDataForForm = UsulanLokasi(
-                            id: kplt.ulokId,
-                            namaLokasi: kplt.namaLokasi,
-                            alamat: kplt.alamat,
-                            kecamatan: kplt.kecamatan,
-                            desaKelurahan: kplt.desaKelurahan,
-                            kabupaten: kplt.kabupaten,
-                            provinsi: kplt.provinsi,
-                            status: kplt.status,
-                            createdAt: kplt.tanggal,
-                            latLong: kplt.latLong,
-                            formatStore: kplt.formatStore,
-                            bentukObjek: kplt.bentukObjek,
-                            alasHak: kplt.alasHak,
-                            jumlahLantai: kplt.jumlahLantai,
-                            lebarDepan: kplt.lebarDepan,
-                            panjang: kplt.panjang,
-                            luas: kplt.luas,
-                            hargaSewa: kplt.hargaSewa,
-                            namaPemilik: kplt.namaPemilik,
-                            kontakPemilik: kplt.kontakPemilik,
-                            formUlok: kplt.formUlok,
-                            approvalIntip: kplt.approvalIntip,
-                            tanggalApprovalIntip: kplt.tanggalApprovalIntip,
-                            fileIntip: kplt.fileIntip
-                        );
-                        
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => KpltFormPage(ulok: ulokDataForForm),
-                          ),
-                        );
+                      onPressed: () async {
+                        try {
+                          final ulokData = await ref.read(ulokByIdProvider(kplt.ulokId).future);
+                          if (!context.mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => KpltFormPage(ulok: ulokData)),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal memuat data ulok: $e')),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: highlightColor,
