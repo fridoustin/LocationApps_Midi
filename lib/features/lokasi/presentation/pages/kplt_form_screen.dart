@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/services/file_service.dart';
+import 'package:midi_location/core/utils/date_formatter.dart';
 import 'package:midi_location/core/widgets/custom_success_dialog.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/form_kplt_state.dart';
@@ -147,7 +148,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage>
   @override
   Widget build(BuildContext context) {
     final formattedDate =
-        DateFormat("dd MMMM yyyy").format(widget.ulok.createdAt);
+        DateFormat("dd MMMM yyyy").format(widget.ulok.approvedAt!);
     final latLngParts = widget.ulok.latLong?.split(',') ?? ['0', '0'];
     final latLng = LatLng(
       double.tryParse(latLngParts[0]) ?? 0.0,
@@ -403,7 +404,7 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage>
           ],
         ),
         const SizedBox(height: 16),
-        if (widget.ulok.formUlok != null && widget.ulok.formUlok!.isNotEmpty)
+        if (widget.ulok.formUlok != null && widget.ulok.formUlok!.isNotEmpty) ... [
           DetailSectionCard(
             title: "Form Ulok",
             icon: Icons.description,
@@ -417,7 +418,40 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage>
                     ),
                   ),
             ],
-          ),
+          )
+        ],
+        const SizedBox(height: 16),
+
+        DetailSectionCard(
+          title: 'Informasi Tambahan',
+          icon: Icons.info_outline,
+          children: [
+            TwoColumnRowWidget(
+                label1: "Tanggal Ulok Dibuat",
+                value1: DateFormatter.formatDate(widget.ulok.createdAt),
+                label2: "Dibuat oleh",
+                value2: widget.ulok.createdBy!,
+              ),
+            if (widget.ulok.approvedAt != null && widget.ulok.status == 'OK') ...[
+              const SizedBox(height: 12),
+              TwoColumnRowWidget(
+                label1: "Tanggal Ulok Disetujui",
+                value1: DateFormatter.formatDate(widget.ulok.approvedAt!),
+                label2: "Disetujui oleh",
+                value2: widget.ulok.approvedBy!,
+              ),
+            ],
+            if (widget.ulok.updatedAt != null && widget.ulok.status == 'NOK') ...[
+              const SizedBox(height: 12),
+              TwoColumnRowWidget(
+                label1: "Tanggal Ulok Ditolak",
+                value1: DateFormatter.formatDate(widget.ulok.updatedAt!),
+                label2: "Ditolak oleh",
+                value2: widget.ulok.updatedBy!,
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }
