@@ -17,7 +17,7 @@ class UlokRepositoryImpl implements UlokRepository {
       kabupaten: map['kabupaten'],
       provinsi: map['provinsi'],
       status: map['approval_status'],
-      tanggal: DateTime.parse(map['created_at']),
+      createdAt: DateTime.parse(map['created_at']),
       latLong:
           (map['latitude'] != null && map['longitude'] != null)
               ? "${map['latitude']},${map['longitude']}"
@@ -38,6 +38,15 @@ class UlokRepositoryImpl implements UlokRepository {
           ? DateTime.parse(map['tanggal_approval_intip'])
           : null,
       fileIntip: map['file_intip'],
+      approvedBy: (map['approved_by'] as Map<String, dynamic>?)?['nama'],
+      approvedAt: map['approved_at'] != null
+          ? DateTime.parse(map['approved_at'])
+          : null,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'])
+          : null,
+      updatedBy: (map['updated_by'] as Map<String, dynamic>?)?['nama'],
+      createdBy: (map['users_id'] as Map<String, dynamic>?)?['nama'],
     );
   }
 

@@ -11,14 +11,7 @@ class UlokRemoteDataSource {
 
     var request = client
         .from('ulok')
-        .select('''
-          id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
-          latitude, longitude,
-          approval_status, created_at,
-          format_store, bentuk_objek, alas_hak, jumlah_lantai,
-          lebar_depan, panjang, luas, harga_sewa,
-          nama_pemilik, kontak_pemilik, form_ulok
-        ''')
+        .select('*, updated_by(nama), approved_by(nama), users_id(nama)')
         .eq('users_id', userId)
         .eq('approval_status', 'In Progress');
 
@@ -64,17 +57,9 @@ class UlokRemoteDataSource {
     
     var request = client
         .from('ulok')
-        .select('''
-          id, nama_ulok, alamat, kecamatan, desa_kelurahan, kabupaten, provinsi,
-          latitude, longitude,
-          approval_status, created_at,
-          format_store, bentuk_objek, alas_hak, jumlah_lantai,
-          lebar_depan, panjang, luas, harga_sewa,
-          nama_pemilik, kontak_pemilik, form_ulok
-        ''')
+        .select('*, updated_by(nama), approved_by(nama), users_id(nama)')
         .eq('users_id', userId)
         .inFilter('approval_status', ['OK', 'NOK']);
-        //tanggal_approval_intip, approval_intip, file_intip -> kalau digunakan, tambahkan di select
 
     if (query.isNotEmpty) {
       request = request.ilike('nama_ulok', '%$query%');
@@ -86,7 +71,7 @@ class UlokRemoteDataSource {
 
     if (filter.year != null && (filter.month == null)) {
       final startYear = DateTime(filter.year!, 1, 1);
-      final startYearStr = startYear.toIso8601String().split('T')[0]; // YYYY-MM-DD
+      final startYearStr = startYear.toIso8601String().split('T')[0]; 
       final nextYear = DateTime(filter.year! + 1, 1, 1);
       final nextYearStr = nextYear.toIso8601String().split('T')[0];
       request = request.filter('created_at', 'gte', startYearStr);
@@ -115,7 +100,7 @@ class UlokRemoteDataSource {
     try {
       final response = await client
           .from('ulok')
-          .select('*') 
+          .select('*, updated_by(nama), approved_by(nama), users_id(nama)') 
           .eq('id', ulokId)
           .single(); 
       return response;

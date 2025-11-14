@@ -7,7 +7,7 @@ class UsulanLokasi {
   final String kabupaten;
   final String provinsi;
   final String status;
-  final DateTime tanggal;
+  final DateTime createdAt;
   final String? latLong;
   final String? formatStore;
   final String? bentukObjek;
@@ -23,6 +23,12 @@ class UsulanLokasi {
   final String? approvalIntip;
   final DateTime? tanggalApprovalIntip;
   final String? fileIntip;
+  final String? approvedBy;
+  final DateTime? approvedAt;
+  final DateTime? updatedAt;
+  final String? updatedBy;
+  final String? createdBy;
+
 
   UsulanLokasi({
     required this.id,
@@ -33,7 +39,7 @@ class UsulanLokasi {
     required this.kabupaten,
     required this.provinsi,
     required this.status,
-    required this.tanggal,
+    required this.createdAt,
     this.latLong,
     this.formatStore,
     this.bentukObjek,
@@ -48,6 +54,11 @@ class UsulanLokasi {
     this.formUlok,
     this.approvalIntip,
     this.tanggalApprovalIntip,
-    this.fileIntip
+    this.fileIntip,
+    this.approvedBy,
+    this.approvedAt,
+    this.updatedAt,
+    this.updatedBy,
+    this.createdBy,
   });
 }
