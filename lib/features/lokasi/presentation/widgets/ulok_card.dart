@@ -29,18 +29,20 @@ class UlokCard extends StatelessWidget {
     final fullAddress =
         '${ulok.alamat}, ${ulok.desaKelurahan}, Kec. ${ulok.kecamatan}, ${ulok.kabupaten}, ${ulok.provinsi}';
 
-    final formattedDate = DateFormat('dd MMMM yyyy').format(ulok.tanggal);
-
     String dateLabel;
+    String formattedDate = '';
     switch (ulok.status) {
       case 'OK':
         dateLabel = 'Approved on';
+        formattedDate = DateFormat('dd MMMM yyyy').format(ulok.approvedAt!);
         break;
       case 'NOK':
         dateLabel = 'Rejected on';
+        formattedDate = DateFormat('dd MMMM yyyy').format(ulok.updatedAt!);
         break;
       default:
         dateLabel = 'Created on';
+        formattedDate = DateFormat('dd MMMM yyyy').format(ulok.createdAt);
     }
 
     return InkWell(
