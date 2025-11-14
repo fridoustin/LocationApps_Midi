@@ -111,7 +111,7 @@ class _UlokDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat("dd MMMM yyyy").format(ulok.tanggal);
+    final formattedDate = DateFormat("dd MMMM yyyy").format(ulok.createdAt);
     final latLngParts = ulok.latLong?.split(',') ?? ['0', '0'];
     final latLng = LatLng(
       double.tryParse(latLngParts[0]) ?? 0.0,
@@ -223,6 +223,39 @@ class _UlokDetailView extends StatelessWidget {
                 ],
               ),
             ],
+
+            const SizedBox(height: 16),
+
+            DetailSectionCard(
+            title: 'Informasi Tambahan',
+            icon: Icons.info_outline,
+            children: [
+              TwoColumnRowWidget(
+                  label1: "Tanggal Ulok Dibuat",
+                  value1: DateFormatter.formatDate(ulok.createdAt),
+                  label2: "Dibuat oleh",
+                  value2: ulok.createdBy!,
+                ),
+              if (ulok.approvedAt != null && ulok.status == 'OK') ...[
+                const SizedBox(height: 12),
+                TwoColumnRowWidget(
+                  label1: "Tanggal Ulok Disetujui",
+                  value1: DateFormatter.formatDate(ulok.approvedAt!),
+                  label2: "Disetujui oleh",
+                  value2: ulok.approvedBy!,
+                ),
+              ],
+              if (ulok.updatedAt != null && ulok.status == 'NOK') ...[
+                const SizedBox(height: 12),
+                TwoColumnRowWidget(
+                  label1: "Tanggal Ulok Ditolak",
+                  value1: DateFormatter.formatDate(ulok.updatedAt!),
+                  label2: "Ditolak oleh",
+                  value2: ulok.updatedBy!,
+                ),
+              ],
+            ],
+          ),
 
             const SizedBox(height: 24),
 
