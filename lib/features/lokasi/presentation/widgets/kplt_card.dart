@@ -26,7 +26,8 @@ class KpltCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fullAddress = '${kplt.alamat}, ${kplt.desaKelurahan}, Kec. ${kplt.kecamatan}, ${kplt.kabupaten}, ${kplt.provinsi}';
-    final formattedDate = DateFormat('dd MMMM yyyy').format(kplt.tanggal);
+    final dibuat = DateFormat('dd MMMM yyyy').format(kplt.createdAt);
+    final update = DateFormat('dd MMMM yyyy').format(kplt.updatedAt ?? kplt.createdAt);
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -93,13 +94,33 @@ class KpltCard extends StatelessWidget {
                     color: Colors.grey[600],
                   ),
                   const SizedBox(width: 7),
-                  Text(
-                    'Update : $formattedDate',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
+                  if(kplt.status == 'Waiting for Forum' || kplt.status == 'In Progress') ...[
+                    Text(
+                      'Update : $dibuat',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
                     ),
-                  ),
+                  ],
+                  if(kplt.status == 'OK') ...[
+                    Text(
+                      'Disetujui : $update',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                  if(kplt.status == 'NOK') ...[
+                    Text(
+                      'Ditolak : $update',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ]
                 ],
               ),
               const SizedBox(height: 12),

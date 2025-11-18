@@ -30,8 +30,8 @@ class RecentKpltView extends ConsumerWidget {
             data: (list) {
               final ordered = List.of(list);
               ordered.sort((a, b) {
-                final ta = a.tanggal;
-                final tb = b.tanggal;
+                final ta = a.createdAt;
+                final tb = b.createdAt;
                 return ta.compareTo(tb);
               });
               final displayed = ordered.take(4).toList();
@@ -91,8 +91,8 @@ class RecentKpltView extends ConsumerWidget {
             data: (list) {
               final ordered = List.of(list);
               ordered.sort((a, b) {
-                final ta = a.tanggal;
-                final tb = b.tanggal;
+                final ta = a.createdAt;
+                final tb = b.createdAt;
                 return ta.compareTo(tb);
               });
               final displayed = ordered.take(4).toList();

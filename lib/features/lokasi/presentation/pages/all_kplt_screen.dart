@@ -35,8 +35,8 @@ class AllKpltListPage extends ConsumerWidget {
           }
           final ordered = List.of(list)
             ..sort((a, b) {
-              final ta = a.tanggal;
-              final tb = b.tanggal;
+              final ta = a.createdAt;
+              final tb = b.createdAt;
               return ta.compareTo(tb);
             });
 

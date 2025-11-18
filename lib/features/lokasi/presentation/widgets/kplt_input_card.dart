@@ -56,7 +56,7 @@ class KpltNeedInputCard extends ConsumerWidget {
     ];
     final fullAddress = addressParts.where((p) => p != null && p.isNotEmpty).join(', ');
     
-    final formattedDate = DateFormat('dd MMMM yyyy').format(kplt.tanggal);
+    final formattedDate = DateFormat('dd MMMM yyyy').format(kplt.createdAt);
 
     const double outerRadius = 14.0;
     const double innerRadius = 12.0; 
