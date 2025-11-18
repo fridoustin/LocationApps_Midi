@@ -22,7 +22,7 @@ class KpltRemoteDatasource {
 
     var request = client
         .from('kplt')
-        .select('*, ulok!inner(*)') 
+        .select('*, updated_by(nama), ulok!inner(*, users_id(nama))') 
         .eq('ulok.users_id', userId)
         .inFilter('kplt_approval', ['Waiting for Forum', 'In Progress']);
 
@@ -62,7 +62,7 @@ class KpltRemoteDatasource {
 
     var request = client
         .from('kplt')
-        .select('*, ulok!inner(*)')
+        .select('*, updated_by(nama), ulok!inner(*, users_id(nama))')
         .eq('ulok.users_id', userId)
         .inFilter('kplt_approval', ['OK', 'NOK']);
 
@@ -219,10 +219,26 @@ class KpltRemoteDatasource {
     try {
       final response = await client
           .from('kplt')
-          .select() 
-          .eq('id', kpltId) 
-          .single(); 
+          .select('''
+            *,
+            ulok!inner(*, users_id(nama)),
+            updated_by(nama)
+          ''')
+          .eq('id', kpltId)
+          .single();
 
+      final approvalsResponse = await client
+          .from('kplt_approval')
+          .select('''
+            *,
+            approved_by:users!kplt_approval_approved_by_fkey(
+              nama,
+              position_id:position(nama)
+            )
+          ''')
+          .eq('kplt_id', kpltId);
+
+      response['kplt_approvals'] = approvalsResponse;
       return response;
     } catch (e) {
       rethrow;

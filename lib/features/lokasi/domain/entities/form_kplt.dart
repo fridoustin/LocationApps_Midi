@@ -1,3 +1,5 @@
+import 'package:midi_location/features/lokasi/domain/entities/approval.dart';
+
 class FormKPLT {
   final String id;
   final String ulokId;
@@ -8,7 +10,7 @@ class FormKPLT {
   final String kabupaten;
   final String provinsi;
   final String status;
-  final DateTime tanggal;
+  final DateTime createdAt;
   final String? latLong;
   final String? formatStore;
   final String? bentukObjek;
@@ -46,6 +48,11 @@ class FormKPLT {
   final String? video360Malam;
   final String? petaCoverage;
   final double? progressPercentage;
+  final String? createdBy;
+  final String? updatedBy;
+  final DateTime? updatedAt;
+  final List<Approval>? approvals;
+
 
   FormKPLT({
     required this.id,
@@ -57,7 +64,7 @@ class FormKPLT {
     required this.kabupaten,
     required this.provinsi,
     required this.status,
-    required this.tanggal,
+    required this.createdAt,
     this.latLong,
     this.formatStore,
     this.bentukObjek,
@@ -95,6 +102,10 @@ class FormKPLT {
     this.video360Malam,
     this.petaCoverage,
     this.progressPercentage,
+    this.createdBy,
+    this.updatedBy,
+    this.updatedAt,
+    this.approvals
   });
 
   static double? _parseDouble(dynamic value) {
@@ -114,7 +125,7 @@ class FormKPLT {
     final ulokData = map['ulok'] as Map<String, dynamic>?;
 
     if (ulokData == null) {
-      return FormKPLT(id: map['id'] ?? '', ulokId: map['ulok_id'] ?? '', namaLokasi: 'Data Ulok Hilang', alamat: '', kecamatan: '', kabupaten: '', provinsi: '', desaKelurahan: '', status: map['kplt_approval'] ?? 'Error', tanggal: DateTime.parse(map['created_at']));
+      return FormKPLT(id: map['id'] ?? '', ulokId: map['ulok_id'] ?? '', namaLokasi: 'Data Ulok Hilang', alamat: '', kecamatan: '', kabupaten: '', provinsi: '', desaKelurahan: '', status: map['kplt_approval'] ?? 'Error', createdAt: DateTime.parse(map['created_at']));
     }
 
     final lat = _parseDouble(ulokData['latitude']);
@@ -127,7 +138,7 @@ class FormKPLT {
       id: map['id'],
       ulokId: map['ulok_id'],
       status: map['kplt_approval'],
-      tanggal: DateTime.parse(map['created_at']),
+      createdAt: DateTime.parse(map['created_at']),
       namaLokasi: map['nama_kplt'] ?? ulokData['nama_ulok'] ?? '',
       alamat: map['alamat'] ?? ulokData['alamat'] ?? '',
       kecamatan: map['kecamatan'] ?? ulokData['kecamatan'] ?? '',
@@ -186,7 +197,7 @@ class FormKPLT {
       id: map['id'],
       ulokId: map['id'],
       status: 'Need Input',
-      tanggal: DateTime.parse(map['updated_at']),
+      createdAt: DateTime.parse(map['updated_at']),
       namaLokasi: map['nama_ulok'] ?? '',
       alamat: map['alamat'] ?? '',
       kecamatan: map['kecamatan'] ?? '',
@@ -242,11 +253,39 @@ class FormKPLT {
       latLongValue = '$lat,$lon';
     }
 
+    String? createdByName;
+    final ulokData = map['ulok'];
+    if (ulokData is Map<String, dynamic>) {
+      final userData = ulokData['users_id']; 
+      if (userData is Map<String, dynamic>) {
+        createdByName = userData['nama'] as String?;
+      }
+    }
+
+    List<Approval>? approvalsList;
+    final kpltApprovalsData = map['kplt_approvals'];
+    if (kpltApprovalsData is List && kpltApprovalsData.isNotEmpty) {
+      approvalsList = kpltApprovalsData
+          // ignore: prefer_iterable_wheretype
+          .where((item) => item is Map<String, dynamic>)
+          .map((approvalMap) {
+            try {
+              final approval = Approval.fromMap(approvalMap as Map<String, dynamic>);
+              return approval;
+            } catch (e) {
+              return null;
+            }
+          })
+          .whereType<Approval>()
+          .toList();
+      } else {
+    }
+
     return FormKPLT(
-      id: map['id'],
-      ulokId: map['ulok_id'],
-      status: map['kplt_approval'],
-      tanggal: DateTime.parse(map['created_at']),
+      id: map['id'] ?? '',
+      ulokId: map['ulok_id'] ?? '',
+      status: map['kplt_approval'] ?? '',
+      createdAt: DateTime.parse(map['created_at']),
       namaLokasi: map['nama_kplt'] ?? '',
       alamat: map['alamat'] ?? '',
       kecamatan: map['kecamatan'] ?? '',
@@ -267,7 +306,9 @@ class FormKPLT {
       formUlok: map['form_ulok'],
       approvalIntip: map['approval_intip'],
       fileIntip: map['file_intip'],
-      tanggalApprovalIntip: map['tanggal_approval_intip'] == null ? null : DateTime.parse(map['tanggal_approval_intip']),
+      tanggalApprovalIntip: map['tanggal_approval_intip'] == null 
+          ? null 
+          : DateTime.parse(map['tanggal_approval_intip']),
       karakterLokasi: map['karakter_lokasi'],
       sosialEkonomi: map['sosial_ekonomi'],
       peStatus: map['pe_status'],
@@ -283,13 +324,21 @@ class FormKPLT {
       excelFpl: map['excel_fpl'],
       excelPe: map['excel_pe'],
       formUkur: map['form_ukur'],
-      tanggalUkur: map['tanggal_ukur'] == null ? null : DateTime.parse(map['tanggal_ukur']),
+      tanggalUkur: map['tanggal_ukur'] == null 
+          ? null 
+          : DateTime.parse(map['tanggal_ukur']),
       videoTrafficSiang: map['video_traffic_siang'],
       videoTrafficMalam: map['video_traffic_malam'],
       video360Siang: map['video_360_siang'],
       video360Malam: map['video_360_malam'],
       petaCoverage: map['peta_coverage'],
       progressPercentage: _parseDouble(map['progress_percentage']),
+      createdBy: createdByName,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'])
+          : null,
+      updatedBy: (map['updated_by'] as Map<String, dynamic>?)?['nama'],
+      approvals: approvalsList,
     );
   }
 }
