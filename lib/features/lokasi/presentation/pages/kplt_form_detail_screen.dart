@@ -110,7 +110,7 @@ class _KpltDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat("dd MMMM yyyy").format(kplt.tanggal);
+    final formattedDate = DateFormat("dd MMMM yyyy").format(kplt.createdAt);
     final latLngParts = kplt.latLong?.split(',') ?? ['0', '0'];
     final latLng = LatLng(
       double.tryParse(latLngParts[0]) ?? 0.0,
@@ -381,6 +381,123 @@ class _KpltDetailView extends StatelessWidget {
                 ],
               ),
             ],
+
+            const SizedBox(height: 16),
+
+            if (kplt.approvals != null && kplt.approvals!.isNotEmpty) ...[
+            DetailSectionCard(
+              title: 'Status Approval Forum',
+              icon: Icons.verified_user,
+              children: [
+                ...kplt.approvals!.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final approval = entry.value;
+                  final isLast = index == kplt.approvals!.length - 1;
+                  
+                  return Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: approval.isApproved 
+                              ? AppColors.successColor.withOpacity(0.1)
+                              : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: approval.isApproved 
+                                ? AppColors.successColor.withOpacity(0.3)
+                                : Colors.orange.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              approval.isApproved 
+                                  ? Icons.check_circle 
+                                  : Icons.pending,
+                              color: approval.isApproved 
+                                  ? AppColors.successColor
+                                  : Colors.orange,
+                              size: 32,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    approval.approverRole,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    approval.isApproved
+                                        ? 'Disetujui oleh: ${approval.approverName}'
+                                        : 'Menunggu persetujuan',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.black.withOpacity(0.7),
+                                    ),
+                                  ),
+                                  if (approval.approvedAt != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DateFormatter.formatDate(approval.approvedAt!),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.black.withOpacity(0.5),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!isLast) const SizedBox(height: 8),
+                    ],
+                  );
+                }).toList(),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+
+            DetailSectionCard(
+            title: 'Informasi Tambahan',
+            icon: Icons.info_outline,
+            children: [
+              TwoColumnRowWidget(
+                  label1: "Tanggal Dibuat",
+                  value1: DateFormatter.formatDate(kplt.createdAt),
+                  label2: "Dibuat oleh",
+                  value2: kplt.createdBy ?? '-',
+                ),
+              if (kplt.updatedAt != null && (kplt.status == "OK")) ...[
+                const SizedBox(height: 12),
+                TwoColumnRowWidget(
+                  label1: "Tanggal KPLT Disetujui",
+                  value1: DateFormatter.formatDate(kplt.updatedAt!),
+                  label2: "Disetujui oleh",
+                  value2: kplt.updatedBy ?? '-',
+                ),
+              ],
+              if (kplt.updatedAt != null && kplt.status == 'NOK') ...[
+                const SizedBox(height: 12),
+                TwoColumnRowWidget(
+                  label1: "Tanggal KPLT ditolak",
+                  value1: DateFormatter.formatDate(kplt.updatedAt!),
+                  label2: "Ditolak oleh",
+                  value2: kplt.updatedBy ?? '-',
+                ),
+              ],
+            ],
+          ),
 
             const SizedBox(height: 24),
           ],
