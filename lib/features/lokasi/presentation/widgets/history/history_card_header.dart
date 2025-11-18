@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/core/utils/date_formatter.dart';
 
 class HistoryCardHeader extends StatelessWidget {
   final int number;
@@ -36,7 +36,7 @@ class HistoryCardHeader extends StatelessWidget {
         const SizedBox(width: 4),
         Expanded(
           child: Text(
-            DateFormat('dd MMM yyyy, HH:mm').format(createdAt),
+            DateFormatter.formatDateTime(createdAt),
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
