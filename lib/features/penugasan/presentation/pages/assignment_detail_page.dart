@@ -1,10 +1,7 @@
-// lib/features/penugasan/presentation/pages/assignment_detail_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
@@ -13,12 +10,18 @@ import 'package:midi_location/features/penugasan/domain/entities/assignment_acti
 import 'package:midi_location/features/penugasan/domain/entities/tracking_point.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
 import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
-import 'package:midi_location/features/penugasan/presentation/widgets/activity_item_widget.dart';
+import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_info_section.dart';
+import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_activity_list.dart';
+import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_tracking_history.dart';
+import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_action_buttons.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final Assignment assignment;
 
-  const AssignmentDetailPage({super.key, required this.assignment});
+  const AssignmentDetailPage({
+    super.key,
+    required this.assignment,
+  });
 
   @override
   ConsumerState<AssignmentDetailPage> createState() =>
@@ -28,134 +31,166 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   String? _checkingInActivityId;
   String? _togglingActivityId;
-  
+
   Future<void> _checkInActivity(AssignmentActivity activity) async {
-    if (!activity.requiresCheckin || activity.location == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lokasi aktivitas belum ditentukan')),
-      );
-      return;
-    }
-    
-    // Cek jika sudah check-in
-    if (activity.checkedInAt != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aktivitas ini sudah di-checkin')),
-      );
-      return;
-    }
+    // Validation
+    if (!_canCheckIn(activity)) return;
 
     setState(() => _checkingInActivityId = activity.id);
 
     try {
-      // Get current location
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      final currentLocation = LatLng(position.latitude, position.longitude);
+      final currentLocation = await _getCurrentLocation();
+      final isInRadius = await _validateDistance(activity, currentLocation);
 
-      // Calculate distance
-      final Distance distance = const Distance();
-      final meters = distance.as(
-        LengthUnit.Meter,
-        currentLocation,
-        activity.location!,
-      );
+      if (!isInRadius) return;
 
-      // Validate radius
-      if (meters > activity.checkInRadius) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Anda terlalu jauh dari lokasi! '
-                'Jarak: ${meters.toStringAsFixed(0)}m, '
-                'Maksimal: ${activity.checkInRadius}m',
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
+      await _performCheckIn(activity, currentLocation);
+      await _updateAssignmentStatusIfNeeded();
 
-      final userProfile = await ref.read(userProfileProvider.future);
-      if (userProfile == null) throw Exception('User not found');
-      
-      final repository = ref.read(assignmentRepositoryProvider);
-
-      await repository.checkInActivity(activity.id, currentLocation);
-
-      final trackingPoint = TrackingPoint(
-        id: '', 
-        assignmentId: widget.assignment.id,
-        userId: userProfile.id,
-        status: TrackingStatus.arrived,
-        notes: 'Check-in di aktivitas: ${activity.activityName}',
-        photoUrl: null,
-        createdAt: DateTime.now(),
-      );
-      await repository.addTrackingPoint(trackingPoint);
-
-      if (widget.assignment.status == AssignmentStatus.pending) {
-        await repository.updateAssignmentStatus(
-          widget.assignment.id,
-          AssignmentStatus.inProgress,
-        );
-      }
-
-      ref.invalidate(trackingHistoryProvider(widget.assignment.id));
-      ref.invalidate(assignmentActivitiesProvider(widget.assignment.id));
-      ref.invalidate(allAssignmentsProvider); 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Check-in di ${activity.activityName} berhasil!'),
-            backgroundColor: AppColors.successColor,
-          ),
-        );
-      }
+      _showSuccess('Check-in di ${activity.activityName} berhasil!');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
+      _showError('Error: $e');
     } finally {
       if (mounted) setState(() => _checkingInActivityId = null);
     }
   }
 
-  Future<void> _toggleCompletion(AssignmentActivity activity, bool value) async {
-    if (value == false) return; 
+  bool _canCheckIn(AssignmentActivity activity) {
+    if (!activity.requiresCheckin || activity.location == null) {
+      _showError('Lokasi aktivitas belum ditentukan');
+      return false;
+    }
 
-    if (value && !activity.canBeCompleted()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan check-in terlebih dahulu untuk menyelesaikan aktivitas ini'),
-          backgroundColor: AppColors.warningColor,
-        ),
+    if (activity.checkedInAt != null) {
+      _showError('Aktivitas ini sudah di-checkin');
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<LatLng> _getCurrentLocation() async {
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+    return LatLng(position.latitude, position.longitude);
+  }
+
+  Future<bool> _validateDistance(
+    AssignmentActivity activity,
+    LatLng currentLocation,
+  ) async {
+    final Distance distance = const Distance();
+    final meters = distance.as(
+      LengthUnit.Meter,
+      currentLocation,
+      activity.location!,
+    );
+
+    if (meters > activity.checkInRadius) {
+      if (mounted) {
+        _showError(
+          'Anda terlalu jauh dari lokasi! '
+          'Jarak: ${meters.toStringAsFixed(0)}m, '
+          'Maksimal: ${activity.checkInRadius}m',
+        );
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> _performCheckIn(
+    AssignmentActivity activity,
+    LatLng location,
+  ) async {
+    final repository = ref.read(assignmentRepositoryProvider);
+    final userProfile = await ref.read(userProfileProvider.future);
+
+    if (userProfile == null) throw Exception('User not found');
+
+    await repository.checkInActivity(activity.id, location);
+
+    final trackingPoint = TrackingPoint(
+      id: '',
+      assignmentId: widget.assignment.id,
+      userId: userProfile.id,
+      status: TrackingStatus.arrived,
+      notes: 'Check-in di aktivitas: ${activity.activityName}',
+      photoUrl: null,
+      createdAt: DateTime.now(),
+    );
+
+    await repository.addTrackingPoint(trackingPoint);
+
+    // Invalidate providers
+    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
+    ref.invalidate(assignmentActivitiesProvider(widget.assignment.id));
+    ref.invalidate(allAssignmentsProvider);
+  }
+
+  Future<void> _updateAssignmentStatusIfNeeded() async {
+    if (widget.assignment.status == AssignmentStatus.pending) {
+      final repository = ref.read(assignmentRepositoryProvider);
+      await repository.updateAssignmentStatus(
+        widget.assignment.id,
+        AssignmentStatus.inProgress,
+      );
+    }
+  }
+
+  Future<void> _toggleCompletion(
+    AssignmentActivity activity,
+    bool value,
+  ) async {
+    if (value == false) return;
+
+    if (!activity.canBeCompleted()) {
+      _showError(
+        'Silakan check-in terlebih dahulu untuk menyelesaikan aktivitas ini',
       );
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _showCompletionDialog(activity);
+    if (confirmed != true) return;
+
+    setState(() => _togglingActivityId = activity.id);
+
+    try {
+      await _performToggleCompletion(activity);
+      _showSuccess('Aktivitas "${activity.activityName}" berhasil diselesaikan.');
+    } catch (e) {
+      _showError('Error: $e');
+    } finally {
+      if (mounted) setState(() => _togglingActivityId = null);
+    }
+  }
+
+  Future<bool?> _showCompletionDialog(AssignmentActivity activity) {
+    return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.white,
         title: const Text('Sudah Selesai?'),
-        content: Text('Apakah tugas anda "${activity.activityName}" sudah selesai?'),
+        content: Text(
+          'Apakah tugas anda "${activity.activityName}" sudah selesai?',
+        ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(context, false),
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(color: AppColors.primaryColor)
+                side: const BorderSide(color: AppColors.primaryColor),
               ),
               backgroundColor: AppColors.white,
             ),
-            child: const Text('Batal', style: TextStyle(color: AppColors.primaryColor)),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.primaryColor),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -165,58 +200,62 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               ),
               backgroundColor: AppColors.successColor,
             ),
-            child: const Text('Selesai', style: TextStyle(color: AppColors.white),),
+            child: const Text(
+              'Selesai',
+              style: TextStyle(color: AppColors.white),
+            ),
           ),
         ],
       ),
     );
+  }
 
+  Future<void> _performToggleCompletion(AssignmentActivity activity) async {
+    final repository = ref.read(assignmentRepositoryProvider);
+    final userProfile = await ref.read(userProfileProvider.future);
+
+    if (userProfile == null) throw Exception('User not found');
+
+    await repository.toggleActivityCompletion(activity.id, true);
+
+    final trackingPoint = TrackingPoint(
+      id: '',
+      assignmentId: widget.assignment.id,
+      userId: userProfile.id,
+      status: TrackingStatus.arrived,
+      notes: 'Selesai aktivitas: ${activity.activityName}',
+      photoUrl: null,
+      createdAt: DateTime.now(),
+    );
+
+    await repository.addTrackingPoint(trackingPoint);
+
+    // Invalidate providers
+    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
+    ref.invalidate(assignmentActivitiesProvider(activity.assignmentId));
+  }
+
+  // ============================================================================
+  // ASSIGNMENT ACTIONS
+  // ============================================================================
+
+  Future<void> _cancelAssignment() async {
+    final confirmed = await _showCancelDialog();
     if (confirmed != true) return;
 
-    setState(() => _togglingActivityId = activity.id);
-
     try {
-      final repository = ref.read(assignmentRepositoryProvider);
-      final userProfile = await ref.read(userProfileProvider.future);
-      if (userProfile == null) throw Exception('User not found');
-
-      await repository.toggleActivityCompletion(activity.id, true);
-      
-      final trackingPoint = TrackingPoint(
-        id: '',
-        assignmentId: widget.assignment.id,
-        userId: userProfile.id,
-        status: TrackingStatus.arrived, 
-        notes: 'Selesai aktivitas: ${activity.activityName}', 
-        photoUrl: null,
-        createdAt: DateTime.now(), 
-      );
-      await repository.addTrackingPoint(trackingPoint);
-
-      ref.invalidate(trackingHistoryProvider(widget.assignment.id));
-      ref.invalidate(assignmentActivitiesProvider(activity.assignmentId));
-
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Aktivitas "${activity.activityName}" berhasil diselesaikan.'),
-            backgroundColor: AppColors.successColor,
-          ),
-        );
+      await _performCancelAssignment();
+      if (mounted) {
+        Navigator.pop(context);
+        _showSuccess('Penugasan berhasil dibatalkan', color: Colors.red);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _togglingActivityId = null);
+      _showError('Error: $e');
     }
   }
 
-  Future<void> _cancelAssignment() async {
-    final confirmed = await showDialog<bool>(
+  Future<bool?> _showCancelDialog() {
+    return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Batalkan Penugasan?'),
@@ -230,71 +269,61 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Ya, Batalkan'),
           ),
         ],
       ),
     );
+  }
 
-    if (confirmed != true) return;
+  Future<void> _performCancelAssignment() async {
+    final userProfile = await ref.read(userProfileProvider.future);
+    if (userProfile == null) throw Exception('User not found');
 
-    try {
-      final userProfile = await ref.read(userProfileProvider.future);
-      if (userProfile == null) throw Exception('User not found');
+    final repository = ref.read(assignmentRepositoryProvider);
 
-      final repository = ref.read(assignmentRepositoryProvider);
-      
-      // Add tracking point for cancellation - use first activity location or default
-      await repository.getAssignmentActivities(widget.assignment.id);
-      
-      final trackingPoint = TrackingPoint(
-        id: '',
-        assignmentId: widget.assignment.id,
-        userId: userProfile.id,
-        status: TrackingStatus.cancelled,
-        notes: 'Penugasan dibatalkan oleh user',
-        photoUrl: null,
-        createdAt: DateTime.now(),
-      );
-      
-      await repository.addTrackingPoint(trackingPoint);
-      
-      // Update assignment status to cancelled
-      await repository.updateAssignmentStatus(
-        widget.assignment.id,
-        AssignmentStatus.cancelled,
-      );
+    final trackingPoint = TrackingPoint(
+      id: '',
+      assignmentId: widget.assignment.id,
+      userId: userProfile.id,
+      status: TrackingStatus.cancelled,
+      notes: 'Penugasan dibatalkan oleh user',
+      photoUrl: null,
+      createdAt: DateTime.now(),
+    );
 
-      // Refresh all providers
-      ref.invalidate(allAssignmentsProvider);
-      ref.invalidate(pendingAssignmentsProvider);
-      ref.invalidate(inProgressAssignmentsProvider);
-      ref.invalidate(completedAssignmentsProvider);
-      ref.invalidate(trackingHistoryProvider(widget.assignment.id));
+    await repository.addTrackingPoint(trackingPoint);
+    await repository.updateAssignmentStatus(
+      widget.assignment.id,
+      AssignmentStatus.cancelled,
+    );
 
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Penugasan berhasil dibatalkan'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    }
+    // Invalidate all providers
+    ref.invalidate(allAssignmentsProvider);
+    ref.invalidate(pendingAssignmentsProvider);
+    ref.invalidate(inProgressAssignmentsProvider);
+    ref.invalidate(completedAssignmentsProvider);
+    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
   }
 
   Future<void> _completeAssignment() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _showCompleteDialog();
+    if (confirmed != true) return;
+
+    try {
+      await _performCompleteAssignment();
+      if (mounted) {
+        Navigator.pop(context);
+        _showSuccess('Penugasan berhasil diselesaikan!');
+      }
+    } catch (e) {
+      _showError('Error: $e');
+    }
+  }
+
+  Future<bool?> _showCompleteDialog() {
+    return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Selesaikan Penugasan?'),
@@ -317,63 +346,63 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         ],
       ),
     );
-
-    if (confirmed != true) return;
-
-    try {
-      final repository = ref.read(assignmentRepositoryProvider);
-      await repository.updateAssignmentStatus(
-        widget.assignment.id,
-        AssignmentStatus.completed,
-      );
-
-      ref.invalidate(completedAssignmentsProvider);
-      ref.invalidate(inProgressAssignmentsProvider);
-      ref.invalidate(allAssignmentsProvider);
-      ref.invalidate(trackingHistoryProvider(widget.assignment.id));
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Penugasan berhasil diselesaikan!'),
-            backgroundColor: AppColors.successColor,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    }
   }
 
+  Future<void> _performCompleteAssignment() async {
+    final repository = ref.read(assignmentRepositoryProvider);
+    await repository.updateAssignmentStatus(
+      widget.assignment.id,
+      AssignmentStatus.completed,
+    );
+
+    // Invalidate providers
+    ref.invalidate(completedAssignmentsProvider);
+    ref.invalidate(inProgressAssignmentsProvider);
+    ref.invalidate(allAssignmentsProvider);
+    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
+  }
+
+  void _showSuccess(String message, {Color? color}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color ?? AppColors.successColor,
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
-    // Watch assignment updates
     final allAssignmentsAsync = ref.watch(allAssignmentsProvider);
-    
-    // Find updated assignment from provider
+
+    // Get updated assignment
     final Assignment currentAssignment = allAssignmentsAsync.maybeWhen(
-      data: (assignments) {
-        return assignments.firstWhere(
-          (a) => a.id == widget.assignment.id,
-          orElse: () => widget.assignment,
-        );
-      },
+      data: (assignments) => assignments.firstWhere(
+        (a) => a.id == widget.assignment.id,
+        orElse: () => widget.assignment,
+      ),
       orElse: () => widget.assignment,
     );
-    
+
     final activitiesAsync =
         ref.watch(assignmentActivitiesProvider(currentAssignment.id));
     final trackingHistoryAsync =
         ref.watch(trackingHistoryProvider(currentAssignment.id));
 
     final activities = activitiesAsync.valueOrNull ?? [];
-    final allActivitiesCompleted = activities.isNotEmpty &&
-        activities.every((a) => a.isCompleted);
+    final allActivitiesCompleted =
+        activities.isNotEmpty && activities.every((a) => a.isCompleted);
 
     return Scaffold(
       appBar: CustomTopBar.general(
@@ -391,60 +420,28 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            currentAssignment.title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          // Assignment Info Section
+          AssignmentInfoSection(assignment: currentAssignment),
 
-          if (currentAssignment.description != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              currentAssignment.description!,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey[700],
-                height: 1.4,
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 16),
-
-          // Info Cards
-          _buildInfoCard(
-            icon: Icons.calendar_today,
-            label: 'Periode',
-            value:
-                '${DateFormat('dd MMM yyyy').format(currentAssignment.startDate)} - '
-                '${DateFormat('dd MMM yyyy').format(currentAssignment.endDate)}',
-          ),
-
-          const SizedBox(height: 12),
-          _buildInfoCard(
-            icon: Icons.info_outline,
-            label: 'Status',
-            value: _getStatusText(currentAssignment.status),
-            valueColor: _getStatusColor(currentAssignment.status),
-          ),
-
-          // Activities
           const SizedBox(height: 24),
+
+          // Activities Section
           const Text(
             'Aktivitas',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
-          activitiesAsync.when(
-            data: (activities) => _buildActivitiesList(activities, currentAssignment),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Text('Error: $err'),
+          AssignmentActivityList(
+            activitiesAsync: activitiesAsync,
+            currentAssignment: currentAssignment,
+            checkingInActivityId: _checkingInActivityId,
+            togglingActivityId: _togglingActivityId,
+            onCheckIn: _checkInActivity,
+            onToggle: _toggleCompletion,
           ),
 
-          // Tracking History
+          // Tracking History Section
           const SizedBox(height: 24),
           const Text(
             'Tracking History',
@@ -452,10 +449,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           ),
           const SizedBox(height: 12),
 
-          trackingHistoryAsync.when(
-            data: (history) => _buildTrackingHistory(history),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Text('Error: $err'),
+          AssignmentTrackingHistory(
+            trackingHistoryAsync: trackingHistoryAsync,
           ),
 
           const SizedBox(height: 24),
@@ -463,209 +458,15 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
           // Action Buttons
           if (currentAssignment.status != AssignmentStatus.completed &&
               currentAssignment.status != AssignmentStatus.cancelled)
-            _buildActionButtons(currentAssignment, allActivitiesCompleted),
-
-          const SizedBox(height: 24)
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    Color? valueColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 1,
-            offset: const Offset(0, 1),
-          ),
-        ]
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primaryColor, size: 20),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: valueColor ?? Colors.black87,
-                  ),
-                ),
-              ],
+            AssignmentActionButtons(
+              allActivitiesCompleted: allActivitiesCompleted,
+              onComplete: _completeAssignment,
+              onCancel: _cancelAssignment,
             ),
-          ),
+
+          const SizedBox(height: 24),
         ],
       ),
     );
-  }
-
-  Widget _buildActivitiesList(List<AssignmentActivity> activities, Assignment currentAssignment) {
-    if (activities.isEmpty) {
-      return const Text('Belum ada aktivitas');
-    }
-
-    return Column(
-      children: activities.map((activity) {
-        return ActivityItemWidget(
-          activity: activity,
-          isAssignmentCompleted: currentAssignment.status == AssignmentStatus.completed ||
-              currentAssignment.status == AssignmentStatus.cancelled,
-          isCheckingIn: _checkingInActivityId == activity.id,
-          isToggling: _togglingActivityId == activity.id,
-          onCheckIn: () => _checkInActivity(activity),
-          onToggle: (value) => _toggleCompletion(activity, value),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildTrackingHistory(List<TrackingPoint> history) {
-    if (history.isEmpty) {
-      return const Text('Belum ada tracking history');
-    }
-    
-    // Sort dari yang paling lama (ascending)
-    final sortedHistory = history.toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-
-    return Column(
-      children: sortedHistory.map((point) {
-        return ListTile(
-          leading: Icon(
-            _getTrackingIcon(point.status),
-            color: _getTrackingColor(point.status),
-          ),
-          title: Text(point.notes ?? _getTrackingStatusText(point.status)),
-          subtitle: Text(
-            DateFormat('dd MMM yyyy, HH:mm').format(point.createdAt),
-          ),
-          trailing: point.notes != null
-              ? Tooltip(
-                  message: point.notes!,
-                  child: const Icon(Icons.info_outline, size: 20),
-                )
-              : null,
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildActionButtons(Assignment currentAssignment, bool allActivitiesCompleted) {
-    return Column(
-      children: [
-        if (allActivitiesCompleted) ...[
-          ElevatedButton.icon(
-            onPressed: _completeAssignment,
-            icon: const Icon(Icons.check_circle),
-            label: const Text('Selesaikan Penugasan'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.successColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              minimumSize: const Size(double.infinity, 0),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-
-        OutlinedButton.icon(
-          onPressed: _cancelAssignment,
-          icon: const Icon(Icons.cancel),
-          label: const Text('Batalkan Penugasan'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.red,
-            side: const BorderSide(color: Colors.red),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            minimumSize: const Size(double.infinity, 0),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _getStatusText(AssignmentStatus status) {
-    switch (status) {
-      case AssignmentStatus.pending:
-        return 'Belum Dikerjakan';
-      case AssignmentStatus.inProgress:
-        return 'Sedang Dikerjakan';
-      case AssignmentStatus.completed:
-        return 'Sudah Selesai';
-      case AssignmentStatus.cancelled:
-        return 'Dibatalkan';
-    }
-  }
-
-  Color _getStatusColor(AssignmentStatus status) {
-    switch (status) {
-      case AssignmentStatus.pending:
-        return AppColors.warningColor;
-      case AssignmentStatus.inProgress:
-        return AppColors.blue;
-      case AssignmentStatus.completed:
-        return AppColors.successColor;
-      case AssignmentStatus.cancelled:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getTrackingIcon(TrackingStatus status) {
-    switch (status) {
-      case TrackingStatus.arrived:
-        return Icons.check_circle;
-      case TrackingStatus.pending:
-        return Icons.pending;
-      case TrackingStatus.cancelled:
-        return Icons.cancel;
-      case TrackingStatus.inTransit:
-        return Icons.directions_walk;
-    }
-  }
-
-  Color _getTrackingColor(TrackingStatus status) {
-    switch (status) {
-      case TrackingStatus.arrived:
-        return AppColors.successColor;
-      case TrackingStatus.pending:
-        return AppColors.warningColor;
-      case TrackingStatus.cancelled:
-        return Colors.red;
-      case TrackingStatus.inTransit:
-        return AppColors.blue;
-    }
-  }
-
-  String _getTrackingStatusText(TrackingStatus status) {
-    switch (status) {
-      case TrackingStatus.arrived:
-        return 'Check-in berhasil';
-      case TrackingStatus.pending:
-        return 'Pending';
-      case TrackingStatus.cancelled:
-        return 'Dibatalkan';
-      case TrackingStatus.inTransit:
-        return 'Dalam perjalanan';
-    }
   }
 }
