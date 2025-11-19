@@ -34,13 +34,11 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: _buildFilterTabs(),
             ),
-
             // Assignment List
             Expanded(child: _buildAssignmentList()),
           ],
         ),
 
-        // FAB untuk create assignment
         Positioned(
           right: 16,
           bottom: 16,
@@ -55,10 +53,8 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
               );
 
               if (result == true) {
-                // Refresh list
-                ref.invalidate(pendingAssignmentsProvider);
-                ref.invalidate(inProgressAssignmentsProvider);
                 ref.invalidate(completedAssignmentsProvider);
+                ref.invalidate(allAssignmentsProvider);
               }
             },
             backgroundColor: AppColors.primaryColor,
@@ -170,19 +166,38 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
 
     return assignmentsAsync.when(
       data: (assignments) {
-        if (assignments.isEmpty) {
+        final managerAssignments = assignments
+            .where((a) => a.type != AssignmentType.self)
+            .toList();
+
+        if (managerAssignments.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.assignment_outlined, size: 64, color: Colors.grey[400]),
+                Icon(
+                  Icons.assignment_outlined,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
                 const SizedBox(height: 16),
                 Text(
-                  'Belum ada penugasan',
+                  _selectedFilter == AssignmentStatus.pending
+                      ? 'Belum ada tugas yang diberikan'
+                      : 'Belum ada tugas yang sedang dikerjakan',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Kerjakan tugas yang telah diberikan',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[500],
                   ),
                 ),
               ],
@@ -194,15 +209,14 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
           onRefresh: () async {
             ref.invalidate(pendingAssignmentsProvider);
             ref.invalidate(inProgressAssignmentsProvider);
-            ref.invalidate(completedAssignmentsProvider);
           },
           color: AppColors.primaryColor,
           backgroundColor: AppColors.cardColor,
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: assignments.length,
+            itemCount: managerAssignments.length,
             itemBuilder: (context, index) {
-              final assignment = assignments[index];
+              final assignment = managerAssignments[index];
               return AssignmentCard(
                 assignment: assignment,
                 onTap: () {
@@ -218,9 +232,34 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      ),
       error: (err, stack) => Center(
-        child: Text('Error: $err'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Terjadi kesalahan',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              err.toString(),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
