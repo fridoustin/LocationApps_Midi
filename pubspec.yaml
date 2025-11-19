@@ -48,6 +48,7 @@ dependencies:
   local_auth: ^2.1.0
   freezed_annotation: ^2.0.0
   json_annotation: ^4.9.0
+  flutter_windowmanager: ^0.2.0
 
 dev_dependencies:
   flutter_test:
