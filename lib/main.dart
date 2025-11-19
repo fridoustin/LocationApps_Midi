@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/routes/route.dart';
@@ -21,12 +23,14 @@ import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  if (Platform.isAndroid) {
+    await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.white,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
