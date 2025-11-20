@@ -252,11 +252,7 @@ class _TrackingViewState extends ConsumerState<TrackingView>
           onLocationPressed: _centerToCurrentLocation,
           onListPressed: () => _showAssignmentListSheet(activeAssignments),
         ),
-
-        // Empty State
-        if (activeAssignments.isEmpty && !_isLoadingLocation)
-          const TrackingEmptyState(),
-
+        
         // Loading Overlay
         if (_isLoadingLocation) const TrackingLoadingOverlay(),
       ],
