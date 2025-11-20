@@ -3,146 +3,172 @@ import 'package:intl/intl.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 
-/// Section untuk menampilkan informasi assignment
 class AssignmentInfoSection extends StatelessWidget {
   final Assignment assignment;
+  final double progress;
+  final int completedCount;
+  final int totalCount;
 
   const AssignmentInfoSection({
     super.key,
     required this.assignment,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title
-        Text(
-          assignment.title,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-
-        // Description
-        if (assignment.description != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            assignment.description!,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[700],
-              height: 1.4,
-            ),
-          ),
-        ],
-
-        const SizedBox(height: 16),
-
-        // Info Cards
-        _InfoCard(
-          icon: Icons.calendar_today,
-          label: 'Periode',
-          value:
-              '${DateFormat('dd MMM yyyy').format(assignment.startDate)} - '
-              '${DateFormat('dd MMM yyyy').format(assignment.endDate)}',
-        ),
-
-        const SizedBox(height: 12),
-
-        _InfoCard(
-          icon: Icons.info_outline,
-          label: 'Status',
-          value: _getStatusText(assignment.status),
-          valueColor: _getStatusColor(assignment.status),
-        ),
-      ],
-    );
-  }
-
-  String _getStatusText(AssignmentStatus status) {
-    switch (status) {
-      case AssignmentStatus.pending:
-        return 'Belum Dikerjakan';
-      case AssignmentStatus.inProgress:
-        return 'Sedang Dikerjakan';
-      case AssignmentStatus.completed:
-        return 'Sudah Selesai';
-      case AssignmentStatus.cancelled:
-        return 'Dibatalkan';
-    }
-  }
-
-  Color _getStatusColor(AssignmentStatus status) {
-    switch (status) {
-      case AssignmentStatus.pending:
-        return AppColors.warningColor;
-      case AssignmentStatus.inProgress:
-        return AppColors.blue;
-      case AssignmentStatus.completed:
-        return AppColors.successColor;
-      case AssignmentStatus.cancelled:
-        return Colors.grey;
-    }
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  const _InfoCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.valueColor,
+    required this.progress,
+    required this.completedCount,
+    required this.totalCount,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 1,
-            offset: const Offset(0, 1),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppColors.primaryColor, size: 20),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: valueColor ?? Colors.black87,
+          // Header Row: Title & Status
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  assignment.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    height: 1.3,
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              _buildStatusBadge(assignment.status),
+            ],
+          ),
+          
+          // Description
+          if (assignment.description != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              assignment.description!,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+                height: 1.4,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+
+          // Date Info
+          Row(
+            children: [
+              const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                '${DateFormat('dd MMM').format(assignment.startDate)} - ${DateFormat('dd MMM yyyy').format(assignment.endDate)}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Progress Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Progress Tugas',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              Text(
+                '$completedCount dari $totalCount Selesai',
+                style: TextStyle(
+                  fontSize: 12, 
+                  fontWeight: FontWeight.bold, 
+                  color: AppColors.primaryColor
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress == 1.0 ? AppColors.successColor : AppColors.primaryColor,
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(AssignmentStatus status) {
+    Color bgColor;
+    Color textColor;
+    String text;
+
+    switch (status) {
+      case AssignmentStatus.pending:
+        bgColor = AppColors.warningColor.withOpacity(0.1);
+        textColor = AppColors.warningColor;
+        text = 'Belum Mulai';
+        break;
+      case AssignmentStatus.inProgress:
+        bgColor = AppColors.blue.withOpacity(0.1);
+        textColor = AppColors.blue;
+        text = 'Dikerjakan';
+        break;
+      case AssignmentStatus.completed:
+        bgColor = AppColors.successColor.withOpacity(0.1);
+        textColor = AppColors.successColor;
+        text = 'Selesai';
+        break;
+      case AssignmentStatus.cancelled:
+        bgColor = Colors.red.withOpacity(0.1);
+        textColor = Colors.red;
+        text = 'Batal';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: textColor.withOpacity(0.2)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
       ),
     );
   }
