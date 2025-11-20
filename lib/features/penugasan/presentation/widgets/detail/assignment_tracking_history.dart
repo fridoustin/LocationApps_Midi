@@ -131,7 +131,7 @@ class _HistoryItem extends StatelessWidget {
           // Content
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
+              padding: const EdgeInsets.only(bottom: 12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

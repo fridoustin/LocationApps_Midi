@@ -61,7 +61,6 @@ class AssignmentTimelineItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Visual Timeline (Kiri)
           SizedBox(
             width: 30,
             child: Column(
@@ -113,15 +112,12 @@ class AssignmentTimelineItem extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // 2. Konten (Kanan)
           Expanded(
             child: Padding(
-              // UPDATE: Mengurangi padding bawah agar tidak terlalu renggang
-              padding: const EdgeInsets.only(bottom: 12.0), 
+              padding: const EdgeInsets.only(bottom: 4.0), 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Judul Aktivitas
                   Text(
                     activity.activityName,
                     style: TextStyle(
@@ -135,7 +131,6 @@ class AssignmentTimelineItem extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // --- MAP SECTION ---
                   if (activity.location != null && !isCompleted)
                     Container(
                       height: 140,
@@ -144,24 +139,23 @@ class AssignmentTimelineItem extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[300]!),
                         boxShadow: [
-                           BoxShadow(
-                             color: Colors.black.withOpacity(0.05), 
-                             blurRadius: 4,
-                             offset: const Offset(0,2)
-                           )
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05), 
+                            blurRadius: 4,
+                            offset: const Offset(0,2)
+                          )
                         ]
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(11),
                         child: Stack(
                           children: [
-                            // 1. The Map
                             FlutterMap(
                               options: MapOptions(
                                 initialCenter: activity.location!,
                                 initialZoom: 15,
                                 interactionOptions: const InteractionOptions(
-                                  flags: InteractiveFlag.none, // Static map
+                                  flags: InteractiveFlag.none,
                                 ),
                               ),
                               children: [
@@ -186,7 +180,6 @@ class AssignmentTimelineItem extends StatelessWidget {
                               ],
                             ),
                             
-                            // 2. Navigation Button (UPDATE: Tombol Arah)
                             Positioned(
                               right: 8,
                               bottom: 8,
