@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 
 class AssignmentActionButtons extends StatelessWidget {
+  final AssignmentType assignmentType;
   final bool allActivitiesCompleted;
   final VoidCallback onComplete;
   final VoidCallback onCancel;
+  final VoidCallback? onExternalOk; 
+  final VoidCallback? onExternalNok;
 
   const AssignmentActionButtons({
     super.key,
+    required this.assignmentType,
     required this.allActivitiesCompleted,
     required this.onComplete,
     required this.onCancel,
+    this.onExternalOk,
+    this.onExternalNok,
   });
 
   @override
@@ -18,17 +25,50 @@ class AssignmentActionButtons extends StatelessWidget {
     return Column(
       children: [
         if (allActivitiesCompleted) ...[
-          ElevatedButton.icon(
-            onPressed: onComplete,
-            icon: const Icon(Icons.check_circle),
-            label: const Text('Selesaikan Penugasan'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.successColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              minimumSize: const Size(double.infinity, 0),
+          if (assignmentType == AssignmentType.externalCheck) 
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onExternalNok,
+                    icon: const Icon(Icons.close),
+                    label: const Text('Lokasi NOK'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onExternalOk,
+                    icon: const Icon(Icons.check),
+                    label: const Text('Lokasi OK'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.successColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          
+          else 
+            ElevatedButton.icon(
+              onPressed: onComplete,
+              icon: const Icon(Icons.check_circle),
+              label: const Text('Selesaikan Penugasan'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.successColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                minimumSize: const Size(double.infinity, 0),
+              ),
             ),
-          ),
+            
           const SizedBox(height: 12),
         ],
         OutlinedButton.icon(

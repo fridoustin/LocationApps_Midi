@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
+import 'package:midi_location/features/lokasi/presentation/pages/ulok_eksternal_detail_screen.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment_activity.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
@@ -234,12 +235,12 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     try {
       await ref.read(assignmentDetailControllerProvider).checkInActivity(activity, widget.assignment.id);
       if (mounted) {
-        Navigator.pop(context); // Tutup Loading
+        Navigator.pop(context);
         _showSuccessDialog("Check-in Berhasil!", "Anda berhasil check-in di lokasi ini.");
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Tutup Loading
+        Navigator.pop(context);
         _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
       }
     }
@@ -335,7 +336,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       if (mounted) {
         Navigator.pop(context);
         await _showSuccessDialog("Selesai!", "Terima kasih atas kerja keras Anda.");
-        if (mounted) Navigator.pop(context); // Tutup Halaman
+        if (mounted) Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -345,11 +346,98 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
+  String? _findExternalLocationId(List<AssignmentActivity> activities) {
+    for (var activity in activities) {
+      if (activity.externalLocationId != null) {
+        return activity.externalLocationId;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _onExternalCheckOk(List<AssignmentActivity> activities) async {
+    final ulokId = _findExternalLocationId(activities);
+    if (ulokId == null) {
+      _showErrorDialog("Error: Tidak ditemukan data Ulok Eksternal di aktivitas manapun.");
+      return;
+    }
+    final confirm = await _showConfirmDialog(
+      title: "Setujui Lokasi?",
+      content: "Status Ulok Eksternal akan diubah menjadi OK dan penugasan diselesaikan.",
+      confirmText: "Ya, Setujui (OK)",
+      confirmColor: AppColors.successColor,
+      icon: Icons.thumb_up_alt_outlined,
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+    _showLoadingDialog();
+
+    try {
+      await ref.read(assignmentDetailControllerProvider).submitExternalCheckResult(
+        assignmentId: widget.assignment.id,
+        ulokId: ulokId,
+        isApproved: true,
+        notes: 'Disetujui oleh Location Specialist',
+      );
+      
+      if (mounted) {
+        Navigator.pop(context);
+        await _showSuccessDialog("Berhasil", "Lokasi disetujui (OK).");
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showErrorDialog(e.toString());
+      }
+    }
+  }
+
+  // Handler untuk External Check NOK
+  Future<void> _onExternalCheckNok(List<AssignmentActivity> activities) async {
+    final ulokId = _findExternalLocationId(activities);
+    if (ulokId == null) {
+      _showErrorDialog("Error: Tidak ditemukan data Ulok Eksternal di aktivitas manapun.");
+      return;
+    }
+    final confirm = await _showConfirmDialog(
+      title: "Tolak Lokasi?",
+      content: "Status Ulok Eksternal akan diubah menjadi NOK. Pastikan alasan penolakan sudah jelas.",
+      confirmText: "Ya, Tolak (NOK)",
+      confirmColor: Colors.red,
+      icon: Icons.thumb_down_alt_outlined,
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+    _showLoadingDialog();
+
+    try {
+      await ref.read(assignmentDetailControllerProvider).submitExternalCheckResult(
+        assignmentId: widget.assignment.id,
+        ulokId: ulokId,
+        isApproved: false,
+        notes: 'Ditolak oleh Location Specialist',
+      );
+      
+      if (mounted) {
+        Navigator.pop(context);
+        await _showSuccessDialog("Berhasil", "Lokasi ditolak (NOK).");
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showErrorDialog(e.toString());
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final allAssignmentsAsync = ref.watch(allAssignmentsProvider);
     
-    // Ambil data assignment terbaru
     final Assignment currentAssignment = allAssignmentsAsync.maybeWhen(
       data: (assignments) => assignments.firstWhere(
         (a) => a.id == widget.assignment.id,
@@ -361,15 +449,17 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     final activitiesAsync = ref.watch(assignmentActivitiesProvider(currentAssignment.id));
     final trackingHistoryAsync = ref.watch(trackingHistoryProvider(currentAssignment.id));
     
-    // State Loading dari Controller (untuk mendisable button jika sedang proses)
     final isLoading = ref.watch(assignmentActionStateProvider);
 
-    // Kalkulasi Progress
-    final activities = activitiesAsync.valueOrNull ?? [];
+    final activities = activitiesAsync.valueOrNull ?? []; 
     final completedCount = activities.where((a) => a.isCompleted).length;
     final totalCount = activities.length;
     final double progress = totalCount == 0 ? 0 : completedCount / totalCount;
     final allActivitiesCompleted = totalCount > 0 && completedCount == totalCount;
+
+    final externalIdForNav = activities.isNotEmpty 
+                  ? activities.firstWhere((a) => a.externalLocationId != null, orElse: () => activities.first).externalLocationId 
+                  : null;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -400,6 +490,85 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               ),
 
               const SizedBox(height: 24),
+
+              if (currentAssignment.type == AssignmentType.externalCheck && 
+                  externalIdForNav != null) ...[
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UlokEksternalDetailPage(ulokId: externalIdForNav),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryColor.withOpacity(0.2)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryColor.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.business_outlined,
+                              color: AppColors.primaryColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Cek Detail Lokasi",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Lihat data lengkap usulan eksternal",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
 
               _buildSectionTitle('Daftar Aktivitas', Icons.format_list_bulleted),
               const SizedBox(height: 12),
@@ -460,9 +629,12 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
               if (currentAssignment.status != AssignmentStatus.completed &&
                   currentAssignment.status != AssignmentStatus.cancelled)
                 AssignmentActionButtons(
+                  assignmentType: currentAssignment.type,
                   allActivitiesCompleted: allActivitiesCompleted,
                   onComplete: _onCompleteAssignment,
                   onCancel: _onCancelAssignment,
+                  onExternalOk: () => _onExternalCheckOk(activities), 
+                  onExternalNok: () => _onExternalCheckNok(activities),
                 ),
 
               const SizedBox(height: 24),

@@ -145,4 +145,47 @@ class AssignmentDetailController {
       ref.read(assignmentActionStateProvider.notifier).state = false;
     }
   }
+
+  Future<void> submitExternalCheckResult({
+    required String assignmentId,
+    required String? ulokId,
+    required bool isApproved,
+    required String notes,
+  }) async {
+    try {
+      ref.read(assignmentActionStateProvider.notifier).state = true;
+
+      if (ulokId == null) {
+        throw Exception('ID Usulan Lokasi Eksternal tidak ditemukan dalam penugasan ini.');
+      }
+
+      final repository = ref.read(assignmentRepositoryProvider);
+      final userProfile = await ref.read(userProfileProvider.future);
+      if (userProfile == null) throw Exception('User session not found');
+
+      final statusUlok = isApproved ? 'OK' : 'NOK';
+      await repository.updateUlokStatus(ulokId, statusUlok, userProfile.id);
+
+      final actionText = isApproved ? 'Menyetujui (OK)' : 'Menolak (NOK)';
+      
+      final trackingPoint = TrackingPoint(
+        id: '',
+        assignmentId: assignmentId,
+        userId: userProfile.id,
+        status: TrackingStatus.arrived,
+        notes: 'External Check Selesai: $actionText. Catatan: $notes',
+        photoUrl: null,
+        createdAt: DateTime.now(),
+      );
+      
+      await repository.addTrackingPoint(trackingPoint);
+      await repository.updateAssignmentStatus(assignmentId, AssignmentStatus.completed);
+
+      ref.invalidate(allAssignmentsProvider);
+      ref.invalidate(trackingHistoryProvider(assignmentId));
+
+    } finally {
+      ref.read(assignmentActionStateProvider.notifier).state = false;
+    }
+  }
 }
