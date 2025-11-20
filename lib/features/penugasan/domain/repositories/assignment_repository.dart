@@ -40,4 +40,5 @@ abstract class AssignmentRepository {
   Future<List<TrackingPoint>> getTrackingHistory(String assignmentId);
   Future<TrackingPoint> addTrackingPoint(TrackingPoint point);
   Future<void> updateAssignmentStatus(String assignmentId, AssignmentStatus status);
+  Future<void> updateUlokStatus(String ulokId, String status, String userId);
 }

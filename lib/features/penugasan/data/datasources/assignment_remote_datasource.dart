@@ -236,4 +236,19 @@ class AssignmentRemoteDataSource {
         .update(updates)
         .eq('id', assignmentId);
   }
+
+  Future<void> updateUlokStatus(String ulokId, String status, String userId) async {
+    final updates = {
+      'status_ulok_eksternal': status,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    if (status == 'OK') {
+      updates['approved_at'] = DateTime.now().toIso8601String();
+    }
+
+    await _supabase
+        .from('ulok_eksternal')
+        .update(updates)
+        .eq('id', ulokId);
+  }
 }

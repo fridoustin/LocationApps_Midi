@@ -111,4 +111,9 @@ class AssignmentRepositoryImpl implements AssignmentRepository {
   ) async {
     await _remoteDataSource.updateAssignmentStatus(assignmentId, status);
   }
+
+  @override
+Future<void> updateUlokStatus(String ulokId, String status, String userId) async {
+  await _remoteDataSource.updateUlokStatus(ulokId, status, userId);
+}
 }

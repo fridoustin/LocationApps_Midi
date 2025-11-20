@@ -15,6 +15,7 @@ class AssignmentActivity {
   final bool requiresCheckin;
   final DateTime? checkedInAt;
   final LatLng? checkedInLocation;
+  final String? externalLocationId;
 
   AssignmentActivity({
     required this.id,
@@ -31,6 +32,7 @@ class AssignmentActivity {
     required this.requiresCheckin,
     this.checkedInAt,
     this.checkedInLocation,
+    this.externalLocationId
   });
 
   factory AssignmentActivity.fromMap(Map<String, dynamic> map) {
@@ -69,6 +71,7 @@ class AssignmentActivity {
           ? DateTime.parse(map['checked_in_at'])
           : null,
       checkedInLocation: checkedInLoc,
+      externalLocationId: map['external_location_id']
     );
   }
 
@@ -89,6 +92,7 @@ class AssignmentActivity {
       'checked_in_at': checkedInAt?.toIso8601String(),
       'checked_in_latitude': checkedInLocation?.latitude,
       'checked_in_longitude': checkedInLocation?.longitude,
+      'external_location_id': externalLocationId
     };
   }
 
@@ -107,6 +111,7 @@ class AssignmentActivity {
     bool? requiresCheckin,
     DateTime? checkedInAt,
     LatLng? checkedInLocation,
+    String? externalLocationId
   }) {
     return AssignmentActivity(
       id: id ?? this.id,
@@ -123,10 +128,10 @@ class AssignmentActivity {
       requiresCheckin: requiresCheckin ?? this.requiresCheckin,
       checkedInAt: checkedInAt ?? this.checkedInAt,
       checkedInLocation: checkedInLocation ?? this.checkedInLocation,
+      externalLocationId: externalLocationId ?? this.externalLocationId
     );
   }
   
-  // Helper: Can this activity be completed?
   bool canBeCompleted() {
     if (!requiresCheckin) return true;
     return checkedInAt != null;
