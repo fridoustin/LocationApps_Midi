@@ -472,6 +472,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
         ),
       ),
       body: RefreshIndicator(
+        color: AppColors.primaryColor,
+        backgroundColor: AppColors.cardColor,
         onRefresh: () async {
           ref.invalidate(assignmentActivitiesProvider(currentAssignment.id));
           ref.invalidate(trackingHistoryProvider(currentAssignment.id));
