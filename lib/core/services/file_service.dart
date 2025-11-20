@@ -21,8 +21,9 @@ class FileService {
 
   static Future<void> openOrDownloadFile(
     BuildContext context,
-    String? pathOrUrl,
-  ) async {
+    String? pathOrUrl, {
+    String bucketName = 'file_storage', 
+  }) async {
     if (pathOrUrl == null || pathOrUrl.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -45,7 +46,7 @@ class FileService {
 
         final supabase = Supabase.instance.client;
         final fileBytes = await supabase.storage
-            .from('file_storage')
+            .from(bucketName) 
             .download(pathOrUrl);
 
         if (context.mounted) Navigator.of(context).pop();
@@ -55,9 +56,10 @@ class FileService {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop();
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengunduh file: $e')),
+          SnackBar(content: Text('Gagal membuka file: $e')),
         );
       }
     }
