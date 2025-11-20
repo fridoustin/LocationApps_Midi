@@ -1,392 +1,355 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment_activity.dart';
-import 'package:midi_location/features/penugasan/domain/entities/tracking_point.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_provider.dart';
-import 'package:midi_location/features/auth/presentation/providers/user_profile_provider.dart';
-import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_info_section.dart';
-import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_activity_list.dart';
+import 'package:midi_location/features/penugasan/presentation/providers/assignment_detail_controller.dart';
+import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_header_card.dart';
+import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_timeline_item.dart';
 import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_tracking_history.dart';
 import 'package:midi_location/features/penugasan/presentation/widgets/detail/assignment_action_buttons.dart';
 
 class AssignmentDetailPage extends ConsumerStatefulWidget {
   final Assignment assignment;
-
-  const AssignmentDetailPage({
-    super.key,
-    required this.assignment,
-  });
+  const AssignmentDetailPage({super.key, required this.assignment});
 
   @override
-  ConsumerState<AssignmentDetailPage> createState() =>
-      _AssignmentDetailPageState();
+  ConsumerState<AssignmentDetailPage> createState() => _AssignmentDetailPageState();
 }
 
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
-  String? _checkingInActivityId;
-  String? _togglingActivityId;
 
-  Future<void> _checkInActivity(AssignmentActivity activity) async {
-    // Validation
-    if (!_canCheckIn(activity)) return;
+  Future<bool?> _showConfirmDialog({
+    required String title,
+    required String content,
+    required String confirmText,
+    required Color confirmColor,
+    required IconData icon,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: confirmColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 32, color: confirmColor),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                content,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        foregroundColor: Colors.grey[700],
+                      ),
+                      child: const Text("Batal", style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: confirmColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: Text(confirmText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    setState(() => _checkingInActivityId = activity.id);
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              CircularProgressIndicator(color: AppColors.primaryColor),
+              SizedBox(height: 20),
+              Text("Memproses data...", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showSuccessDialog(String title, String message) async {
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.successColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, size: 40, color: AppColors.successColor),
+              ),
+              const SizedBox(height: 20),
+              Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(message, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.successColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text("Oke, Mengerti", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.warning_amber_rounded, size: 40, color: Colors.red),
+              ),
+              const SizedBox(height: 20),
+              const Text("Terjadi Kesalahan", textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(message, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text("Tutup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onCheckIn(AssignmentActivity activity) async {
+    final confirm = await _showConfirmDialog(
+      title: "Check-in Lokasi",
+      content: "Pastikan Anda sudah berada di lokasi ${activity.activityName}.",
+      confirmText: "Ya, Check-in",
+      confirmColor: AppColors.primaryColor,
+      icon: Icons.location_on,
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+    
+    _showLoadingDialog();
 
     try {
-      final currentLocation = await _getCurrentLocation();
-      final isInRadius = await _validateDistance(activity, currentLocation);
-
-      if (!isInRadius) return;
-
-      await _performCheckIn(activity, currentLocation);
-      await _updateAssignmentStatusIfNeeded();
-
-      _showSuccess('Check-in di ${activity.activityName} berhasil!');
-    } catch (e) {
-      _showError('Error: $e');
-    } finally {
-      if (mounted) setState(() => _checkingInActivityId = null);
-    }
-  }
-
-  bool _canCheckIn(AssignmentActivity activity) {
-    if (!activity.requiresCheckin || activity.location == null) {
-      _showError('Lokasi aktivitas belum ditentukan');
-      return false;
-    }
-
-    if (activity.checkedInAt != null) {
-      _showError('Aktivitas ini sudah di-checkin');
-      return false;
-    }
-
-    return true;
-  }
-
-  Future<LatLng> _getCurrentLocation() async {
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-    return LatLng(position.latitude, position.longitude);
-  }
-
-  Future<bool> _validateDistance(
-    AssignmentActivity activity,
-    LatLng currentLocation,
-  ) async {
-    final Distance distance = const Distance();
-    final meters = distance.as(
-      LengthUnit.Meter,
-      currentLocation,
-      activity.location!,
-    );
-
-    if (meters > activity.checkInRadius) {
+      await ref.read(assignmentDetailControllerProvider).checkInActivity(activity, widget.assignment.id);
       if (mounted) {
-        _showError(
-          'Anda terlalu jauh dari lokasi! '
-          'Jarak: ${meters.toStringAsFixed(0)}m, '
-          'Maksimal: ${activity.checkInRadius}m',
-        );
+        Navigator.pop(context); // Tutup Loading
+        _showSuccessDialog("Check-in Berhasil!", "Anda berhasil check-in di lokasi ini.");
       }
-      return false;
-    }
-
-    return true;
-  }
-
-  Future<void> _performCheckIn(
-    AssignmentActivity activity,
-    LatLng location,
-  ) async {
-    final repository = ref.read(assignmentRepositoryProvider);
-    final userProfile = await ref.read(userProfileProvider.future);
-
-    if (userProfile == null) throw Exception('User not found');
-
-    await repository.checkInActivity(activity.id, location);
-
-    final trackingPoint = TrackingPoint(
-      id: '',
-      assignmentId: widget.assignment.id,
-      userId: userProfile.id,
-      status: TrackingStatus.arrived,
-      notes: 'Check-in di aktivitas: ${activity.activityName}',
-      photoUrl: null,
-      createdAt: DateTime.now(),
-    );
-
-    await repository.addTrackingPoint(trackingPoint);
-
-    // Invalidate providers
-    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
-    ref.invalidate(assignmentActivitiesProvider(widget.assignment.id));
-    ref.invalidate(allAssignmentsProvider);
-  }
-
-  Future<void> _updateAssignmentStatusIfNeeded() async {
-    if (widget.assignment.status == AssignmentStatus.pending) {
-      final repository = ref.read(assignmentRepositoryProvider);
-      await repository.updateAssignmentStatus(
-        widget.assignment.id,
-        AssignmentStatus.inProgress,
-      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Tutup Loading
+        _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
+      }
     }
   }
 
-  Future<void> _toggleCompletion(
-    AssignmentActivity activity,
-    bool value,
-  ) async {
-    if (value == false) return;
-
+  Future<void> _onToggleCompletion(AssignmentActivity activity, bool val) async {
+    if (!val) return;
     if (!activity.canBeCompleted()) {
-      _showError(
-        'Silakan check-in terlebih dahulu untuk menyelesaikan aktivitas ini',
-      );
+      _showErrorDialog('Silakan check-in terlebih dahulu.');
       return;
     }
 
-    final confirmed = await _showCompletionDialog(activity);
-    if (confirmed != true) return;
-
-    setState(() => _togglingActivityId = activity.id);
-
-    try {
-      await _performToggleCompletion(activity);
-      _showSuccess('Aktivitas "${activity.activityName}" berhasil diselesaikan.');
-    } catch (e) {
-      _showError('Error: $e');
-    } finally {
-      if (mounted) setState(() => _togglingActivityId = null);
-    }
-  }
-
-  Future<bool?> _showCompletionDialog(AssignmentActivity activity) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.white,
-        title: const Text('Sudah Selesai?'),
-        content: Text(
-          'Apakah tugas anda "${activity.activityName}" sudah selesai?',
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, false),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(color: AppColors.primaryColor),
-              ),
-              backgroundColor: AppColors.white,
-            ),
-            child: const Text(
-              'Batal',
-              style: TextStyle(color: AppColors.primaryColor),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              backgroundColor: AppColors.successColor,
-            ),
-            child: const Text(
-              'Selesai',
-              style: TextStyle(color: AppColors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _performToggleCompletion(AssignmentActivity activity) async {
-    final repository = ref.read(assignmentRepositoryProvider);
-    final userProfile = await ref.read(userProfileProvider.future);
-
-    if (userProfile == null) throw Exception('User not found');
-
-    await repository.toggleActivityCompletion(activity.id, true);
-
-    final trackingPoint = TrackingPoint(
-      id: '',
-      assignmentId: widget.assignment.id,
-      userId: userProfile.id,
-      status: TrackingStatus.arrived,
-      notes: 'Selesai aktivitas: ${activity.activityName}',
-      photoUrl: null,
-      createdAt: DateTime.now(),
+    final confirm = await _showConfirmDialog(
+      title: "Selesaikan Aktivitas?",
+      content: "Apakah tugas \"${activity.activityName}\" benar-benar sudah selesai?",
+      confirmText: "Ya, Selesai",
+      confirmColor: AppColors.successColor,
+      icon: Icons.check_circle_outline,
     );
 
-    await repository.addTrackingPoint(trackingPoint);
+    if (confirm != true) return;
+    if (!mounted) return;
 
-    // Invalidate providers
-    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
-    ref.invalidate(assignmentActivitiesProvider(activity.assignmentId));
-  }
-
-  // ============================================================================
-  // ASSIGNMENT ACTIONS
-  // ============================================================================
-
-  Future<void> _cancelAssignment() async {
-    final confirmed = await _showCancelDialog();
-    if (confirmed != true) return;
+    _showLoadingDialog();
 
     try {
-      await _performCancelAssignment();
+      await ref.read(assignmentDetailControllerProvider).toggleCompletion(activity, widget.assignment.id);
       if (mounted) {
         Navigator.pop(context);
-        _showSuccess('Penugasan berhasil dibatalkan', color: Colors.red);
+        _showSuccessDialog("Aktivitas Selesai!", "Kerja bagus, lanjutkan ke aktivitas berikutnya.");
       }
     } catch (e) {
-      _showError('Error: $e');
-    }
-  }
-
-  Future<bool?> _showCancelDialog() {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Batalkan Penugasan?'),
-        content: const Text(
-          'Penugasan yang dibatalkan tidak dapat dikembalikan lagi.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Tidak'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Ya, Batalkan'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _performCancelAssignment() async {
-    final userProfile = await ref.read(userProfileProvider.future);
-    if (userProfile == null) throw Exception('User not found');
-
-    final repository = ref.read(assignmentRepositoryProvider);
-
-    final trackingPoint = TrackingPoint(
-      id: '',
-      assignmentId: widget.assignment.id,
-      userId: userProfile.id,
-      status: TrackingStatus.cancelled,
-      notes: 'Penugasan dibatalkan oleh user',
-      photoUrl: null,
-      createdAt: DateTime.now(),
-    );
-
-    await repository.addTrackingPoint(trackingPoint);
-    await repository.updateAssignmentStatus(
-      widget.assignment.id,
-      AssignmentStatus.cancelled,
-    );
-
-    // Invalidate all providers
-    ref.invalidate(allAssignmentsProvider);
-    ref.invalidate(pendingAssignmentsProvider);
-    ref.invalidate(inProgressAssignmentsProvider);
-    ref.invalidate(completedAssignmentsProvider);
-    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
-  }
-
-  Future<void> _completeAssignment() async {
-    final confirmed = await _showCompleteDialog();
-    if (confirmed != true) return;
-
-    try {
-      await _performCompleteAssignment();
       if (mounted) {
         Navigator.pop(context);
-        _showSuccess('Penugasan berhasil diselesaikan!');
+        _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
       }
-    } catch (e) {
-      _showError('Error: $e');
     }
   }
 
-  Future<bool?> _showCompleteDialog() {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Selesaikan Penugasan?'),
-        content: const Text(
-          'Pastikan semua aktivitas sudah selesai. '
-          'Penugasan yang sudah selesai tidak dapat diubah lagi.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.successColor,
-            ),
-            child: const Text('Selesaikan'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _performCompleteAssignment() async {
-    final repository = ref.read(assignmentRepositoryProvider);
-    await repository.updateAssignmentStatus(
-      widget.assignment.id,
-      AssignmentStatus.completed,
+  Future<void> _onCancelAssignment() async {
+    final confirm = await _showConfirmDialog(
+      title: "Batalkan Penugasan?",
+      content: "Penugasan yang dibatalkan tidak dapat dikembalikan. Yakin ingin lanjut?",
+      confirmText: "Ya, Batalkan",
+      confirmColor: Colors.red,
+      icon: Icons.cancel_outlined,
     );
 
-    // Invalidate providers
-    ref.invalidate(completedAssignmentsProvider);
-    ref.invalidate(inProgressAssignmentsProvider);
-    ref.invalidate(allAssignmentsProvider);
-    ref.invalidate(trackingHistoryProvider(widget.assignment.id));
-  }
-
-  void _showSuccess(String message, {Color? color}) {
+    if (confirm != true) return;
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color ?? AppColors.successColor,
-      ),
-    );
+
+    _showLoadingDialog();
+
+    try {
+      await ref.read(assignmentDetailControllerProvider).updateAssignmentStatus(
+        widget.assignment.id, 
+        AssignmentStatus.cancelled,
+        'Penugasan dibatalkan oleh user'
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        await _showSuccessDialog("Dibatalkan", "Status penugasan telah diperbarui.");
+        if (mounted) Navigator.pop(context); // Tutup Halaman
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
+      }
+    }
   }
 
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+  Future<void> _onCompleteAssignment() async {
+    final confirm = await _showConfirmDialog(
+      title: "Selesaikan Penugasan?",
+      content: "Pastikan semua data sudah benar. Penugasan yang selesai tidak dapat diubah.",
+      confirmText: "Selesaikan",
+      confirmColor: AppColors.successColor,
+      icon: Icons.task_alt,
     );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+
+    _showLoadingDialog();
+
+    try {
+      await ref.read(assignmentDetailControllerProvider).updateAssignmentStatus(
+        widget.assignment.id, 
+        AssignmentStatus.completed,
+        'Penugasan diselesaikan oleh user'
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        await _showSuccessDialog("Selesai!", "Terima kasih atas kerja keras Anda.");
+        if (mounted) Navigator.pop(context); // Tutup Halaman
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
+      }
+    }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final allAssignmentsAsync = ref.watch(allAssignmentsProvider);
-
-    // Get updated assignment
+    
+    // Ambil data assignment terbaru
     final Assignment currentAssignment = allAssignmentsAsync.maybeWhen(
       data: (assignments) => assignments.firstWhere(
         (a) => a.id == widget.assignment.id,
@@ -395,78 +358,131 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       orElse: () => widget.assignment,
     );
 
-    final activitiesAsync =
-        ref.watch(assignmentActivitiesProvider(currentAssignment.id));
-    final trackingHistoryAsync =
-        ref.watch(trackingHistoryProvider(currentAssignment.id));
+    final activitiesAsync = ref.watch(assignmentActivitiesProvider(currentAssignment.id));
+    final trackingHistoryAsync = ref.watch(trackingHistoryProvider(currentAssignment.id));
+    
+    // State Loading dari Controller (untuk mendisable button jika sedang proses)
+    final isLoading = ref.watch(assignmentActionStateProvider);
 
+    // Kalkulasi Progress
     final activities = activitiesAsync.valueOrNull ?? [];
-    final allActivitiesCompleted =
-        activities.isNotEmpty && activities.every((a) => a.isCompleted);
+    final completedCount = activities.where((a) => a.isCompleted).length;
+    final totalCount = activities.length;
+    final double progress = totalCount == 0 ? 0 : completedCount / totalCount;
+    final allActivitiesCompleted = totalCount > 0 && completedCount == totalCount;
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
       appBar: CustomTopBar.general(
         title: 'Detail Penugasan',
         showNotificationButton: false,
         leadingWidget: IconButton(
-          icon: SvgPicture.asset(
-            "assets/icons/left_arrow.svg",
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          ),
+          icon: SvgPicture.asset("assets/icons/left_arrow.svg", colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      backgroundColor: AppColors.backgroundColor,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Assignment Info Section
-          AssignmentInfoSection(assignment: currentAssignment),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(assignmentActivitiesProvider(currentAssignment.id));
+          ref.invalidate(trackingHistoryProvider(currentAssignment.id));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AssignmentHeaderCard(
+                assignment: currentAssignment,
+                progress: progress,
+                completedCount: completedCount,
+                totalCount: totalCount,
+              ),
 
-          const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-          // Activities Section
-          const Text(
-            'Aktivitas',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              _buildSectionTitle('Daftar Aktivitas', Icons.format_list_bulleted),
+              const SizedBox(height: 12),
+              
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  ],
+                ),
+                padding: const EdgeInsets.all(16),
+                child: activitiesAsync.when(
+                  data: (list) {
+                    if (list.isEmpty) return const Center(child: Text('Belum ada aktivitas'));
+                    return Column(
+                      children: List.generate(list.length, (index) {
+                        final act = list[index];
+                        final isNext = !act.isCompleted && (index == 0 || list[index - 1].isCompleted);
+                        
+                        return AssignmentTimelineItem(
+                          activity: act,
+                          isLastItem: index == list.length - 1,
+                          isCompleted: act.isCompleted,
+                          isNextTask: isNext,
+                          isCheckingIn: isLoading,
+                          isToggling: isLoading,
+                          onCheckIn: () => _onCheckIn(act),
+                          onToggle: (val) => _onToggleCompletion(act, val),
+                        );
+                      }),
+                    );
+                  },
+                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator())),
+                  error: (e, s) => Text('Error: $e'),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              _buildSectionTitle('Riwayat Tracking', Icons.history),
+              const SizedBox(height: 12),
+              
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: AssignmentTrackingHistory(trackingHistoryAsync: trackingHistoryAsync),
+              ),
+
+              const SizedBox(height: 24),
+
+              if (currentAssignment.status != AssignmentStatus.completed &&
+                  currentAssignment.status != AssignmentStatus.cancelled)
+                AssignmentActionButtons(
+                  allActivitiesCompleted: allActivitiesCompleted,
+                  onComplete: _onCompleteAssignment,
+                  onCancel: _onCancelAssignment,
+                ),
+
+              const SizedBox(height: 24),
+            ],
           ),
-          const SizedBox(height: 12),
-
-          AssignmentActivityList(
-            activitiesAsync: activitiesAsync,
-            currentAssignment: currentAssignment,
-            checkingInActivityId: _checkingInActivityId,
-            togglingActivityId: _togglingActivityId,
-            onCheckIn: _checkInActivity,
-            onToggle: _toggleCompletion,
-          ),
-
-          // Tracking History Section
-          const SizedBox(height: 24),
-          const Text(
-            'Tracking History',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          AssignmentTrackingHistory(
-            trackingHistoryAsync: trackingHistoryAsync,
-          ),
-
-          const SizedBox(height: 24),
-
-          // Action Buttons
-          if (currentAssignment.status != AssignmentStatus.completed &&
-              currentAssignment.status != AssignmentStatus.cancelled)
-            AssignmentActionButtons(
-              allActivitiesCompleted: allActivitiesCompleted,
-              onComplete: _completeAssignment,
-              onCancel: _cancelAssignment,
-            ),
-
-          const SizedBox(height: 24),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primaryColor),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+      ],
     );
   }
 }
