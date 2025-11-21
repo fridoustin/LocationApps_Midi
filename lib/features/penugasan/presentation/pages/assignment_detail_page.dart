@@ -280,7 +280,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
-  Future<void> _onCancelAssignment() async {
+  Future<void> _onCancelAssignment(List<AssignmentActivity> activities) async {
     final confirm = await _showConfirmDialog(
       title: "Batalkan Penugasan?",
       content: "Penugasan yang dibatalkan tidak dapat dikembalikan. Yakin ingin lanjut?",
@@ -295,10 +295,12 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     _showLoadingDialog();
 
     try {
+      final ulokId = _findExternalLocationId(activities);
       await ref.read(assignmentDetailControllerProvider).updateAssignmentStatus(
-        widget.assignment.id, 
-        AssignmentStatus.cancelled,
-        'Penugasan dibatalkan oleh user'
+        assignmentId: widget.assignment.id, 
+        status: AssignmentStatus.cancelled,
+        notes: 'Penugasan dibatalkan oleh user',
+        ulokId: ulokId
       );
       if (mounted) {
         Navigator.pop(context);
@@ -329,9 +331,9 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
 
     try {
       await ref.read(assignmentDetailControllerProvider).updateAssignmentStatus(
-        widget.assignment.id, 
-        AssignmentStatus.completed,
-        'Penugasan diselesaikan oleh user'
+        assignmentId: widget.assignment.id, 
+        status: AssignmentStatus.completed,
+        notes: 'Penugasan diselesaikan oleh user',
       );
       if (mounted) {
         Navigator.pop(context);
@@ -634,7 +636,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                   assignmentType: currentAssignment.type,
                   allActivitiesCompleted: allActivitiesCompleted,
                   onComplete: _onCompleteAssignment,
-                  onCancel: _onCancelAssignment,
+                  onCancel: () => _onCancelAssignment(activities),
                   onExternalOk: () => _onExternalCheckOk(activities), 
                   onExternalNok: () => _onExternalCheckNok(activities),
                 ),

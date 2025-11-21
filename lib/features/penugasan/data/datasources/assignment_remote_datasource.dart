@@ -251,4 +251,11 @@ class AssignmentRemoteDataSource {
         .update(updates)
         .eq('id', ulokId);
   }
+
+  Future<void> removeUlokPenanggungjawab(String ulokId) async {
+    await _supabase.from('ulok_eksternal').update({
+      'penanggungjawab': null,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', ulokId);
+  }
 }

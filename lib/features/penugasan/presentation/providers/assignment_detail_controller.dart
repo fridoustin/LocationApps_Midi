@@ -111,13 +111,22 @@ class AssignmentDetailController {
     }
   }
 
-  Future<void> updateAssignmentStatus(String assignmentId, AssignmentStatus status, String notes) async {
+  Future<void> updateAssignmentStatus({
+    required String assignmentId,
+    required AssignmentStatus status,
+    required String notes,
+    String? ulokId,
+  }) async {
     try {
       ref.read(assignmentActionStateProvider.notifier).state = true;
       
       final repository = ref.read(assignmentRepositoryProvider);
       final userProfile = await ref.read(userProfileProvider.future);
       if (userProfile == null) throw Exception('User session not found');
+
+      if (status == AssignmentStatus.cancelled && ulokId != null) {
+        await repository.removeUlokPenanggungjawab(ulokId);
+      }
 
       // Buat tracking point penutup
       if (status == AssignmentStatus.cancelled || status == AssignmentStatus.completed) {
