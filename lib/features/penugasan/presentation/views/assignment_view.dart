@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midi_location/core/constants/color.dart';
+import 'package:midi_location/features/lokasi/presentation/widgets/card_list_skeleton.dart'; // Pastikan import ini benar
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/presentation/pages/assignment_detail_page.dart';
 import 'package:midi_location/features/penugasan/presentation/pages/assignment_form_page.dart';
@@ -14,17 +15,18 @@ class AssignmentView extends ConsumerStatefulWidget {
   ConsumerState<AssignmentView> createState() => _AssignmentViewState();
 }
 
-class _AssignmentViewState extends ConsumerState<AssignmentView>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
+class _AssignmentViewState extends ConsumerState<AssignmentView> {
   AssignmentStatus _selectedFilter = AssignmentStatus.pending;
+  void _refreshData() {
+    Future.microtask(() {
+      ref.invalidate(pendingAssignmentsProvider);
+      ref.invalidate(inProgressAssignmentsProvider);
+      ref.invalidate(allAssignmentsProvider);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     return Stack(
       children: [
         Column(
@@ -53,8 +55,7 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
               );
 
               if (result == true) {
-                ref.invalidate(completedAssignmentsProvider);
-                ref.invalidate(allAssignmentsProvider);
+                _refreshData();
               }
             },
             backgroundColor: AppColors.primaryColor,
@@ -105,8 +106,10 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
                 ),
                 Row(
                   children: [
-                    _buildFilterTab('Belum', AssignmentStatus.pending, 0, tabWidth),
-                    _buildFilterTab('Sedang', AssignmentStatus.inProgress, 1, tabWidth),
+                    _buildFilterTab(
+                        'Belum', AssignmentStatus.pending, 0, tabWidth),
+                    _buildFilterTab(
+                        'Sedang', AssignmentStatus.inProgress, 1, tabWidth),
                   ],
                 ),
               ],
@@ -117,24 +120,33 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
     );
   }
 
-  Widget _buildFilterTab(String label, AssignmentStatus status, int index, double width) {
+  Widget _buildFilterTab(
+      String label, AssignmentStatus status, int index, double width) {
     final isActive = _selectedFilter == status;
     return SizedBox(
       width: width,
       child: GestureDetector(
-        onTap: () => setState(() => _selectedFilter = status),
+        onTap: () {
+          setState(() => _selectedFilter = status);
+          Future.microtask(() { 
+            if (status == AssignmentStatus.pending) {
+              ref.invalidate(pendingAssignmentsProvider);
+            } else {
+              ref.invalidate(inProgressAssignmentsProvider);
+            }
+          });
+        },
         behavior: HitTestBehavior.opaque,
         child: Center(
-          child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 300),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: isActive ? AppColors.white : AppColors.black,
-              ),
-            child: Text(label),
-          )
-        ),
+            child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 300),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: isActive ? AppColors.white : AppColors.black,
+          ),
+          child: Text(label),
+        )),
       ),
     );
   }
@@ -162,6 +174,10 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
         break;
       default:
         assignmentsAsync = ref.watch(pendingAssignmentsProvider);
+    }
+
+    if (assignmentsAsync.isLoading || assignmentsAsync.isRefreshing) {
+      return const CommonListSkeleton();
     }
 
     return assignmentsAsync.when(
@@ -207,8 +223,7 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
 
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(pendingAssignmentsProvider);
-            ref.invalidate(inProgressAssignmentsProvider);
+            _refreshData();
           },
           color: AppColors.primaryColor,
           backgroundColor: AppColors.cardColor,
@@ -219,22 +234,25 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
               final assignment = managerAssignments[index];
               return AssignmentCard(
                 assignment: assignment,
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AssignmentDetailPage(assignment: assignment),
+                      builder: (_) =>
+                          AssignmentDetailPage(assignment: assignment),
                     ),
                   );
+                  if (mounted) {
+                    _refreshData();
+                  }
                 },
               );
             },
           ),
         );
       },
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryColor),
-      ),
+      // Fallback loading (biasanya tidak terpanggil karena logic if di atas)
+      loading: () => const CommonListSkeleton(),
       error: (err, stack) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -250,14 +268,22 @@ class _AssignmentViewState extends ConsumerState<AssignmentView>
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              err.toString(),
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                err.toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: _refreshData,
+              child: const Text("Coba Lagi"),
+            )
           ],
         ),
       ),
