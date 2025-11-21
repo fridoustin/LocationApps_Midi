@@ -19,7 +19,20 @@ class TaskListSection extends ConsumerWidget {
 
       error: (err, stack) => Center(child: Text('Gagal memuat tugas: $err')),
 
-      data: (tasks) {
+      data: (allTasks) {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+
+        final todaysTasks = allTasks.where((task) {
+          final start = DateTime(task.startDate.year, task.startDate.month, task.startDate.day);
+          final end = DateTime(task.endDate.year, task.endDate.month, task.endDate.day);
+
+          final isAfterStart = today.isAtSameMomentAs(start) || today.isAfter(start);
+          final isBeforeEnd = today.isAtSameMomentAs(end) || today.isBefore(end);
+
+          return isAfterStart && isBeforeEnd;
+        }).take(3).toList();
+
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -63,7 +76,7 @@ class TaskListSection extends ConsumerWidget {
                     ),
                     GestureDetector(
                       onTap: () {
-                        ref.read(mainNavigationProvider.notifier).state = 2;
+                        ref.read(mainNavigationProvider.notifier).state = 2; // Pindah ke Tab Tugas
                       },
                       child: const Text(
                         'Lihat Semua',
@@ -78,19 +91,23 @@ class TaskListSection extends ConsumerWidget {
                 ),
               ),
               const Divider(thickness: 1, height: 1),
-              if (tasks.isEmpty)
+              
+              if (todaysTasks.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Text('Tidak ada tugas hari ini.'),
+                  child: Text(
+                    'Tidak ada tugas aktif hari ini.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 )
               else
                 ListView.builder(
-                  itemCount: tasks.length,
+                  itemCount: todaysTasks.length,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemBuilder: (context, index) {
-                    final assignment = tasks[index];
+                    final assignment = todaysTasks[index];
                     return TaskItem(assignment: assignment);
                   },
                 ),
