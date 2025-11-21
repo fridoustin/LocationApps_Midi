@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment_activity.dart';
-import 'package:url_launcher/url_launcher.dart'; // Pastikan package ini ada
+import 'package:url_launcher/url_launcher.dart';
 
 class AssignmentTimelineItem extends StatelessWidget {
   final AssignmentActivity activity;
@@ -65,7 +65,6 @@ class AssignmentTimelineItem extends StatelessWidget {
             width: 30,
             child: Column(
               children: [
-                // Dot
                 Container(
                   width: 16,
                   height: 16,
@@ -95,7 +94,6 @@ class AssignmentTimelineItem extends StatelessWidget {
                                       shape: BoxShape.circle)))
                           : null),
                 ),
-                // Line
                 if (!isLastItem)
                   Expanded(
                     child: Container(
@@ -114,7 +112,7 @@ class AssignmentTimelineItem extends StatelessWidget {
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 4.0), 
+              padding: const EdgeInsets.only(bottom: 0.0), 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -131,7 +129,7 @@ class AssignmentTimelineItem extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  if (activity.location != null && !isCompleted)
+                  if (activity.location != null) 
                     Container(
                       height: 140,
                       margin: const EdgeInsets.only(bottom: 12),
@@ -179,7 +177,6 @@ class AssignmentTimelineItem extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            
                             Positioned(
                               right: 8,
                               bottom: 8,
@@ -198,7 +195,7 @@ class AssignmentTimelineItem extends StatelessWidget {
                                     ]
                                   ),
                                   child: const Icon(
-                                    Icons.directions, // Icon panah navigasi
+                                    Icons.directions,
                                     color: AppColors.primaryColor,
                                     size: 20,
                                   ),
@@ -210,10 +207,8 @@ class AssignmentTimelineItem extends StatelessWidget {
                       ),
                     ),
 
-                  // Tombol Aksi
                   if (!isCompleted) _buildActionButton(),
 
-                  // Status Selesai
                   if (isCompleted)
                     Row(
                       children: const [

@@ -17,6 +17,21 @@ class AssignmentDetailController {
   final Ref ref;
 
   AssignmentDetailController(this.ref);
+  Future<void> _ensureInProgress(String assignmentId) async {
+    final allAssignments = await ref.read(allAssignmentsProvider.future);
+    try {
+      final currentAssignment = allAssignments.firstWhere((a) => a.id == assignmentId);
+      
+      if (currentAssignment.status == AssignmentStatus.pending) {
+        final repository = ref.read(assignmentRepositoryProvider);
+        await repository.updateAssignmentStatus(assignmentId, AssignmentStatus.inProgress);
+        ref.invalidate(allAssignmentsProvider);
+      }
+    } catch (e) {
+      // Silent error jika assignment tidak ditemukan di list lokal, tidak perlu crash
+      print("Warning: Could not update status to InProgress: $e");
+    }
+  }
 
   /// Logic Check-In
   Future<void> checkInActivity(AssignmentActivity activity, String assignmentId) async {
@@ -62,19 +77,12 @@ class AssignmentDetailController {
         photoUrl: null,
         createdAt: DateTime.now(),
       );
-
       await repository.addTrackingPoint(trackingPoint);
 
-      final allAssignments = await ref.read(allAssignmentsProvider.future);
-      final currentAssignment = allAssignments.firstWhere((a) => a.id == assignmentId);
-      
-      if (currentAssignment.status == AssignmentStatus.pending) {
-        await repository.updateAssignmentStatus(assignmentId, AssignmentStatus.inProgress);
-      }
+      await _ensureInProgress(assignmentId);
 
       ref.invalidate(trackingHistoryProvider(assignmentId));
       ref.invalidate(assignmentActivitiesProvider(assignmentId));
-      ref.invalidate(allAssignmentsProvider);
 
     } finally {
       ref.read(assignmentActionStateProvider.notifier).state = false;
@@ -102,6 +110,7 @@ class AssignmentDetailController {
       );
 
       await repository.addTrackingPoint(trackingPoint);
+      await _ensureInProgress(assignmentId);
       
       ref.invalidate(trackingHistoryProvider(assignmentId));
       ref.invalidate(assignmentActivitiesProvider(assignmentId));
@@ -128,7 +137,6 @@ class AssignmentDetailController {
         await repository.removeUlokPenanggungjawab(ulokId);
       }
 
-      // Buat tracking point penutup
       if (status == AssignmentStatus.cancelled || status == AssignmentStatus.completed) {
         final trackingStatus = status == AssignmentStatus.cancelled 
             ? TrackingStatus.cancelled 
