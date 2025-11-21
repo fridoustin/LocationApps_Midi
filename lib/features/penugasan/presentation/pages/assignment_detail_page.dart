@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
+import 'package:midi_location/core/widgets/confirmation_dialog.dart'; 
 import 'package:midi_location/features/lokasi/presentation/pages/ulok_eksternal_detail_screen.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment_activity.dart';
@@ -22,94 +23,6 @@ class AssignmentDetailPage extends ConsumerStatefulWidget {
 }
 
 class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
-
-  Future<bool?> _showConfirmDialog({
-    required String title,
-    required String content,
-    required String confirmText,
-    required Color confirmColor,
-    required IconData icon,
-  }) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: confirmColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 32, color: confirmColor),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                content,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
-              ),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        foregroundColor: Colors.grey[700],
-                      ),
-                      child: const Text("Batal", style: TextStyle(fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: confirmColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      child: Text(confirmText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showLoadingDialog() {
     showDialog(
@@ -219,7 +132,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   Future<void> _onCheckIn(AssignmentActivity activity) async {
-    final confirm = await _showConfirmDialog(
+    final confirm = await showConfirmationDialog(
+      context,
       title: "Check-in Lokasi",
       content: "Pastikan Anda sudah berada di lokasi ${activity.activityName}.",
       confirmText: "Ya, Check-in",
@@ -253,7 +167,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       return;
     }
 
-    final confirm = await _showConfirmDialog(
+    final confirm = await showConfirmationDialog(
+      context,
       title: "Selesaikan Aktivitas?",
       content: "Apakah tugas \"${activity.activityName}\" benar-benar sudah selesai?",
       confirmText: "Ya, Selesai",
@@ -281,9 +196,10 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   Future<void> _onCancelAssignment(List<AssignmentActivity> activities) async {
-    final confirm = await _showConfirmDialog(
+    final confirm = await showConfirmationDialog(
+      context,
       title: "Batalkan Penugasan?",
-      content: "Penugasan yang dibatalkan tidak dapat dikembalikan. Yakin ingin lanjut?",
+      content: "Penugasan yang dibatalkan tidak dapat dikembalikan. Penanggungjawab lokasi akan dilepas.",
       confirmText: "Ya, Batalkan",
       confirmColor: Colors.red,
       icon: Icons.cancel_outlined,
@@ -316,7 +232,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
   }
 
   Future<void> _onCompleteAssignment() async {
-    final confirm = await _showConfirmDialog(
+    final confirm = await showConfirmationDialog(
+      context,
       title: "Selesaikan Penugasan?",
       content: "Pastikan semua data sudah benar. Penugasan yang selesai tidak dapat diubah.",
       confirmText: "Selesaikan",
@@ -363,7 +280,8 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       _showErrorDialog("Error: Tidak ditemukan data Ulok Eksternal di aktivitas manapun.");
       return;
     }
-    final confirm = await _showConfirmDialog(
+    final confirm = await showConfirmationDialog(
+      context,
       title: "Setujui Lokasi?",
       content: "Status Ulok Eksternal akan diubah menjadi OK dan penugasan diselesaikan.",
       confirmText: "Ya, Setujui (OK)",
@@ -396,14 +314,14 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
     }
   }
 
-  // Handler untuk External Check NOK
   Future<void> _onExternalCheckNok(List<AssignmentActivity> activities) async {
     final ulokId = _findExternalLocationId(activities);
     if (ulokId == null) {
       _showErrorDialog("Error: Tidak ditemukan data Ulok Eksternal di aktivitas manapun.");
       return;
     }
-    final confirm = await _showConfirmDialog(
+    final confirm = await showConfirmationDialog(
+      context,
       title: "Tolak Lokasi?",
       content: "Status Ulok Eksternal akan diubah menjadi NOK. Pastikan alasan penolakan sudah jelas.",
       confirmText: "Ya, Tolak (NOK)",

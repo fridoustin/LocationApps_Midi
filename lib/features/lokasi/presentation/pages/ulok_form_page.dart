@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/custom_success_dialog.dart';
+import 'package:midi_location/core/widgets/confirmation_dialog.dart';
 import 'package:midi_location/core/widgets/main_layout.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/core/widgets/file_upload.dart';
@@ -94,8 +95,57 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage>
     super.dispose();
   }
 
-  Future<void> _openMapDialog(
-      dynamic notifier, LatLng? currentLatLng) async {
+  Future<void> _handleDraft(dynamic formNotifier) async {
+    final confirm = await showConfirmationDialog(
+      context,
+      title: "Simpan Draft?",
+      content: "Data akan disimpan sebagai draft dan bisa dilanjutkan nanti.",
+      confirmText: "Simpan Draft",
+      icon: Icons.save_as_outlined,
+      confirmColor: AppColors.primaryColor,
+    );
+
+    if (confirm != true) return;
+
+    final success = await formNotifier.saveDraft();
+    if (success && mounted) {
+      _showPopupAndNavigateBack(
+        "Draft berhasil disimpan!",
+        "assets/icons/draft.svg",
+      );
+    }
+  }
+
+  Future<void> _handleSubmit(dynamic formNotifier) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final confirm = await showConfirmationDialog(
+      context,
+      title: _isEditMode ? "Update Data?" : "Submit Usulan?",
+      content: "Pastikan semua data yang diisi sudah benar sebelum melanjutkan.",
+      confirmText: _isEditMode ? "Ya, Update" : "Ya, Submit",
+      icon: Icons.check_circle_outline,
+      confirmColor: AppColors.successColor,
+    );
+
+    if (confirm != true) return;
+
+    formNotifier.submitOrUpdateForm();
+  }
+
+  Future<bool> _onWillPop() async {
+    final confirm = await showConfirmationDialog(
+      context,
+      title: "Batalkan Pengisian?",
+      content: "Data yang belum disimpan akan hilang. Yakin ingin keluar?",
+      confirmText: "Ya, Keluar",
+      icon: Icons.warning_amber_rounded,
+      confirmColor: Colors.red,
+    );
+    return confirm ?? false;
+  }
+
+  Future<void> _openMapDialog(dynamic notifier, LatLng? currentLatLng) async {
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
@@ -234,7 +284,6 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
-        // Update numeric controllers
         updateControllerIfNeeded(
           _jumlahLantaiC,
           formatNumber(next.jumlahLantai),
@@ -265,7 +314,6 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage>
           _isUserTypingHargaSewa,
         );
 
-        // Update text controllers
         if (previous?.namaUlok != next.namaUlok &&
             _namaUlokC.text != next.namaUlok) {
           _namaUlokC.text = next.namaUlok ?? '';
@@ -301,130 +349,125 @@ class _UlokFormPageState extends ConsumerState<UlokFormPage>
       });
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: CustomTopBar.general(
-        title: _isEditMode ? 'Edit ULOK' : 'Form ULOK',
-        showNotificationButton: false,
-        leadingWidget: IconButton(
-          icon: SvgPicture.asset(
-            "assets/icons/left_arrow.svg",
-            colorFilter:
-                const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundColor,
+        appBar: CustomTopBar.general(
+          title: _isEditMode ? 'Edit ULOK' : 'Form ULOK',
+          showNotificationButton: false,
+          leadingWidget: IconButton(
+            icon: SvgPicture.asset(
+              "assets/icons/left_arrow.svg",
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+            onPressed: () async {
+              if (await _onWillPop()) {
+                Navigator.of(context).pop();
+              }
+            },
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Data Usulan Lokasi
-              FormSectionContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const FormSectionHeader(
-                      title: "Data Usulan Lokasi",
-                      iconPath: "assets/icons/location.svg",
-                    ),
-                    const SizedBox(height: 20),
-                    _buildLokasiFields(formState, formNotifier),
-                  ],
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Data Usulan Lokasi
+                FormSectionContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const FormSectionHeader(
+                        title: "Data Usulan Lokasi",
+                        iconPath: "assets/icons/location.svg",
+                      ),
+                      const SizedBox(height: 20),
+                      _buildLokasiFields(formState, formNotifier),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Data Store
-              FormSectionContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const FormSectionHeader(
-                      title: "Data Store",
-                      iconPath: "assets/icons/data_store.svg",
-                    ),
-                    const SizedBox(height: 20),
-                    _buildStoreFields(formState, formNotifier),
-                  ],
+                // Data Store
+                FormSectionContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const FormSectionHeader(
+                        title: "Data Store",
+                        iconPath: "assets/icons/data_store.svg",
+                      ),
+                      const SizedBox(height: 20),
+                      _buildStoreFields(formState, formNotifier),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Data Pemilik
-              FormSectionContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const FormSectionHeader(
-                      title: "Data Pemilik",
-                      iconPath: "assets/icons/avatar.svg",
-                    ),
-                    const SizedBox(height: 20),
-                    _buildPemilikFields(formNotifier),
-                  ],
+                // Data Pemilik
+                FormSectionContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const FormSectionHeader(
+                        title: "Data Pemilik",
+                        iconPath: "assets/icons/avatar.svg",
+                      ),
+                      const SizedBox(height: 20),
+                      _buildPemilikFields(formNotifier),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Upload Dokumen
-              FormSectionContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const FormSectionHeader(
-                      title: "Upload Dokumen",
-                      iconPath: "assets/icons/upload.svg",
-                    ),
-                    const SizedBox(height: 16),
-                    FileUploadCard(
-                      label: "Formulir Usulan Lokasi (PDF)",
-                      fileName: formState.formUlokPdf?.path.split('/').last,
-                      existingUrl: formState.existingFormUlokUrl,
-                      onTap: () async {
-                        await pickFile(
-                          (fieldName, file) =>
-                              formNotifier.onFilePicked(file),
-                          '',
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Action Buttons
-              FormActionButtons(
-                isLoading: formState.status == UlokFormStatus.loading,
-                showDraftButton: !_isEditMode,
-                onDraftPressed: !_isEditMode
-                    ? () async {
-                        final success = await formNotifier.saveDraft();
-                        if (success && mounted) {
-                          _showPopupAndNavigateBack(
-                            "Draft berhasil disimpan!",
-                            "assets/icons/draft.svg",
+                // Upload Dokumen
+                FormSectionContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const FormSectionHeader(
+                        title: "Upload Dokumen",
+                        iconPath: "assets/icons/upload.svg",
+                      ),
+                      const SizedBox(height: 16),
+                      FileUploadCard(
+                        label: "Formulir Usulan Lokasi (PDF)",
+                        fileName: formState.formUlokPdf?.path.split('/').last,
+                        existingUrl: formState.existingFormUlokUrl,
+                        onTap: () async {
+                          await pickFile(
+                            (fieldName, file) =>
+                                formNotifier.onFilePicked(file),
+                            '',
                           );
-                        }
-                      }
-                    : null,
-                onSubmitPressed: () {
-                  if (_formKey.currentState?.validate() ?? false) {
-                    formNotifier.submitOrUpdateForm();
-                  }
-                },
-                submitLabel: _isEditMode ? 'Update Data' : 'Submit',
-              ),
+                        },
+                      ),
+                    ],
+                  ),
+                ),
 
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+
+                // Action Buttons dengan Konfirmasi
+                FormActionButtons(
+                  isLoading: formState.status == UlokFormStatus.loading,
+                  showDraftButton: !_isEditMode,
+                  onDraftPressed: !_isEditMode
+                      ? () => _handleDraft(formNotifier)
+                      : null,
+                  onSubmitPressed: () => _handleSubmit(formNotifier),
+                  submitLabel: _isEditMode ? 'Update Data' : 'Submit',
+                ),
+
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),

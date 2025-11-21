@@ -10,6 +10,7 @@ import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/services/file_service.dart';
 import 'package:midi_location/core/utils/date_formatter.dart';
 import 'package:midi_location/core/widgets/custom_success_dialog.dart';
+import 'package:midi_location/core/widgets/confirmation_dialog.dart'; // Import Widget Universal
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/features/lokasi/domain/entities/form_kplt_state.dart';
 import 'package:midi_location/features/lokasi/presentation/providers/kplt_form_provider.dart';
@@ -77,6 +78,18 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage>
     _peRabDebounceTimer?.cancel();
 
     super.dispose();
+  }
+
+  Future<bool> _onWillPop() async {
+    final confirm = await showConfirmationDialog(
+      context,
+      title: "Batalkan Pengisian?",
+      content: "Data KPLT yang belum disimpan akan hilang. Yakin ingin keluar?",
+      confirmText: "Ya, Keluar",
+      icon: Icons.warning_amber_rounded,
+      confirmColor: Colors.red,
+    );
+    return confirm ?? false;
   }
 
   Future<void> _showPopupAndNavigateBack(
@@ -215,125 +228,154 @@ class _KpltFormPageState extends ConsumerState<KpltFormPage>
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: CustomTopBar.general(
-        title: 'Form Input KPLT',
-        showNotificationButton: false,
-        leadingWidget: IconButton(
-          icon: SvgPicture.asset(
-            "assets/icons/left_arrow.svg",
-            colorFilter:
-                const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundColor,
+        appBar: CustomTopBar.general(
+          title: 'Form Input KPLT',
+          showNotificationButton: false,
+          leadingWidget: IconButton(
+            icon: SvgPicture.asset(
+              "assets/icons/left_arrow.svg",
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+            onPressed: () async {
+              if (await _onWillPop()) {
+                if (mounted) Navigator.of(context).pop();
+              }
+            },
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Header Card
-            FormHeaderCard(
-              title: widget.ulok.namaLokasi,
-              subtitle: "Approved $formattedDate",
-              icon: Icons.store,
-              isExpandable: true,
-              isExpanded: _isDetailExpanded,
-              onToggleExpanded: () {
-                setState(() {
-                  _isDetailExpanded = !_isDetailExpanded;
-                });
-              },
-            ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Header Card
+              FormHeaderCard(
+                title: widget.ulok.namaLokasi,
+                subtitle: "Approved $formattedDate",
+                icon: Icons.store,
+                isExpandable: true,
+                isExpanded: _isDetailExpanded,
+                onToggleExpanded: () {
+                  setState(() {
+                    _isDetailExpanded = !_isDetailExpanded;
+                  });
+                },
+              ),
 
-            // Expandable Detail Section
-            if (_isDetailExpanded) ...[
+              // Expandable Detail Section
+              if (_isDetailExpanded) ...[
+                const SizedBox(height: 16),
+                _buildUlokDetailSection(fullAddress, latLng),
+              ],
+
+              const SizedBox(height: 8),
+              const Divider(thickness: 1),
+              const SizedBox(height: 8),
+
+              // Analisa & FPL Section
+              FormSectionContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const FormSectionHeader(
+                      title: "Analisa & FPL",
+                      iconPath: "assets/icons/analisis.svg",
+                    ),
+                    const SizedBox(height: 20),
+                    _buildAnalisaFplFields(formState, formNotifier),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 16),
-              _buildUlokDetailSection(fullAddress, latLng),
+
+              // Data PE Section
+              FormSectionContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const FormSectionHeader(
+                      title: "Data PE",
+                      iconPath: "assets/icons/data_store.svg",
+                    ),
+                    const SizedBox(height: 20),
+                    _buildDataPeFields(formState, formNotifier),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Upload Dokumen Section
+              FormSectionContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const FormSectionHeader(
+                      title: "Upload Dokumen",
+                      iconPath: "assets/icons/lampiran.svg",
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFileUploadSection(formState, formNotifier),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              FormActionButtons(
+                isLoading: formState.status == KpltFormStatus.loading,
+                onDraftPressed: () async {
+                  final confirm = await showConfirmationDialog(
+                    context,
+                    title: "Simpan Draft KPLT?",
+                    content: "Data akan disimpan sementara. Anda bisa melanjutkannya nanti.",
+                    confirmText: "Simpan Draft",
+                    icon: Icons.save_as_outlined,
+                    confirmColor: AppColors.primaryColor,
+                  );
+
+                  if (confirm == true) {
+                    final success = await formNotifier.saveDraft();
+                    if (success && mounted) {
+                      _showPopupAndNavigateBack(
+                        "Draft berhasil disimpan!",
+                        "assets/icons/draft.svg",
+                      );
+                    }
+                  }
+                },
+                onSubmitPressed: () async {
+                  final confirm = await showConfirmationDialog(
+                    context,
+                    title: "Submit KPLT?",
+                    content: "Pastikan semua data sudah terisi lengkap dan benar sebelum submit.",
+                    confirmText: "Ya, Submit",
+                    icon: Icons.check_circle_outline,
+                    confirmColor: AppColors.successColor,
+                  );
+
+                  if (confirm == true) {
+                    final success = await formNotifier.submitForm();
+                    if (success && mounted) {
+                      _showPopupAndNavigateBack(
+                        "Data Berhasil Disubmit!",
+                        "assets/icons/success.svg",
+                      );
+                    }
+                  }
+                },
+                submitLabel: 'Submit KPLT',
+              ),
+
+              const SizedBox(height: 24),
             ],
-
-            const SizedBox(height: 8),
-            const Divider(thickness: 1),
-            const SizedBox(height: 8),
-
-            // Analisa & FPL Section
-            FormSectionContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const FormSectionHeader(
-                    title: "Analisa & FPL",
-                    iconPath: "assets/icons/analisis.svg",
-                  ),
-                  const SizedBox(height: 20),
-                  _buildAnalisaFplFields(formState, formNotifier),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Data PE Section
-            FormSectionContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const FormSectionHeader(
-                    title: "Data PE",
-                    iconPath: "assets/icons/data_store.svg",
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDataPeFields(formState, formNotifier),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Upload Dokumen Section
-            FormSectionContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const FormSectionHeader(
-                    title: "Upload Dokumen",
-                    iconPath: "assets/icons/lampiran.svg",
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFileUploadSection(formState, formNotifier),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            FormActionButtons(
-              isLoading: formState.status == KpltFormStatus.loading,
-              onDraftPressed: () async {
-                final success = await formNotifier.saveDraft();
-                if (success && mounted) {
-                  _showPopupAndNavigateBack(
-                    "Draft berhasil disimpan!",
-                    "assets/icons/draft.svg",
-                  );
-                }
-              },
-              onSubmitPressed: () async {
-                final success = await formNotifier.submitForm();
-                if (success && mounted) {
-                  _showPopupAndNavigateBack(
-                    "Data Berhasil Disubmit!",
-                    "assets/icons/success.svg",
-                  );
-                }
-              },
-              submitLabel: 'Submit KPLT',
-            ),
-
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );

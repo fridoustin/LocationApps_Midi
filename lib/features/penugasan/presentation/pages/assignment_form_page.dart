@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:midi_location/core/constants/color.dart';
 import 'package:midi_location/core/widgets/topbar.dart';
 import 'package:midi_location/core/widgets/custom_success_dialog.dart';
+import 'package:midi_location/core/widgets/confirmation_dialog.dart'; // Import Widget Universal
 import 'package:midi_location/features/penugasan/domain/entities/activity_template.dart';
 import 'package:midi_location/features/penugasan/domain/entities/assignment.dart';
 import 'package:midi_location/features/penugasan/presentation/providers/assignment_form_provider.dart';
@@ -37,6 +38,18 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
     });
   }
 
+  Future<bool> _onWillPop() async {
+    final confirm = await showConfirmationDialog(
+      context,
+      title: "Batalkan Penugasan?",
+      content: "Data yang sudah diisi akan hilang jika Anda keluar.",
+      confirmText: "Ya, Keluar",
+      icon: Icons.warning_amber_rounded,
+      confirmColor: Colors.red,
+    );
+    return confirm ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final formProvider = assignmentFormProvider(widget.initialAssignment);
@@ -51,30 +64,37 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
       }
     });
 
-    return Scaffold(
-      appBar: CustomTopBar.general(
-        title: _isEditMode ? 'Edit Penugasan' : 'Buat Penugasan',
-        showNotificationButton: false,
-        leadingWidget: IconButton(
-          icon: SvgPicture.asset(
-            "assets/icons/left_arrow.svg",
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: CustomTopBar.general(
+          title: _isEditMode ? 'Edit Penugasan' : 'Buat Penugasan',
+          showNotificationButton: false,
+          leadingWidget: IconButton(
+            icon: SvgPicture.asset(
+              "assets/icons/left_arrow.svg",
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+            onPressed: () async {
+              if (await _onWillPop()) {
+                if (mounted) Navigator.of(context).pop();
+              }
+            },
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-      backgroundColor: AppColors.backgroundColor,
-      body: activitiesAsync.when(
-        data: (activities) => _buildForm(
-          context,
-          formState,
-          formNotifier,
-          activities,
+        backgroundColor: AppColors.backgroundColor,
+        body: activitiesAsync.when(
+          data: (activities) => _buildForm(
+            context,
+            formState,
+            formNotifier,
+            activities,
+          ),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryColor),
+          ),
+          error: (err, stack) => _buildErrorState(err),
         ),
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryColor),
-        ),
-        error: (err, stack) => _buildErrorState(err),
       ),
     );
   }
@@ -113,8 +133,19 @@ class _AssignmentFormPageState extends ConsumerState<AssignmentFormPage> {
     );
   }
 
-  void _handleSubmit(AssignmentFormNotifier formNotifier) {
-    if (_formKey.currentState?.validate() ?? false) {
+  Future<void> _handleSubmit(AssignmentFormNotifier formNotifier) async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final confirm = await showConfirmationDialog(
+      context,
+      title: _isEditMode ? "Update Penugasan?" : "Buat Penugasan?",
+      content: "Pastikan data penugasan sudah benar sebelum melanjutkan.",
+      confirmText: _isEditMode ? "Ya, Update" : "Ya, Buat",
+      icon: Icons.assignment_turned_in_outlined,
+      confirmColor: AppColors.primaryColor,
+    );
+
+    if (confirm == true) {
       formNotifier.submitForm();
     }
   }
