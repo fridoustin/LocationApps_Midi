@@ -94,6 +94,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardColor,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -117,7 +118,7 @@ class _AssignmentDetailPageState extends ConsumerState<AssignmentDetailPage> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
