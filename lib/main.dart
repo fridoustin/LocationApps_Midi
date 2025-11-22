@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
+import 'package:screen_protector/screen_protector.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:midi_location/auth_gate.dart';
 import 'package:midi_location/core/routes/route.dart';
@@ -23,9 +23,6 @@ import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (Platform.isAndroid) {
-    await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -61,14 +58,23 @@ class MyApp extends ConsumerStatefulWidget {
 
 class _MyAppState extends ConsumerState<MyApp> {
   late final StreamSubscription<AuthState> _authSubscription;
+  bool _isHandlingAuthChange = false;
 
   @override
   void initState() {
     super.initState();
+    _setupScreenProtection();
     _setupAuthListener();
   }
 
-  bool _isHandlingAuthChange = false;
+  void _setupScreenProtection() async {
+    //Nyalakan kalau sudah tahap production untuk mencegah user melakukan screenshot
+
+    // await ScreenProtector.preventScreenshotOn();
+    // if (Platform.isIOS) {
+    //   await ScreenProtector.protectDataLeakageWithBlur();
+    // }
+  }
 
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
